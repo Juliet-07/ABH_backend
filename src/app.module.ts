@@ -22,13 +22,14 @@ import { JwtModule } from '@nestjs/jwt';
     TypeOrmModule.forRoot({
       "type": "postgres",
       "host": process.env.POSTGRES_URI,
-      "port": Number(process.env.POSTGRES_PORT),
+      // "port": Number(process.env.POSTGRES_PORT),
       "username": process.env.POSTGRES_USER,
       "password": process.env.POSTGRES_PASSWORD,
       "database": process.env.POSTGRES_DB,
       "entities": [
         "dist/**/*.entity{.ts,.js}"
       ],
+      "ssl": true,
       "synchronize": true
     }),
     CacheModule.register({
