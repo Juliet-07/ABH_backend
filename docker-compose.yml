@@ -1,0 +1,22 @@
+version: '3'
+services:
+  nestjs-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=production
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=1DqkDgLx87RquycTLo4X
+      - POSTGRES_DB=rental-project
+      - POSTGRES_URI=roovasstagingdb.cuzjlcl29nhs.us-west-2.rds.amazonaws.com
+    depends_on:
+      - redis
+  redis:
+    image: redis:latest
+    command: ['redis-server', '--bind', 'redis', '--port', '6379']
+    restart: always
+    ports:
+      - '6379:6379'
