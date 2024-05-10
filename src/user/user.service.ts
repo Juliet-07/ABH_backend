@@ -76,7 +76,7 @@ export class UserService {
       const isPasswordCorrect = await user.comparePassword(password);
       if (!isPasswordCorrect) throw new UnauthorizedException('Incorrect Password')
 
-      if (!user.verified) throw new MisdirectedException('Pls verify your account')
+      // if (!user.verified) throw new MisdirectedException('Pls verify your account')
 
       const lastLoginAt = new Date().toISOString();
       await this.userRepository.update(user.id, {
