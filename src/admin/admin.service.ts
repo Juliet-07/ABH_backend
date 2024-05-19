@@ -72,7 +72,7 @@ export class AdminService {
       await this.adminRepository.update(admin.id, {
         lastLoginAt
       })
-      const payload = { id: admin.id, email, lastLoginAt };
+      const payload = { id: admin.id, email, role: admin.role, lastLoginAt };
       return {
         accessToken: await this.jwtService.signAsync(payload),
       };

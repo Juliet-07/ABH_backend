@@ -55,7 +55,7 @@ export class Admin {
     @Column()
     password: string;
 
-    @Column({ nullable: false })
+    @Column({ nullable: true })
     createdBy: string;
   
     @Column({ nullable: true })
