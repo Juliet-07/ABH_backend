@@ -15,7 +15,7 @@ export class AdminController {
   constructor(private readonly adminService: AdminService) { }
 
   // Create Admin
-  @UseGuards(AdminAuthGuard)
+  // @UseGuards(AdminAuthGuard)
   @Post()
   @UsePipes(new ValidationPipe())
   create(@Body() createAdminDto: CreateAdminDto): Promise<void> {
@@ -51,14 +51,14 @@ export class AdminController {
     return this.adminService.findOne(+id);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AdminAuthGuard)
   @Patch(':id')
   @ApiBearerAuth('JWT-auth')
   update(@Param('id') id: string, @Body() updateAdminDto: UpdateAdminDto) {
     return this.adminService.update(+id, updateAdminDto);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AdminAuthGuard)
   @Delete(':id')
   @ApiBearerAuth('JWT-auth')
   remove(@Param('id') id: string) {
