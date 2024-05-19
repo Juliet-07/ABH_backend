@@ -11,6 +11,7 @@ import { UtilsModule } from './utils/utils.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ResponseInterceptor } from './utils/interceptors/response/response.interceptor';
 import { JwtModule } from '@nestjs/jwt';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { JwtModule } from '@nestjs/jwt';
     }),
     // TransactionModule,
     UserModule,
+    AdminModule,
     TypeOrmModule.forRoot({
       "type": "postgres",
       "host": process.env.POSTGRES_URI,

@@ -7,3 +7,9 @@ export enum UserTypeEnums {
     RENTER = 'RENTER',
     LANDLORD = 'LANDLORD',
 }
+
+export enum AdminRolesEnums {
+    CUSTOMER_SUPPORT = 'CUSTOMER_SUPPORT',
+    OPERATIONS = 'OPERATIONS',
+    SUPER_ADMIN = 'SUPER_ADMIN',
+}
