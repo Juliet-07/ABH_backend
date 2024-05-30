@@ -25,10 +25,12 @@ export class ProductsService {
       product.vendorId = vendor.id
       product.createdBy = vendor.id
 
-      await this.productRepository.save(product);
+      const result = await this.productRepository.save(product);
 
       // Invalidate cache after a new admin is created
       // await this.cacheManager.del(this.cacheKey);
+
+      return result;
 
     } catch (error) {
       throw new BadRequestException(error.message);

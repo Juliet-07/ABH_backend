@@ -69,9 +69,9 @@ import { VendorGuard } from './auth/vendor-guard/vendor.guard';
       provide: APP_INTERCEPTOR,
       useClass: ResponseInterceptor,
     },
-    { provide: APP_GUARD, useClass: AdminAuthGuard },
-    { provide: APP_GUARD, useClass: AuthGuard },
-    { provide: APP_GUARD, useClass: VendorGuard }
+    // { provide: APP_GUARD, useClass: AdminAuthGuard },
+    // { provide: APP_GUARD, useClass: AuthGuard },
+    // { provide: APP_GUARD, useClass: VendorGuard }
   ],
 })
 export class AppModule { }

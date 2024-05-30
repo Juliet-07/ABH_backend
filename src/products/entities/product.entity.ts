@@ -33,7 +33,7 @@ export class Product {
   price: number;
 
   @Column({ nullable: true })
-  vendorId: number;
+  vendorId: string;
 
   @Column({ name: 'sale_price', nullable: true })
   salePrice: number;
@@ -86,7 +86,7 @@ export class Product {
   @Column({ nullable: true })
   length: number;
 
-  @Column('json')
+  @Column({type: 'json', nullable: true})
   images: {
     id: number;
     url: string;

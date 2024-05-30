@@ -156,7 +156,7 @@ export class VendorsService {
     }
   }
 
-  async manageVendorRegistration(manageVendorDto: ManageVendorDto, id: number): Promise<void> {
+  async manageVendorRegistration(manageVendorDto: ManageVendorDto, id: string | any): Promise<void> {
     try {
       const { status } = manageVendorDto;
 

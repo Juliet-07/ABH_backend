@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, ValidationPipe, UsePipes, HttpStatus, HttpCode, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, ValidationPipe, UsePipes, HttpStatus, HttpCode, Query, Put } from '@nestjs/common';
 import { VendorsService } from './vendors.service';
 import { CreateVendorDto } from './dto/create-vendor.dto';
 import { UpdateVendorDto } from './dto/update-vendor.dto';
@@ -50,9 +50,10 @@ export class VendorsController {
     // Manage Vendor Account Status
     @UseGuards(AdminAuthGuard)
     @HttpCode(HttpStatus.OK)
-    @Post('manage-accont-status/:id')
+    @Put('manage-accont-status/:id')
     @UsePipes(new ValidationPipe())
-    manageVendorRegistration(@Body() manageVendorDto: ManageVendorDto, @Param('id') id: number): Promise<void> {
+    @ApiBearerAuth('JWT-auth')
+    manageVendorRegistration(@Body() manageVendorDto: ManageVendorDto, @Param('id') id: string): Promise<void> {
       return this.vendorsService.manageVendorRegistration(manageVendorDto, id);
     }
 

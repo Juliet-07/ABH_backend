@@ -102,12 +102,12 @@ export class CreateProductDto {
     length?: number;
   
     @IsJSON()
-    @IsDefined()
+    @IsOptional()
     @ApiProperty({
         type: JSON,
         description: 'Product Images [URL]',
     })
-    images: {
+    images?: {
       id: number;
       url: string;
     }[];
