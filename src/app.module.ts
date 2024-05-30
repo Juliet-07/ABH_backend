@@ -8,10 +8,16 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './user/user.module';
 import { UtilsModule } from './utils/utils.module';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ResponseInterceptor } from './utils/interceptors/response/response.interceptor';
 import { JwtModule } from '@nestjs/jwt';
 import { AdminModule } from './admin/admin.module';
+import { ProductsModule } from './products/products.module';
+import { RatingsModule } from './ratings/ratings.module';
+import { VendorsModule } from './vendors/vendors.module';
+import { AdminAuthGuard } from './auth/admin-auth/admin-auth.guard';
+import { AuthGuard } from './auth/auth.guard';
+import { VendorGuard } from './auth/vendor-guard/vendor.guard';
 
 @Module({
   imports: [
@@ -21,6 +27,9 @@ import { AdminModule } from './admin/admin.module';
     // TransactionModule,
     UserModule,
     AdminModule,
+    ProductsModule,
+    RatingsModule,
+    VendorsModule,
     TypeOrmModule.forRoot({
       "type": "postgres",
       "host": process.env.POSTGRES_URI,
@@ -51,6 +60,7 @@ import { AdminModule } from './admin/admin.module';
       signOptions: { expiresIn: '3600s' },
     }),
     UtilsModule,
+   
   ],
   controllers: [AppController],
   providers: [
@@ -59,6 +69,9 @@ import { AdminModule } from './admin/admin.module';
       provide: APP_INTERCEPTOR,
       useClass: ResponseInterceptor,
     },
+    { provide: APP_GUARD, useClass: AdminAuthGuard },
+    { provide: APP_GUARD, useClass: AuthGuard },
+    { provide: APP_GUARD, useClass: VendorGuard }
   ],
 })
 export class AppModule { }

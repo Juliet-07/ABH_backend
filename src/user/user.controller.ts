@@ -6,7 +6,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { LoginUserDto } from './dto/login-user.dto';
 import { LoginResponse } from './user.interface';
 import { AuthGuard } from '../auth/auth.guard';
-import { AdminAuthGuard } from '../admin-auth/admin-auth.guard';
+import { AdminAuthGuard } from '../auth/admin-auth/admin-auth.guard';
 import { VerifyUserDto } from './dto/verify-user.dto';
 
 @ApiTags('User')

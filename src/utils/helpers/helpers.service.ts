@@ -50,4 +50,8 @@ export class HelpersService {
         const num = Math.floor(Math.random() * (9 * _exponent)) + _exponent;
         return num;
     }
+
+    public convertProductNameToSlug(productName: string) {
+       return productName.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s/g, '-').toLowerCase();
+    }
 }

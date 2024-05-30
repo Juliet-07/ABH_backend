@@ -13,3 +13,9 @@ export enum AdminRolesEnums {
     OPERATIONS = 'OPERATIONS',
     SUPER_ADMIN = 'SUPER_ADMIN',
 }
+
+export enum VendorStatusEnums {
+    ACTIVE = 'ACTIVE',
+    PENDING = 'PENDING',
+    BLOCKED = 'BLOCKED',
+}

@@ -7,7 +7,7 @@ import { HelpersService } from '../utils/helpers/helpers.service';
 import { MailingService } from '../utils/mailing/mailing.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User,]),],
+  imports: [TypeOrmModule.forFeature([User,])],
   controllers: [UserController],
   providers: [UserService, HelpersService, MailingService],
 })

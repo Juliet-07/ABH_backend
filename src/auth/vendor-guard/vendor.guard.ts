@@ -1,16 +1,12 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { VendorsService } from '../../vendors/vendors.service';
 import { Request } from 'express';
-import { AdminRolesEnums } from '../constants';
 
 @Injectable()
-export class AdminAuthGuard implements CanActivate {
-  constructor(private jwtService: JwtService) { }
+export class VendorGuard implements CanActivate {
+  constructor(
+    private jwtService: JwtService, private readonly vendorService: VendorsService,) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -27,8 +23,10 @@ export class AdminAuthGuard implements CanActivate {
       );
       // 💡 We're assigning the payload to the request object here
       // so that we can access it in our route handlers
-      if (![Object.values(AdminRolesEnums).includes(payload.role)]) throw new UnauthorizedException('Not Authorized')
-      request['admin'] = payload;
+      // Fetch Vendor
+      const vendor = await this.vendorService.findOne(payload.id)
+      if (!vendor) throw new UnauthorizedException('Not Authorized')
+      request['vendor'] = payload;
     } catch {
       throw new UnauthorizedException();
     }
