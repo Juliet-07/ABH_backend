@@ -27,14 +27,45 @@ export class Vendor {
     @Column({ unique: true })
     phoneNumber: string;
 
+    @Column({nullable: true})
+    alternatePhoneNumber: string;
+
+    @Column()
+    dob: Date;
+
     @Column()
     code: string;
 
     @Column()
     store: string;
 
+    @Column()
+    country: string;
+
+    @Column()
+    city: string;
+
+    @Column()
+    state: string;
+
     @Column({enum: VendorStatusEnums, default: VendorStatusEnums.PENDING})
     status: string;
+
+    // Operational Details
+    @Column({ nullable: true })
+    businessType: string;
+
+    @Column({ nullable: true })
+    nationalIdentificationNumber: string;
+
+    @Column({ nullable: true })
+    taxIdentificationNumber: string;
+
+    @Column({ nullable: true })
+    cacRegistrationNumber: string;
+
+    @Column({ nullable: true })
+    cacCertificateUrl: string;
 
     @Column({ nullable: true })
     referredBy: number;
@@ -66,13 +97,13 @@ export class Vendor {
     })
     lastPasswordResetAt: Date
 
-    @Column()
+    @Column({nullable: true, select: false})
     password: string;
 
-    @BeforeInsert()
-    async hashPassword() {
-        this.password = await bcrypt.hash(this.password, 10);
-    }
+    // @BeforeInsert()
+    // async hashPassword() {
+    //     this.password = await bcrypt.hash(this.password, 10);
+    // }
 
     async comparePassword(password: string): Promise<boolean> {
         return await bcrypt.compare(password, this.password);

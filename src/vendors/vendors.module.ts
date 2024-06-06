@@ -5,11 +5,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Vendor } from './entities/vendor.entity';
 import { HelpersService } from '../utils/helpers/helpers.service';
 import { MailingService } from '../utils/mailing/mailing.service';
+import { FileUploadService } from '../services/file-upload/file-upload.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Vendor])],
   exports: [VendorsService],
   controllers: [VendorsController],
-  providers: [VendorsService, HelpersService, MailingService]
+  providers: [VendorsService, HelpersService, MailingService, FileUploadService]
 })
 export class VendorsModule {}

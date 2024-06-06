@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsEmail, IsNumberString, IsOptional, IsPhoneNumber, IsString, IsStrongPassword, Length, Matches, MaxLength, MinLength } from "class-validator";
+import { IsDateString, IsDefined, IsEmail, IsNumberString, IsOptional, IsPhoneNumber, IsString, IsStrongPassword, Length, Matches, MaxLength, MinLength } from "class-validator";
 
 
 export class CreateVendorDto {
@@ -16,6 +16,42 @@ export class CreateVendorDto {
         description: 'User\'s Last Name',
     })
     lastName: string;
+
+
+    @IsString()
+    @ApiProperty({
+        type: String,
+        description: 'Store Name',
+    })
+    store: string;
+
+    @IsString()
+    @ApiProperty({
+        type: String,
+        description: 'Store\'s Country',
+    })
+    country: string;
+
+    @IsString()
+    @ApiProperty({
+        type: String,
+        description: 'Store\'s City',
+    })
+    city: string;
+
+    @IsString()
+    @ApiProperty({
+        type: String,
+        description: 'Store\'s State',
+    })
+    state: string;
+
+    @IsDateString()
+    @ApiProperty({
+        type: Date,
+        description: 'Date of Birth',
+    })
+    dob: Date;
 
     @IsString()
     @IsEmail()
@@ -34,21 +70,56 @@ export class CreateVendorDto {
     })
     phoneNumber: string;
 
-    @IsString()
+    @IsNumberString()
+    @IsOptional()
+    @IsPhoneNumber('NG')
+    @Length(11)
     @ApiProperty({
         type: String,
-        description: 'Store Name',
+        description: 'Alternative Phone Number with country code',
     })
-    store: string;
+    alternatePhoneNumber: string;
 
     @IsString()
-    @IsStrongPassword()
-    @MinLength(4)
-    @MaxLength(20)
-    @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, { message: 'password too weak' })
+    @IsDefined()
     @ApiProperty({
         type: String,
-        description: 'Password that matches the RegExp /((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/',
+        description: 'Business Type',
     })
-    password: string;
+    businessType: string;
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty({
+        type: String,
+        description: 'National Identification Number',
+    })
+    nationalIdentificationNumber: string;
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty({
+        type: String,
+        description: 'Tax Identification Number',
+    })
+    taxIdentificationNumber: string;
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty({
+        type: String,
+        description: 'CAC Identification Number',
+    })
+    cacRegistrationNumber: string;
+
+    // @IsString()
+    // @IsStrongPassword()
+    // @MinLength(4)
+    // @MaxLength(20)
+    // @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, { message: 'password too weak' })
+    // @ApiProperty({
+    //     type: String,
+    //     description: 'Password that matches the RegExp /((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/',
+    // })
+    // password: string;
 }

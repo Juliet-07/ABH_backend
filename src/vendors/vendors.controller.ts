@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, ValidationPipe, UsePipes, HttpStatus, HttpCode, Query, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, ValidationPipe, UsePipes, HttpStatus, HttpCode, Query, Put, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { VendorsService } from './vendors.service';
 import { CreateVendorDto } from './dto/create-vendor.dto';
 import { UpdateVendorDto } from './dto/update-vendor.dto';
@@ -10,6 +10,9 @@ import { LoginVendorDto } from './dto/login-vendor.dto';
 import { VerifyVendorDto } from './dto/verify-vendor.dto';
 import { ManageVendorDto } from './dto/manage-vendor.dto';
 import { VendorGuard } from '../auth/vendor-guard/vendor.guard';
+import { Vendor } from './entities/vendor.entity';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 
 @ApiTags('Vendors')
 @Controller('vendors')
@@ -19,8 +22,9 @@ export class VendorsController {
   // Create Vendor
   @Post()
   @UsePipes(new ValidationPipe())
-  create(@Body() createVendorDto: CreateVendorDto): Promise<void> {
-    return this.vendorsService.create(createVendorDto);
+  @UseInterceptors(FileInterceptor('file'))
+  create(@Body() createVendorDto: CreateVendorDto, @UploadedFile() file: Express.Multer.File): Promise<Vendor> {
+    return this.vendorsService.create(createVendorDto, file);
   }
 
   //  Vendor Login
@@ -50,10 +54,10 @@ export class VendorsController {
     // Manage Vendor Account Status
     @UseGuards(AdminAuthGuard)
     @HttpCode(HttpStatus.OK)
-    @Put('manage-accont-status/:id')
+    @Put('manage-account-status/:id')
     @UsePipes(new ValidationPipe())
     @ApiBearerAuth('JWT-auth')
-    manageVendorRegistration(@Body() manageVendorDto: ManageVendorDto, @Param('id') id: string): Promise<void> {
+    manageVendorRegistration(@Body() manageVendorDto: ManageVendorDto, @Param('id') id: string): Promise<string> {
       return this.vendorsService.manageVendorRegistration(manageVendorDto, id);
     }
 
@@ -67,8 +71,8 @@ export class VendorsController {
   @UseGuards(AdminAuthGuard)
   @Get()
   @ApiBearerAuth('JWT-auth')
-  findAll() {
-    return this.vendorsService.findAll();
+  findAll(@Paginate() query: PaginateQuery): Promise<Paginated<Vendor>> {
+    return this.vendorsService.findAll(query);
   }
 
   @UseGuards(AdminAuthGuard)

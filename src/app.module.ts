@@ -18,6 +18,7 @@ import { VendorsModule } from './vendors/vendors.module';
 import { AdminAuthGuard } from './auth/admin-auth/admin-auth.guard';
 import { AuthGuard } from './auth/auth.guard';
 import { VendorGuard } from './auth/vendor-guard/vendor.guard';
+import { FileUploadService } from './services/file-upload/file-upload.service';
 
 @Module({
   imports: [
@@ -69,6 +70,7 @@ import { VendorGuard } from './auth/vendor-guard/vendor.guard';
       provide: APP_INTERCEPTOR,
       useClass: ResponseInterceptor,
     },
+    FileUploadService,
     // { provide: APP_GUARD, useClass: AdminAuthGuard },
     // { provide: APP_GUARD, useClass: AuthGuard },
     // { provide: APP_GUARD, useClass: VendorGuard }

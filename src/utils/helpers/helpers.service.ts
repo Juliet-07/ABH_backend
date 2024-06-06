@@ -11,7 +11,7 @@ export class HelpersService {
         return this.genString(len);
     }
 
-    private genString(length, possible = '') {
+    public genString(length, possible = '') {
         let text = '';
         const str = possible || 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         // eslint-disable-next-line no-plusplus
@@ -19,6 +19,45 @@ export class HelpersService {
             text += str.charAt(Math.floor(Math.random() * str.length));
         }
         return text;
+    }
+
+    public generateDefaultPassword (length) {
+            // Ensure the minimum length is at least 10
+            length = Math.max(length, 10);
+        
+            // Regex pattern explanation:
+            // (?=.*\d) - at least one digit
+            // (?=.*\W+) - or at least one non-word character
+            // (?![.\n]) - does not contain a dot or a newline
+            // (?=.*[A-Z]) - at least one uppercase letter
+            // (?=.*[a-z]) - at least one lowercase letter
+            // .* - zero or more of any character except newline
+        
+            const uppercaseLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            const lowercaseLetters = 'abcdefghijklmnopqrstuvwxyz';
+            const digits = '0123456789';
+            const specialChars = '!@#$%^&*()_+-=[]{}|;:,.<>?'; // Define your non-word characters here
+        
+            function getRandomChar(chars) {
+                return chars[Math.floor(Math.random() * chars.length)];
+            }
+        
+            // Ensure the string contains at least one uppercase letter, one lowercase letter, and one digit or special character
+            let result = getRandomChar(uppercaseLetters) + getRandomChar(lowercaseLetters);
+        
+            // Randomly decide between adding a digit or a special character
+            result += Math.random() > 0.5 ? getRandomChar(digits) : getRandomChar(specialChars);
+        
+            // Add random characters to meet the specified length requirement
+            while (result.length < length) {
+                const allChars = uppercaseLetters + lowercaseLetters + digits + specialChars;
+                result += getRandomChar(allChars);
+            }
+        
+            // Shuffle the result to avoid predictable patterns
+            result = result.split('').sort(() => 0.5 - Math.random()).join('');
+        
+            return result;
     }
 
     hasCodeExpired(time) {
