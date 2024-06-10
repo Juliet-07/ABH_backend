@@ -9,11 +9,10 @@ import {
 } from "typeorm";
 import * as bcrypt from 'bcrypt';
 import { VendorStatusEnums } from "../../constants";
+import { BaseEntity } from "../../common/base.entity";
 
 @Entity()
-export class Vendor {
-    @PrimaryGeneratedColumn('uuid')
-    id: number;
+export class Vendor extends BaseEntity {
 
     @Column()
     firstName: string;
@@ -114,14 +113,4 @@ export class Vendor {
         type: 'timestamp'
     })
     lastLoginAt: Date;
-
-    @CreateDateColumn({ type: 'timestamp' })
-    createdAt: Date;
-
-    @UpdateDateColumn({ type: 'timestamp' })
-    updatedAt: Date;
-
-    @DeleteDateColumn({ type: 'timestamp' })
-    deletedAt: Date;
-
 }

@@ -4,9 +4,10 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { Category } from './entities/category.entity';
 import { AdminAuthGuard } from '../auth/admin-auth/admin-auth.guard';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 
+@ApiTags('Category')
 @Controller('category')
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
@@ -19,7 +20,7 @@ export class CategoryController {
     return this.categoryService.create(createCategoryDto);
   }
 
-  // @UseGuards(AdminAuthGuard)
+  @UseGuards(AdminAuthGuard)
   @Get()
   // @ApiBearerAuth('JWT-auth')
   findAll(@Paginate() query: PaginateQuery): Promise<Paginated<Category>> {

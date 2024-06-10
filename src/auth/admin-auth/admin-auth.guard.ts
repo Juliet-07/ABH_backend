@@ -7,10 +7,11 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { AdminRolesEnums } from '../../constants';
+import { AdminService } from '../../admin/admin.service';
 
 @Injectable()
 export class AdminAuthGuard implements CanActivate {
-  constructor(private jwtService: JwtService) { }
+  constructor(private jwtService: JwtService, private readonly adminService: AdminService) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -25,6 +26,8 @@ export class AdminAuthGuard implements CanActivate {
           secret: process.env.JWT_SECRET
         }
       );
+      const admin = await this.adminService.findOne(payload.id)
+      if (!admin) throw new UnauthorizedException('Not Authorized')
       // 💡 We're assigning the payload to the request object here
       // so that we can access it in our route handlers
       if (![Object.values(AdminRolesEnums).includes(payload.role)]) throw new UnauthorizedException('Not Authorized')

@@ -1,4 +1,22 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, ValidationPipe, UsePipes, HttpStatus, HttpCode, Query, Put, UseInterceptors, UploadedFile } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Request,
+  ValidationPipe,
+  UsePipes,
+  HttpStatus,
+  HttpCode,
+  Query,
+  Put,
+  UseInterceptors,
+  UploadedFile,
+} from '@nestjs/common';
 import { VendorsService } from './vendors.service';
 import { CreateVendorDto } from './dto/create-vendor.dto';
 import { UpdateVendorDto } from './dto/update-vendor.dto';
@@ -23,7 +41,10 @@ export class VendorsController {
   @Post()
   @UsePipes(new ValidationPipe())
   @UseInterceptors(FileInterceptor('file'))
-  create(@Body() createVendorDto: CreateVendorDto, @UploadedFile() file: Express.Multer.File): Promise<Vendor> {
+  create(
+    @Body() createVendorDto: CreateVendorDto,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<Vendor> {
     return this.vendorsService.create(createVendorDto, file);
   }
 
@@ -51,15 +72,18 @@ export class VendorsController {
     return this.vendorsService.verifyVendorAccount(verifyVendorDto);
   }
 
-    // Manage Vendor Account Status
-    @UseGuards(AdminAuthGuard)
-    @HttpCode(HttpStatus.OK)
-    @Put('manage-account-status/:id')
-    @UsePipes(new ValidationPipe())
-    @ApiBearerAuth('JWT-auth')
-    manageVendorRegistration(@Body() manageVendorDto: ManageVendorDto, @Param('id') id: string): Promise<string> {
-      return this.vendorsService.manageVendorRegistration(manageVendorDto, id);
-    }
+  // Manage Vendor Account Status
+  @UseGuards(AdminAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @Put('manage-account-status/:id')
+  @UsePipes(new ValidationPipe())
+  @ApiBearerAuth('JWT-auth')
+  manageVendorRegistration(
+    @Body() manageVendorDto: ManageVendorDto,
+    @Param('id') id: string,
+  ): Promise<string> {
+    return this.vendorsService.manageVendorRegistration(manageVendorDto, id);
+  }
 
   @UseGuards(VendorGuard)
   @Get('profile')

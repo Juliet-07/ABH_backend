@@ -80,7 +80,7 @@ export class VendorsService {
     }
   }
 
-  async validateReferredBy(code: string): Promise<number> {
+  async validateReferredBy(code: string): Promise<string> {
     // Get Valid Referrer.
 
     const referrer = await this.vendorRepository.findOne({ where: { code } });

@@ -1,5 +1,9 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsArray, IsBoolean, IsDefined, IsJSON, IsNumber, IsOptional, IsString, IsUrl } from "class-validator";
+import { ArrayNotEmpty, IsArray, IsBoolean, IsDefined, IsEnum, IsInt, IsJSON, IsNumber, IsNumberString, IsOptional, IsString, IsUrl } from "class-validator";
+import { Currencies } from "../../utils/constants";
+
+const currency_enums = Object.keys(Currencies)
+
 
 export class CreateProductDto {
     @IsString()
@@ -9,6 +13,20 @@ export class CreateProductDto {
     })
     name: string;
 
+    @IsNumberString()
+    @ApiProperty({
+        type: Number,
+        description: 'Quantity',
+    })
+    quantity: number;
+
+    @IsNumberString()
+    @ApiProperty({
+        type: Number,
+        description: 'Size',
+    })
+    size: number;
+
     @IsString()
     @ApiProperty({
         type: String,
@@ -16,26 +34,46 @@ export class CreateProductDto {
     })
     description: string
 
-    @IsNumber()
+    @ApiProperty({
+        type: Array,
+        description: 'Category ID',
+    })
+    @IsArray()
+    @ArrayNotEmpty()
+    @IsString({each: true})
+    // @IsInt({ each: true })
+    categoryIds: string[];
+
+    @IsNumberString()
     @ApiProperty({
         type: Number,
         description: 'Product price',
     })
     price: number;
 
+    @IsUrl()
+    @IsOptional()
+    @ApiProperty({
+        type: String,
+        description: 'Product Video URL',
+    })
+    videoUrl: string;
+
     @IsString()
+    @IsEnum(currency_enums)
+    @ApiProperty({
+        type: String,
+        description: 'Currency',
+    })
+    currency: string;
+
+    @IsString()
+    @IsOptional()
     @ApiProperty({
         type: String,
         description: 'Product SkU',
     })
     sku: string;
-
-    @IsNumber()
-    @ApiProperty({
-        type: Number,
-        description: 'Quantity',
-    })
-    quantity: number;
   
     @IsNumber()
     @IsOptional()
@@ -46,7 +84,7 @@ export class CreateProductDto {
     salePrice?: number;
   
     @IsBoolean()
-    @IsDefined()
+    @IsOptional()
     @ApiProperty({
         type: Boolean,
         description: 'In Stock',
@@ -54,7 +92,7 @@ export class CreateProductDto {
     inStock: boolean;
   
     @IsBoolean()
-    @IsDefined()
+    @IsOptional()
     @ApiProperty({
         type: Boolean,
         description: 'Is the product taxable?',
@@ -62,7 +100,7 @@ export class CreateProductDto {
     isTaxable: boolean;
   
     @IsBoolean()
-    @IsDefined()
+    @IsOptional()
     @ApiProperty({
         type: Boolean,
         description: 'Product in Flash sale',
@@ -112,16 +150,16 @@ export class CreateProductDto {
       url: string;
     }[];
   
-    @IsNumber()
-    @IsOptional()
+    @IsString()
+    @IsDefined()
     @ApiProperty({
-        type: Number,
-        description: 'Manufacturer ID (optiona)',
+        type: String,
+        description: 'Manufacturer',
     })
-    manufacturerId?: number;
+    manufacturer: string;
   
     @IsBoolean()
-    @IsDefined()
+    @IsOptional()
     @ApiProperty({
         type: Boolean,
         description: 'Product is in wishlist',

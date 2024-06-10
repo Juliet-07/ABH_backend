@@ -59,7 +59,7 @@ import { CategoryModule } from './category/category.module';
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: '3600s' },
+      signOptions: { expiresIn: '21600s' },
     }),
     UtilsModule,
     CategoryModule,

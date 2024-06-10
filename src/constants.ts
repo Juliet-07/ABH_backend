@@ -20,3 +20,9 @@ export enum VendorStatusEnums {
     BLOCKED = 'BLOCKED',
     DECLINED = 'DECLINED',
 }
+
+export enum ProductStatusEnums {
+    APPROVED = 'APPROVED',
+    PENDING = 'PENDING',
+    DECLINED = 'DECLINED',
+}

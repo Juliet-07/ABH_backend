@@ -5,9 +5,10 @@ import { User } from './entities/user.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HelpersService } from '../utils/helpers/helpers.service';
 import { MailingService } from '../utils/mailing/mailing.service';
+import { AdminModule } from '../admin/admin.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User,])],
+  imports: [TypeOrmModule.forFeature([User,]), AdminModule],
   controllers: [UserController],
   providers: [UserService, HelpersService, MailingService],
 })

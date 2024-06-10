@@ -1,4 +1,5 @@
 import {
+    Column,
     CreateDateColumn,
     DeleteDateColumn,
     Entity,
@@ -19,5 +20,11 @@ export class BaseEntity {
 
     @DeleteDateColumn({ type: 'timestamp' })
     deletedAt: Date;
+
+    @Column({ nullable: true })
+    createdBy: string;
+  
+    @Column({ nullable: true })
+    updatedBy: string;
 
 }

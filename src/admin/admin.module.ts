@@ -8,6 +8,7 @@ import { MailingService } from '../utils/mailing/mailing.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Admin,]),],
+  exports: [AdminService],
   controllers: [AdminController],
   providers: [AdminService, HelpersService, MailingService],
 })
