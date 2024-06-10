@@ -19,6 +19,7 @@ import { AdminAuthGuard } from './auth/admin-auth/admin-auth.guard';
 import { AuthGuard } from './auth/auth.guard';
 import { VendorGuard } from './auth/vendor-guard/vendor.guard';
 import { FileUploadService } from './services/file-upload/file-upload.service';
+import { CategoryModule } from './category/category.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { FileUploadService } from './services/file-upload/file-upload.service';
       signOptions: { expiresIn: '3600s' },
     }),
     UtilsModule,
+    CategoryModule,
    
   ],
   controllers: [AppController],

@@ -30,8 +30,8 @@ export class Vendor {
     @Column({nullable: true})
     alternatePhoneNumber: string;
 
-    @Column()
-    dob: Date;
+    @Column({nullable: true})
+    address: string;
 
     @Column()
     code: string;

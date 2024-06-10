@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsDateString, IsDefined, IsEmail, IsNumberString, IsOptional, IsPhoneNumber, IsString, IsStrongPassword, Length, Matches, MaxLength, MinLength } from "class-validator";
+import { IsDefined, IsEmail, IsNumberString, IsOptional, IsPhoneNumber, IsString, Length } from "class-validator";
 
 
 export class CreateVendorDto {
@@ -46,12 +46,13 @@ export class CreateVendorDto {
     })
     state: string;
 
-    @IsDateString()
+    @IsString()
+    @IsDefined()
     @ApiProperty({
-        type: Date,
-        description: 'Date of Birth',
+        type: String,
+        description: 'Address',
     })
-    dob: Date;
+    address: string;
 
     @IsString()
     @IsEmail()

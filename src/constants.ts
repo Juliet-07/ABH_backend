@@ -18,4 +18,5 @@ export enum VendorStatusEnums {
     ACTIVE = 'ACTIVE',
     PENDING = 'PENDING',
     BLOCKED = 'BLOCKED',
+    DECLINED = 'DECLINED',
 }
