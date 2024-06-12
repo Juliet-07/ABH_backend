@@ -35,14 +35,11 @@ export class CreateProductDto {
     description: string
 
     @ApiProperty({
-        type: Array,
+        type: String,
         description: 'Category ID',
     })
-    @IsArray()
-    @ArrayNotEmpty()
-    @IsString({each: true})
-    // @IsInt({ each: true })
-    categoryIds: string[];
+    @IsString()
+    categoryId: string;
 
     @IsNumberString()
     @ApiProperty({

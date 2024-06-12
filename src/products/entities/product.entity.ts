@@ -38,8 +38,8 @@ export class Product extends BaseEntity {
   @Column({ nullable: true })
   vendorId: string;
 
-  @Column({ type: 'simple-array', nullable: true })
-  categoryIds: string[];
+  @Column({ nullable: true })
+  categoryId: string;
 
   @Column({ name: 'sale_price', nullable: true })
   salePrice: number;
