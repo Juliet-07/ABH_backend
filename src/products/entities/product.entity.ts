@@ -98,6 +98,9 @@ export class Product extends BaseEntity {
     url: string;
   }[];
 
+  @Column({nullable: true})
+  featured_image: string;
+
   @Column({ nullable: true })
   manufacturer: string;
 

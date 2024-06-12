@@ -49,19 +49,29 @@ export class ProductsService {
   async create(
     createProductDto: CreateProductDto,
     vendor: Partial<Vendor>,
-    files: Express.Multer.File[],
+    files: { product_images?: Express.Multer.File[], featured_image?: Express.Multer.File[] }
+    // files: Express.Multer.File[],
+    // file: Express.Multer.File,
   ) {
     try {
       const product = this.productRepository.create(createProductDto);
 
-      if (!files.length) {
+      if (!files) throw new BadRequestException('Image Files are empty')
+
+      if (!files?.product_images?.length) {
         throw new BadRequestException(
           'You need to upload product gallery images',
         );
       }
 
       // Upload profile images
-      product.images = await this.uploadGalleryImages(files);
+      product.images = await this.uploadGalleryImages(files.product_images);
+
+      if (!files?.featured_image?.length) throw new BadRequestException('Feature image is required');
+      const uploadedFeaturedImage = await this.uploadService.uploadFile(files.featured_image[0]);
+      if (uploadedFeaturedImage) {
+        product.featured_image = uploadedFeaturedImage?.Location;
+      }
 
       // Generate Admin Unique Code
       product.code = this.helpers.genCode(10);
@@ -85,7 +95,7 @@ export class ProductsService {
   findAll(query: PaginateQuery): Promise<Paginated<Product>> {
     try {
       return paginate(query, this.productRepository, {
-        sortableColumns: ['createdAt',  'name'],
+        sortableColumns: ['createdAt', 'name'],
         nullSort: 'last',
         defaultSortBy: [['createdAt', 'DESC']],
         filterableColumns: {
@@ -95,12 +105,11 @@ export class ProductsService {
           status: true,
           vendorId: true,
         },
-      })
+      });
     } catch (error) {
-      throw new BadRequestException(error.message)
+      throw new BadRequestException(error.message);
     }
   }
-
 
   fetchTopProducts() {
     return [];
@@ -126,8 +135,8 @@ export class ProductsService {
         status,
       };
 
-       await this.productRepository.update(product.id, updateData);
-       
+      await this.productRepository.update(product.id, updateData);
+
       //  Send Email to user
 
       // const text = `Hello ${vendor.firstName}, your account has been verified and active now. Login with your registered email and password ${rawPassword} \n \n \n Kindly ensure you change your paassword on login`
@@ -141,7 +150,6 @@ export class ProductsService {
 
       // TODO: Remove this before Production
       return null;
-
     } catch (error) {
       throw error;
     }

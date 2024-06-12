@@ -16,13 +16,14 @@ import {
   UploadedFiles,
   Req,
   Put,
+  UploadedFile,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { VendorGuard } from '../auth/vendor-guard/vendor.guard';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor, FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { Paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { Product } from './entities/product.entity';
 import { AdminAuthGuard } from '../auth/admin-auth/admin-auth.guard';
@@ -53,14 +54,22 @@ export class ProductsController {
   @UseGuards(VendorGuard)
   @ApiBearerAuth('JWT-auth')
   @UseInterceptors(
-    FilesInterceptor('product_images', 20, {
-      fileFilter: pngFileFilter,
-    }),
+    // FilesInterceptor('product_images', 20, {
+    //   fileFilter: pngFileFilter,
+    // }),
+    // FileInterceptor('featured_image', {
+    //   fileFilter: pngFileFilter,
+    // })
+    FileFieldsInterceptor([
+      { name: 'product_images', maxCount: 20 },
+      { name: 'featured_image', maxCount: 1 },
+    ])
   )
   create(
     @Body() createProductDto: CreateProductDto,
     @Request() req,
-    @UploadedFiles() files: Express.Multer.File[],
+    @UploadedFiles() files: { product_images?: Express.Multer.File[], featured_image?: Express.Multer.File[] },
+    // @UploadedFile() file: Express.Multer.File,
   ) {
     return this.productsService.create(createProductDto, req.vendor, files);
   }
