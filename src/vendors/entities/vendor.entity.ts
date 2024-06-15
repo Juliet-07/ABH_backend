@@ -4,12 +4,14 @@ import {
     CreateDateColumn,
     DeleteDateColumn,
     Entity,
+    OneToMany,
     PrimaryGeneratedColumn,
     UpdateDateColumn
 } from "typeorm";
 import * as bcrypt from 'bcrypt';
 import { VendorStatusEnums } from "../../constants";
 import { BaseEntity } from "../../common/base.entity";
+import { Product } from "../../products/entities/product.entity";
 
 @Entity()
 export class Vendor extends BaseEntity {
@@ -71,6 +73,9 @@ export class Vendor extends BaseEntity {
 
     @Column({ default: false })
     verified: boolean;
+
+    @OneToMany(() => Product, (product) => product.vendor)
+    products: Product[];
 
     @Column({ nullable: true })
     verificationCode: string;

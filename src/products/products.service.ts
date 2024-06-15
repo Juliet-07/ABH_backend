@@ -13,12 +13,14 @@ import { Vendor } from '../vendors/entities/vendor.entity';
 import { FileUploadService } from '../services/file-upload/file-upload.service';
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { ManageProductDto } from './dto/manage-product.dto';
+import { CategoryService } from '../category/category.service';
 
 @Injectable()
 export class ProductsService {
   constructor(
     @InjectRepository(Product)
     private productRepository: Repository<Product>,
+    private categoryService: CategoryService,
     private helpers: HelpersService,
     private uploadService: FileUploadService,
   ) {}
@@ -49,14 +51,21 @@ export class ProductsService {
   async create(
     createProductDto: CreateProductDto,
     vendor: Partial<Vendor>,
-    files: { product_images?: Express.Multer.File[], featured_image?: Express.Multer.File[] }
-    // files: Express.Multer.File[],
-    // file: Express.Multer.File,
+    files: {
+      product_images?: Express.Multer.File[];
+      featured_image?: Express.Multer.File[];
+    },
   ) {
     try {
       const product = this.productRepository.create(createProductDto);
 
-      if (!files) throw new BadRequestException('Image Files are empty')
+      // Validate category
+      const category = await this.categoryService.findOne(
+        createProductDto.categoryId,
+      );
+      if (!category) throw new NotFoundException('Invalid Category');
+
+      if (!files) throw new BadRequestException('Image Files are empty');
 
       if (!files?.product_images?.length) {
         throw new BadRequestException(
@@ -67,8 +76,11 @@ export class ProductsService {
       // Upload profile images
       product.images = await this.uploadGalleryImages(files.product_images);
 
-      if (!files?.featured_image?.length) throw new BadRequestException('Feature image is required');
-      const uploadedFeaturedImage = await this.uploadService.uploadFile(files.featured_image[0]);
+      if (!files?.featured_image?.length)
+        throw new BadRequestException('Feature image is required');
+      const uploadedFeaturedImage = await this.uploadService.uploadFile(
+        files.featured_image[0],
+      );
       if (uploadedFeaturedImage) {
         product.featured_image = uploadedFeaturedImage?.Location;
       }
@@ -92,11 +104,14 @@ export class ProductsService {
     }
   }
 
-  findAll(query: PaginateQuery): Promise<Paginated<Product>> {
+  async findAll(query: PaginateQuery): Promise<Paginated<Product>> {
     try {
+      const res =  await this.productRepository.find({relations: ['vendor', 'category']})
+      console.log({res})
       return paginate(query, this.productRepository, {
         sortableColumns: ['createdAt', 'name'],
         nullSort: 'last',
+        relations: ['vendor', 'category'],
         defaultSortBy: [['createdAt', 'DESC']],
         filterableColumns: {
           name: true,

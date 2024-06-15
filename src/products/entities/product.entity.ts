@@ -1,13 +1,9 @@
 import {
   Column,
-  CreateDateColumn,
-  DeleteDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
   OneToMany,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 import { Rating } from '../../ratings/entities/rating.entity';
 import { Vendor } from '../../vendors/entities/vendor.entity';
@@ -104,6 +100,9 @@ export class Product extends BaseEntity {
   @Column({ nullable: true })
   manufacturer: string;
 
+  @Column({ nullable: true })
+  comments: string;
+
   @Column({ nullable: true, enum: currency_enums })
   currency: string;
 
@@ -125,12 +124,11 @@ export class Product extends BaseEntity {
   @Column({ name: 'in_wishlist', default: false })
   inWishlist: boolean;
 
-
-  @ManyToOne(() => Vendor)
-  @JoinColumn({ name: 'vendor_id' })
+  @ManyToOne(() => Vendor, (vendor) => vendor.products)
+  @JoinColumn({ name: 'vendorId' })
   vendor: Vendor;
 
-  @ManyToOne(() => Category)
-  @JoinColumn({ name: 'category_id' })
+  @ManyToOne(() => Category, (category) => category.products)
+  @JoinColumn({ name: 'categoryId' })
   category: Category;
 }
