@@ -9,9 +9,10 @@ import { FileUploadService } from '../services/file-upload/file-upload.service';
 import { AdminModule } from '../admin/admin.module';
 import { CategoryModule } from '../category/category.module';
 import { Vendor } from '../vendors/entities/vendor.entity';
+import { Cart } from '../cart/entities/cart.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Product, Vendor]), VendorsModule, AdminModule, CategoryModule],
+  imports: [TypeOrmModule.forFeature([Product, Vendor, Cart]), VendorsModule, AdminModule, CategoryModule],
   exports: [ProductsService],
   controllers: [ProductsController],
   providers: [ProductsService, HelpersService, FileUploadService]

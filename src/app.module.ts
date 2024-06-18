@@ -20,6 +20,8 @@ import { AuthGuard } from './auth/auth.guard';
 import { VendorGuard } from './auth/vendor-guard/vendor.guard';
 import { FileUploadService } from './services/file-upload/file-upload.service';
 import { CategoryModule } from './category/category.module';
+import { OrdersModule } from './orders/orders.module';
+import { CartModule } from './cart/cart.module';
 
 @Module({
   imports: [
@@ -63,6 +65,8 @@ import { CategoryModule } from './category/category.module';
     }),
     UtilsModule,
     CategoryModule,
+    OrdersModule,
+    CartModule,
    
   ],
   controllers: [AppController],

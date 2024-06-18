@@ -2,6 +2,7 @@ import {
   Column,
   Entity,
   JoinColumn,
+  ManyToMany,
   ManyToOne,
   OneToMany,
 } from 'typeorm';
@@ -11,6 +12,7 @@ import { Category } from '../../category/entities/category.entity';
 import { Currencies } from '../../utils/constants';
 import { BaseEntity } from '../../common/base.entity';
 import { ProductStatusEnums } from '../../constants';
+import { Cart } from '../../cart/entities/cart.entity';
 
 
 const currency_enums = Object.keys(Currencies)
@@ -131,4 +133,7 @@ export class Product extends BaseEntity {
   @ManyToOne(() => Category, (category) => category.products)
   @JoinColumn({ name: 'categoryId' })
   category: Category;
+
+  @ManyToOne(() => Cart, (cart) => cart.products)
+  carts: Cart[];
 }

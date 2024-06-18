@@ -9,6 +9,7 @@ import { AdminModule } from '../admin/admin.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User,]), AdminModule],
+  exports: [UserService],
   controllers: [UserController],
   providers: [UserService, HelpersService, MailingService],
 })
