@@ -106,8 +106,6 @@ export class ProductsService {
 
   async findAll(query: PaginateQuery): Promise<Paginated<Product>> {
     try {
-      const res =  await this.productRepository.find({relations: ['vendor', 'category']})
-      console.log({res})
       return paginate(query, this.productRepository, {
         sortableColumns: ['createdAt', 'name'],
         nullSort: 'last',
