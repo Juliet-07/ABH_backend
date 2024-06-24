@@ -1,89 +1,88 @@
 import {
-    BeforeInsert,
-    Column,
-    CreateDateColumn,
-    DeleteDateColumn,
-    Entity,
-    PrimaryGeneratedColumn,
-    UpdateDateColumn
-} from "typeorm";
+  BeforeInsert,
+  Column,
+  CreateDateColumn,
+  DeleteDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
 @Entity()
 export class User {
-    @PrimaryGeneratedColumn('uuid')
-    id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: number;
 
-    @Column()
-    firstName: string;
+  @Column()
+  firstName: string;
 
-    @Column()
-    lastName: string;
+  @Column()
+  lastName: string;
 
-    @Column({ unique: true })
-    email: string;
+  @Column({ unique: true })
+  email: string;
 
-    @Column({ unique: true })
-    phoneNumber: string;
+  @Column({ unique: true })
+  phoneNumber: string;
 
-    @Column()
-    code: string;
+  @Column()
+  code: string;
 
-    @Column({ nullable: true })
-    referredBy: number;
+  @Column({ nullable: true })
+  referredBy: number;
 
-    @Column({ default: false })
-    verified: boolean;
+  @Column({ default: false })
+  verified: boolean;
 
-    @Column({ nullable: true })
-    verificationCode: string;
+  @Column({ nullable: true })
+  verificationCode: string;
 
-    @Column({ nullable: true })
-    verificationCodeExpiresIn: Date;
+  @Column({ nullable: true })
+  verificationCodeExpiresIn: Date;
 
-    @Column({
-        nullable: true,
-        type: 'timestamp'
-    })
-    verifiedAt: Date
+  @Column({
+    nullable: true,
+    type: 'timestamp',
+  })
+  verifiedAt: Date;
 
-    @Column({ nullable: true })
-    forgotPasswordVerificationCode: string;
+  @Column({ nullable: true })
+  forgotPasswordVerificationCode: string;
 
-    @Column({ nullable: true })
-    forgotPasswordVerificationCodeExpiresIn: Date;
+  @Column({ nullable: true })
+  forgotPasswordVerificationCodeExpiresIn: Date;
 
-    @Column({
-        nullable: true,
-        type: 'timestamp'
-    })
-    lastPasswordResetAt: Date
+  @Column({
+    nullable: true,
+    type: 'timestamp',
+  })
+  lastPasswordResetAt: Date;
 
-    @Column()
-    password: string;
+  @Column({ select: false })
+  password: string;
 
-    @BeforeInsert()
-    async hashPassword() {
-        this.password = await bcrypt.hash(this.password, 10);
-    }
+  @BeforeInsert()
+  async hashPassword() {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
 
-    async comparePassword(password: string): Promise<boolean> {
-        return await bcrypt.compare(password, this.password);
-    }
+  async comparePassword(password: string): Promise<boolean> {
+    return await bcrypt.compare(password, this.password);
+  }
 
-    @UpdateDateColumn({
-        nullable: true,
-        type: 'timestamp'
-    })
-    lastLoginAt: Date;
+  @UpdateDateColumn({
+    nullable: true,
+    type: 'timestamp',
+  })
+  lastLoginAt: Date;
 
-    @CreateDateColumn({ type: 'timestamp' })
-    createdAt: Date;
+  @CreateDateColumn({ type: 'timestamp' })
+  createdAt: Date;
 
-    @UpdateDateColumn({ type: 'timestamp' })
-    updatedAt: Date;
+  @UpdateDateColumn({ type: 'timestamp' })
+  updatedAt: Date;
 
-    @DeleteDateColumn({ type: 'timestamp' })
-    deletedAt: Date;
-
+  @DeleteDateColumn({ type: 'timestamp' })
+  deletedAt: Date;
 }

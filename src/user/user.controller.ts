@@ -1,4 +1,19 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ValidationPipe, UsePipes, HttpCode, HttpStatus, UseGuards, Request, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ValidationPipe,
+  UsePipes,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  Request,
+  Query,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -12,7 +27,7 @@ import { VerifyUserDto } from './dto/verify-user.dto';
 @ApiTags('User')
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) { }
+  constructor(private readonly userService: UserService) {}
 
   // Create User
   @Post()
@@ -49,7 +64,8 @@ export class UserController {
   @Get('profile')
   @ApiBearerAuth('JWT-auth')
   getProfile(@Request() req) {
-    return req.user;
+    // return req.user;
+    return this.userService.getProfile(req.user);
   }
 
   @UseGuards(AdminAuthGuard)

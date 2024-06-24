@@ -1,4 +1,12 @@
-import { BadRequestException, Inject, Injectable, MisdirectedException, NotFoundException, UnauthorizedException, UseInterceptors } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  MisdirectedException,
+  NotFoundException,
+  UnauthorizedException,
+  UseInterceptors,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
@@ -15,7 +23,7 @@ import { VerifyUserDto } from './dto/verify-user.dto';
 
 @Injectable()
 export class UserService {
-  cacheKey = 'all_user'
+  cacheKey = 'all_user';
 
   constructor(
     @InjectRepository(User)
@@ -24,8 +32,8 @@ export class UserService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private jwtService: JwtService,
     private helpers: HelpersService,
-    private mailingSerivce: MailingService
-  ) { }
+    private mailingSerivce: MailingService,
+  ) {}
 
   async create(createUserDto: CreateUserDto): Promise<void> {
     try {
@@ -42,13 +50,12 @@ export class UserService {
       }
 
       // Generate User Unique Code
-      user.code = this.helpers.genCode(10)
+      user.code = this.helpers.genCode(10);
 
       await this.userRepository.save(user);
 
       // Invalidate cache after a new user is created
       await this.cacheManager.del(this.cacheKey);
-
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -59,7 +66,7 @@ export class UserService {
 
     const referrer = await this.userRepository.findOne({ where: { code } });
 
-    if (!referrer) throw new Error('Invalid Referrer Code')
+    if (!referrer) throw new Error('Invalid Referrer Code');
 
     return referrer.id;
   }
@@ -69,19 +76,21 @@ export class UserService {
       const { email, password } = loginUserDto;
       const user = await this.userRepository.findOne({
         where: {
-          email
-        }
-      })
-      if (!user) throw new NotFoundException('User Not Found')
+          email,
+        },
+        select: ['id', 'email', 'password'],
+      });
+      if (!user) throw new NotFoundException('User Not Found');
       const isPasswordCorrect = await user.comparePassword(password);
-      if (!isPasswordCorrect) throw new UnauthorizedException('Incorrect Password')
+      if (!isPasswordCorrect)
+        throw new UnauthorizedException('Incorrect Password');
 
       // if (!user.verified) throw new MisdirectedException('Pls verify your account')
 
       const lastLoginAt = new Date().toISOString();
       await this.userRepository.update(user.id, {
-        lastLoginAt
-      })
+        lastLoginAt,
+      });
       const payload = { id: user.id, email, lastLoginAt };
       return {
         accessToken: await this.jwtService.signAsync(payload),
@@ -89,7 +98,6 @@ export class UserService {
     } catch (error) {
       throw new BadRequestException(error.message);
     }
-
   }
 
   async requstVerification(email: string): Promise<void> {
@@ -102,15 +110,13 @@ export class UserService {
       if (!user) throw new NotFoundException('User not found');
       if (user.verified) throw new BadRequestException('User already verified');
 
-      const {
-        token: verificationCode,
-        expiresIn: verificationCodeExpiresIn
-      } = this.helpers.generateVerificationCode();
+      const { token: verificationCode, expiresIn: verificationCodeExpiresIn } =
+        this.helpers.generateVerificationCode();
 
       await this.userRepository.update(user.id, {
         verificationCode,
-        verificationCodeExpiresIn
-      })
+        verificationCodeExpiresIn,
+      });
 
       // Send Email For Token
       try {
@@ -118,14 +124,13 @@ export class UserService {
           subject: 'Email Verification',
           email: user.email,
           name: `${user.firstName} ${user.lastName}`,
-          html: `Pls use the OTP code <b style="font-size: 20px;">${verificationCode}</b> for verification, code expires by ${new Date(verificationCodeExpiresIn).toLocaleDateString()}`
-        })
-      } catch (error) {
-
-      }
-
+          html: `Pls use the OTP code <b style="font-size: 20px;">${verificationCode}</b> for verification, code expires by ${new Date(
+            verificationCodeExpiresIn,
+          ).toLocaleDateString()}`,
+        });
+      } catch (error) {}
     } catch (error) {
-      throw error
+      throw error;
     }
   }
 
@@ -135,31 +140,57 @@ export class UserService {
 
       const user = await this.userRepository.findOne({
         where: {
-          email
-        }
+          email,
+        },
       });
 
-      if (!user) throw new NotFoundException(`User with the email ${email} not found`)
-      if (user.verified) throw new BadRequestException('User already verified')
-      if (user.verificationCode !== code) throw new BadRequestException('Invalid Code')
+      if (!user)
+        throw new NotFoundException(`User with the email ${email} not found`);
+      if (user.verified) throw new BadRequestException('User already verified');
+      if (user.verificationCode !== code)
+        throw new BadRequestException('Invalid Code');
 
       // Verify User Verification Code and Expiry Time
-      const isExpired = this.helpers.hasCodeExpired(user.verificationCodeExpiresIn);
+      const isExpired = this.helpers.hasCodeExpired(
+        user.verificationCodeExpiresIn,
+      );
 
-      if (isExpired) throw new BadRequestException('Expired Verification code, kindly request for a new one')
+      if (isExpired)
+        throw new BadRequestException(
+          'Expired Verification code, kindly request for a new one',
+        );
 
       // Update DB and set verification status
       const updateData = {
         verified: true,
         verifiedAt: new Date().toISOString(),
         verificationCode: null,
-        verificationCodeExpiresIn: null
-      }
+        verificationCodeExpiresIn: null,
+      };
 
       await this.userRepository.update(user.id, updateData);
-
     } catch (error) {
-      throw error
+      throw error;
+    }
+  }
+  // getProfile
+  async getProfile(user_: any): Promise<User> {
+    try {
+      const { id, email } = user_;
+
+      const user = await this.userRepository.findOne({
+        where: {
+          email,
+          id,
+        },
+      });
+
+      if (!user)
+        throw new NotFoundException(`User with the email ${email} not found`);
+
+      return user;
+    } catch (error) {
+      throw error;
     }
   }
 
@@ -172,15 +203,13 @@ export class UserService {
       const user = await this.userRepository.findOne({ where: { email } });
       if (!user) throw new NotFoundException('User not found');
 
-      const {
-        token: verificationCode,
-        expiresIn: verificationCodeExpiresIn
-      } = this.helpers.generateVerificationCode();
+      const { token: verificationCode, expiresIn: verificationCodeExpiresIn } =
+        this.helpers.generateVerificationCode();
 
       await this.userRepository.update(user.id, {
         verificationCode,
-        verificationCodeExpiresIn
-      })
+        verificationCodeExpiresIn,
+      });
 
       // Send Email For Token
       try {
@@ -188,14 +217,13 @@ export class UserService {
           subject: 'Email Verification',
           email: user.email,
           name: `${user.firstName} ${user.lastName}`,
-          html: `Pls use the OTP code <b style="font-size: 20px;">${verificationCode}</b> for verification, code expires by ${new Date(verificationCodeExpiresIn).toLocaleDateString()}`
-        })
-      } catch (error) {
-
-      }
-
+          html: `Pls use the OTP code <b style="font-size: 20px;">${verificationCode}</b> for verification, code expires by ${new Date(
+            verificationCodeExpiresIn,
+          ).toLocaleDateString()}`,
+        });
+      } catch (error) {}
     } catch (error) {
-      throw error
+      throw error;
     }
   }
 
@@ -219,7 +247,6 @@ export class UserService {
   }
 
   async findUserWithToken(id: string | any): Promise<User> {
-
     const data = await this.userRepository.findOne({ where: { id } });
 
     return data;
