@@ -26,3 +26,29 @@ export enum ProductStatusEnums {
     PENDING = 'PENDING',
     DECLINED = 'DECLINED',
 }
+
+export enum OrderStatusEnum {
+    PENDING = 'PENDING',
+    CONFIRMED = 'CONFIRMED',
+    SHIPPED = 'SHIPPED',
+    DELIVERED = 'DELIVERED',
+    CANCELLED = 'CANCELLED',
+    RETURNED = 'RETURNED',
+    REFUNDED = 'REFUNDED'
+}
+
+export enum PaymentGatewayEnums {
+    HYDROGENPAY = "HYDROGENPAY",
+}
+
+export enum PaymentStatusEnum {
+    PENDING = "PENDING",
+    SUCCESSFUL = "SUCCESSFUL",
+    FAILED = "FAILED",
+}
+
+export enum ShippingMethodEnums {
+    GIG_LOGISTICS = "GIG_LOGISTICS",
+    NIPOST = "NIPOST",
+    OFFLINE = "OFFLINE",
+}

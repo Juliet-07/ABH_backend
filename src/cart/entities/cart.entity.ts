@@ -18,8 +18,4 @@ export class Cart extends BaseEntity {
 
   @Column({ unique: true })
   userId: string;
-
-  // @ManyToMany(() => Product)
-  // @JoinColumn({name: 'productId'})
-  // product?: Product;
 }

@@ -58,10 +58,9 @@ export class CartController {
     return this.cartService.synchronizeCart(syncCartDto, req.user.id);
   }
 
-  @Post('/validate')
+  @Get('/validate')
   @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.OK)
-  @UsePipes(new ValidationPipe())
   @ApiBearerAuth('JWT-auth')
   validateCart(@Req() req) {
     return this.cartService.validateCart(req.user.id);

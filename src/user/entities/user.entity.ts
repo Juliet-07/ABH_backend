@@ -4,10 +4,12 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { Order } from '../../orders/entities/order.entity';
 
 @Entity()
 export class User {
@@ -70,6 +72,10 @@ export class User {
   async comparePassword(password: string): Promise<boolean> {
     return await bcrypt.compare(password, this.password);
   }
+
+
+  @OneToMany(() => Order, (order) => order.user)
+  orders: Order[];
 
   @UpdateDateColumn({
     nullable: true,

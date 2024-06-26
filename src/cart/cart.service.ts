@@ -35,7 +35,7 @@ export class CartService {
       if (!product) {
         throw new NotFoundException('Product Not Found');
       }
-      if (product.quantity < addToCartDto.quantity) {
+      if (product.quantity - product.soldQuantity < addToCartDto.quantity) {
         throw new BadRequestException('Product quantity is not available');
       }
 
@@ -78,7 +78,7 @@ export class CartService {
           if (!product) {
             throw new NotFoundException('Product Not Found');
           }
-          if (product.quantity < quantity) {
+          if (product.quantity - product.soldQuantity < quantity) {
             throw new BadRequestException('Product quantity is not available');
           }
 
@@ -118,7 +118,7 @@ export class CartService {
       if (!product) {
         throw new NotFoundException('Product Not Found');
       }
-      if (product.quantity < updateCartDto.quantity) {
+      if (product.quantity - product.soldQuantity < updateCartDto.quantity) {
         throw new BadRequestException('Product quantity is not available');
       }
 
@@ -141,9 +141,36 @@ export class CartService {
     try {
       const cart = await this.cartRepository.findOne({ where: { userId } });
 
-      // const validitems = await Promise.all();
+      if (!cart.products?.length)
+        throw new BadRequestException('No Products in Cart');
 
-      let valid = false;
+      const validitems = await Promise.all(
+        cart.products.map(async (product$) => {
+          const product = await this.productRepository.findOne({
+            where: { id: product$.productId },
+          });
+          if (!product) {
+            throw new NotFoundException('Product Not Found');
+          }
+          if (product.quantity - product.soldQuantity < product$.quantity) {
+            return {
+              productId: product.id,
+              valid: false,
+            };
+          }
+          return {
+            productId: product.id,
+            valid: true,
+          };
+        }),
+      );
+
+      const valid = validitems.every((product) => product.valid === true);
+
+      return {
+        items: validitems,
+        valid,
+      };
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -155,7 +182,22 @@ export class CartService {
 
   async findOne(id: string) {
     const result = await this.cartRepository.findOne({ where: { userId: id } });
-    return result;
+    if (result && result.products?.length) {
+      const products = await Promise.all(
+        result?.products.map(async (item) => {
+          const product = await this.productRepository.findOne({
+            where: { id: item.productId },
+          });
+          if (!product) return null;
+          return {
+            product,
+            quantity: item.quantity,
+          };
+        }),
+      );
+      return products
+    }
+    return [];
   }
 
   update(id: number, updateCartDto: UpdateCartDto) {
