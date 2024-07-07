@@ -10,29 +10,29 @@ import { ApiTags } from '@nestjs/swagger';
 export class TransactionController {
   constructor(private readonly transactionService: TransactionService) { }
 
-  @Post()
-  @UsePipes(new ValidationPipe())
-  create(@Body() createTransactionDto: CreateTransactionDto): Promise<Transaction> {
-    return this.transactionService.create(createTransactionDto);
-  }
+  // @Post()
+  // @UsePipes(new ValidationPipe())
+  // create(@Body() createTransactionDto: CreateTransactionDto): Promise<Transaction> {
+  //   return this.transactionService.create(createTransactionDto);
+  // }
 
-  @Get()
-  findAll(): Promise<Transaction[]> {
-    return this.transactionService.findAll();
-  }
+  // @Get()
+  // findAll(): Promise<Transaction[]> {
+  //   return this.transactionService.findAll();
+  // }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.transactionService.findOne(+id);
-  }
+  // @Get(':id')
+  // findOne(@Param('id') id: string) {
+  //   return this.transactionService.findOne(+id);
+  // }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTransactionDto: UpdateTransactionDto) {
-    return this.transactionService.update(+id, updateTransactionDto);
-  }
+  // @Patch(':id')
+  // update(@Param('id') id: string, @Body() updateTransactionDto: UpdateTransactionDto) {
+  //   return this.transactionService.update(+id, updateTransactionDto);
+  // }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.transactionService.remove(+id);
-  }
+  // @Delete(':id')
+  // remove(@Param('id') id: string) {
+  //   return this.transactionService.remove(+id);
+  // }
 }

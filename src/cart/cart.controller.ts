@@ -22,6 +22,7 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { Request } from 'express';
 import { AddToCartDto } from './dto/add-to-cart.dto';
 import { SynchronizeCartDto } from './dto/synchronize-cart.dto';
+import { DeliveryEstimateDto } from './dto/delivery-estimate.dto';
 
 @Controller('cart')
 export class CartController {
@@ -64,6 +65,23 @@ export class CartController {
   @ApiBearerAuth('JWT-auth')
   validateCart(@Req() req) {
     return this.cartService.validateCart(req.user.id);
+  }
+
+  @Post('/delivery-cost-estimate')
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ValidationPipe())
+  @ApiBearerAuth('JWT-auth')
+  getDeliveryEstimate(@Req() req, deliveryEstimateDto: DeliveryEstimateDto) {
+    return this.cartService.getDeliveryEstimate(req.user.id, deliveryEstimateDto);
+  }
+
+  @Delete('/delete/:productId')
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth('JWT-auth')
+  removeProductFromCart(@Req() req, @Param('productId') productId: string) {
+    return this.cartService.removeProductFromCart(req.user.id, productId);
   }
 
   @Get()

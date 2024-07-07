@@ -13,6 +13,7 @@ import { Currencies } from '../../utils/constants';
 import { BaseEntity } from '../../common/base.entity';
 import { ProductStatusEnums } from '../../constants';
 import { Cart } from '../../cart/entities/cart.entity';
+import { Order } from '../../orders/entities/order.entity';
 
 
 const currency_enums = Object.keys(Currencies)
@@ -136,4 +137,7 @@ export class Product extends BaseEntity {
 
   @ManyToOne(() => Cart, (cart) => cart.products)
   carts: Cart[];
+
+  @OneToMany(() => Order, (order) => order.product)
+  orders: Order[];
 }

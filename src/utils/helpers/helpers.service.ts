@@ -93,4 +93,11 @@ export class HelpersService {
     public convertProductNameToSlug(productName: string) {
        return productName.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s/g, '-').toLowerCase();
     }
+
+    public normalizeResponse = (res) => res.data;
+    
+    public normalizeError = (error) => {
+      if (error.response && !error.request) return error.response.data;
+      throw error;
+    };
 }

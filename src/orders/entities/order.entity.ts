@@ -1,7 +1,10 @@
 import { Column, Entity, JoinColumn, ManyToOne } from "typeorm";
 import { BaseEntity } from "../../common/base.entity";
-import { OrderStatusEnum, PaymentGatewayEnums, PaymentStatusEnum } from "../../constants";
+import { OrderStatusEnum, PaymentGatewayEnums, PaymentStatusEnum, ShippingMethodEnums } from "../../constants";
 import { User } from "../../user/entities/user.entity";
+import { Product } from "../../products/entities/product.entity";
+import { Transaction } from "../../transaction/entities/transaction.entity";
+import { Vendor } from "../../vendors/entities/vendor.entity";
 
 @Entity()
 export class Order extends BaseEntity {
@@ -21,11 +24,34 @@ export class Order extends BaseEntity {
     @JoinColumn({ name: 'userId' })
     user: User;
 
-    @Column({type: 'json'})
-    items: {
-        productId: string;
-        quantity: number;
-    }[];
+    @Column()
+    vendorId: string;
+
+    @ManyToOne(() => Vendor, vendor => vendor.orders)
+    @JoinColumn({ name: 'vendorId' })
+    vendor: Vendor;
+
+    // @Column({type: 'json'})
+    // items: {
+    //     productId: string;
+    //     quantity: number;
+    // }[];
+    @Column()
+    productId: string;
+
+    @ManyToOne(() => Product, product => product.orders)
+    @JoinColumn({ name: 'productId' })
+    product: Product;
+
+    @Column()
+    transactionId: string;
+
+    @ManyToOne(() => Transaction, transaction => transaction.orders)
+    @JoinColumn({ name: 'transactionId' })
+    transaction: Transaction;
+
+    @Column({type: 'numeric'})
+    quantity: number;
 
     @Column({type: 'json'})
     shippingAddress: {
@@ -43,17 +69,8 @@ export class Order extends BaseEntity {
         country: string;
     };
 
-    @Column({ nullable: true, default: 'ONLINE' })
-    paymentMethod: string;
-
-    @Column({ nullable: true, enum: PaymentGatewayEnums, default: PaymentGatewayEnums.HYDROGENPAY})
-    paymentGateway: string;
-
-    @Column({ nullable: true, enum: PaymentStatusEnum, default: PaymentStatusEnum.PENDING })
-    paymentStatus: string;
-
-    @Column({nullable: true})
-    paymentReference: string;
+    @Column({type: 'enum', enum: ShippingMethodEnums})
+    shippingMethod: string;
 
     @Column()
     reference: string;

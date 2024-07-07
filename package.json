@@ -32,6 +32,7 @@
     "@nestjs/typeorm": "^9.0.1",
     "@types/nodemailer": "^6.4.15",
     "aws-sdk": "^2.1635.0",
+    "axios": "^1.7.2",
     "bcrypt": "^5.1.0",
     "cache-manager": "^5.2.2",
     "cache-manager-ioredis": "^2.1.0",

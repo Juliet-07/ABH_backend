@@ -18,14 +18,14 @@ export class TransactionService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache
   ) { }
 
-  async create(createTransactionDto: CreateTransactionDto): Promise<Transaction> {
-    const transaction = this.transactionRepository.create(createTransactionDto);
-    const savedTransaction = await this.transactionRepository.save(transaction);
-    // Invalidate cache after a new transaction is created
-    await this.cacheManager.del(this.cacheKey);
+  // async create(createTransactionDto: CreateTransactionDto): Promise<Transaction> {
+  //   const transaction = this.transactionRepository.create(createTransactionDto);
+  //   const savedTransaction = await this.transactionRepository.save(transaction);
+  //   // Invalidate cache after a new transaction is created
+  //   await this.cacheManager.del(this.cacheKey);
 
-    return savedTransaction
-  }
+  //   return savedTransaction
+  // }
 
   @UseInterceptors(CacheInterceptor)
   async findAll(): Promise<Transaction[]> {

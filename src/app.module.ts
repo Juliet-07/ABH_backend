@@ -22,6 +22,8 @@ import { FileUploadService } from './services/file-upload/file-upload.service';
 import { CategoryModule } from './category/category.module';
 import { OrdersModule } from './orders/orders.module';
 import { CartModule } from './cart/cart.module';
+import { HydrogenpayService } from './services/hydrogenpay/hydrogenpay.service';
+import { HelpersService } from './utils/helpers/helpers.service';
 
 @Module({
   imports: [
@@ -77,6 +79,8 @@ import { CartModule } from './cart/cart.module';
       useClass: ResponseInterceptor,
     },
     FileUploadService,
+    HydrogenpayService,
+    HelpersService,
     // { provide: APP_GUARD, useClass: AdminAuthGuard },
     // { provide: APP_GUARD, useClass: AuthGuard },
     // { provide: APP_GUARD, useClass: VendorGuard }

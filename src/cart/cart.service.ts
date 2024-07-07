@@ -11,6 +11,9 @@ import { Repository } from 'typeorm';
 import { AddToCartDto } from './dto/add-to-cart.dto';
 import { Product } from '../products/entities/product.entity';
 import { SynchronizeCartDto } from './dto/synchronize-cart.dto';
+import { ProductStatusEnums } from '../constants';
+import { HelpersService } from '../utils/helpers/helpers.service';
+import { DeliveryEstimateDto } from './dto/delivery-estimate.dto';
 
 @Injectable()
 export class CartService {
@@ -20,6 +23,8 @@ export class CartService {
 
     @InjectRepository(Product)
     private productRepository: Repository<Product>,
+
+    private helperService: HelpersService
   ) {}
   async addToCart(addToCartDto: AddToCartDto, userId: string) {
     try {
@@ -33,6 +38,9 @@ export class CartService {
         where: { id: productId },
       });
       if (!product) {
+        throw new NotFoundException('Product Not Found');
+      }
+      if (product.status !== ProductStatusEnums.APPROVED) {
         throw new NotFoundException('Product Not Found');
       }
       if (product.quantity - product.soldQuantity < addToCartDto.quantity) {
@@ -176,6 +184,59 @@ export class CartService {
     }
   }
 
+  async removeProductFromCart(userId: string, productId: string) {
+    try {
+      const cart = await this.cartRepository.findOne({ where: { userId } });
+
+      if (!cart) throw new NotFoundException('No cart found');
+
+      if (!cart.products?.length)
+        throw new BadRequestException('No Products in Cart');
+
+      const productToDelete = cart.products.find(
+        (item) => item.productId === productId,
+      );
+
+      if (!productToDelete)
+        throw new NotFoundException('Product not found in cart');
+
+      const result = await this.cartRepository.update(cart.id, {
+        products: cart.products.filter((item) => item.productId !== productId),
+      });
+
+      return result;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async getDeliveryEstimate(
+    id: string,
+    deliveryEstimateDto: DeliveryEstimateDto,
+  ) {
+    try {
+      const cart = await this.cartRepository.findOne({ where: { userId: id } });
+
+      if (!cart) throw new Error('Invalid Cart');
+      if (!cart.products.length) throw new Error('No products in cart');
+
+      const result = [
+        {
+          name: 'GIG_LOGISTICS',
+          value: this.helperService.genString(4, '123456789')
+        },
+        {
+          name: 'NIPOST',
+          value: this.helperService.genString(4, '123456789')
+        }
+      ]
+
+      return result;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
   findAll() {
     return `This action returns all cart`;
   }
@@ -195,7 +256,7 @@ export class CartService {
           };
         }),
       );
-      return products
+      return products;
     }
     return [];
   }

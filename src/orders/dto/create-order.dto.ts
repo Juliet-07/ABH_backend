@@ -1,4 +1,5 @@
-import { IsDefined, IsOptional } from 'class-validator';
+import { IsDefined, IsEnum, IsOptional } from 'class-validator';
+import { PaymentGatewayEnums, ShippingMethodEnums } from '../../constants';
 
 class AddressDto {
     @IsDefined()
@@ -19,6 +20,17 @@ export class CreateOrderDto {
 
   @IsOptional()
   billingAddress: AddressDto;
+
+  @IsDefined()
+  shippingFee: number;
+
+  @IsDefined()
+  @IsEnum(ShippingMethodEnums)
+  shippingMethod: string
+
+  @IsDefined()
+  @IsEnum(PaymentGatewayEnums)
+  paymentGateway: string;
 }
 
 

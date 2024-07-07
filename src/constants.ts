@@ -30,11 +30,12 @@ export enum ProductStatusEnums {
 export enum OrderStatusEnum {
     PENDING = 'PENDING',
     CONFIRMED = 'CONFIRMED',
+    DECLINED = 'DECLINED',
+    PROCESSING = 'PROCESSING',
+    READY_TO_SHIP = 'READY_TO_SHIP',
     SHIPPED = 'SHIPPED',
     DELIVERED = 'DELIVERED',
-    CANCELLED = 'CANCELLED',
     RETURNED = 'RETURNED',
-    REFUNDED = 'REFUNDED'
 }
 
 export enum PaymentGatewayEnums {

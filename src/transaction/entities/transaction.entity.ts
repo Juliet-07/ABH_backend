@@ -1,22 +1,35 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import { Entity, Column, OneToMany } from 'typeorm';
+import { BaseEntity } from '../../common/base.entity';
+import { Order } from '../../orders/entities/order.entity';
+import { PaymentGatewayEnums, PaymentStatusEnum } from '../../constants';
 
 @Entity()
-export class Transaction {
-    @PrimaryGeneratedColumn()
-    id: number;
-
+export class Transaction extends BaseEntity {
     @Column()
-    name: string;
+    reference: string;
 
-    @Column()
-    email: string;
-
-    @Column()
-    item: string;
+    @OneToMany(() => Order, order => order.transaction)
+    orders: Order[];
 
     @Column({ type: 'numeric' })
-    price: number;
+    amount: number;
 
-    @CreateDateColumn({ type: 'timestamp' })
-    createdAt: Date;
+    @Column({ type: 'numeric' })
+    totalProductAmount: number;
+
+    @Column({ type: 'numeric' })
+    shippingFee: number;
+
+    @Column({ enum: PaymentStatusEnum, default: PaymentStatusEnum.PENDING })
+    status: string;
+
+    @Column({ nullable: true, default: 'ONLINE' })
+    paymentMethod: string;
+
+    @Column({ nullable: true, enum: PaymentGatewayEnums, default: PaymentGatewayEnums.HYDROGENPAY})
+    paymentGateway: string;
+
+    // Reference from Payment Provider
+    @Column({ nullable: true})
+    paymentReference: string;
 }

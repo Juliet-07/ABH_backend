@@ -12,6 +12,7 @@ import * as bcrypt from 'bcrypt';
 import { VendorStatusEnums } from "../../constants";
 import { BaseEntity } from "../../common/base.entity";
 import { Product } from "../../products/entities/product.entity";
+import { Order } from "../../orders/entities/order.entity";
 
 @Entity()
 export class Vendor extends BaseEntity {
@@ -76,6 +77,9 @@ export class Vendor extends BaseEntity {
 
     @OneToMany(() => Product, (product) => product.vendor)
     products: Product[];
+
+    @OneToMany(() => Order, (order) => order.vendor)
+    orders: Order[];
 
     @Column({ nullable: true })
     verificationCode: string;
