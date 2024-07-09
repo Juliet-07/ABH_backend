@@ -20,12 +20,12 @@ export class CreateProductDto {
     })
     quantity: number;
 
-    @IsNumberString()
+    @IsString()
     @ApiProperty({
-        type: Number,
+        type: String,
         description: 'Size',
     })
-    size: number;
+    size: string;
 
     @IsString()
     @ApiProperty({

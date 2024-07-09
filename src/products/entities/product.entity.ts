@@ -55,8 +55,8 @@ export class Product extends BaseEntity {
   @Column()
   quantity: number;
 
-  @Column({type: 'float', nullable: true})
-  size: number;
+  @Column({nullable: true})
+  size: string;
 
   @Column({ name: 'sold_quantity', nullable: true, default: 0 })
   soldQuantity: number;
