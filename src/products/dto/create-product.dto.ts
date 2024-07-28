@@ -1,166 +1,184 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { ArrayNotEmpty, IsArray, IsBoolean, IsDefined, IsEnum, IsInt, IsJSON, IsNumber, IsNumberString, IsOptional, IsString, IsUrl } from "class-validator";
-import { Currencies } from "../../utils/constants";
+import { ApiProperty } from '@nestjs/swagger';
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsBoolean,
+  IsDefined,
+  IsEnum,
+  IsInt,
+  IsJSON,
+  IsNumber,
+  IsNumberString,
+  IsOptional,
+  IsString,
+  IsUrl,
+} from 'class-validator';
+import { Currencies } from '../../utils/constants';
 
-const currency_enums = Object.keys(Currencies)
-
+const currency_enums = Object.keys(Currencies);
 
 export class CreateProductDto {
-    @IsString()
-    @ApiProperty({
-        type: String,
-        description: 'Product Name',
-    })
-    name: string;
+  @IsString()
+  @ApiProperty({
+    type: String,
+    description: 'Product Name',
+  })
+  name: string;
 
-    @IsNumberString()
-    @ApiProperty({
-        type: Number,
-        description: 'Quantity',
-    })
-    quantity: number;
+  @IsNumberString()
+  @ApiProperty({
+    type: Number,
+    description: 'Quantity',
+  })
+  quantity: number;
 
-    @IsString()
-    @ApiProperty({
-        type: String,
-        description: 'Size',
-    })
-    size: string;
+  @IsString()
+  @ApiProperty({
+    type: String,
+    description: 'Size',
+  })
+  size: string;
 
-    @IsString()
-    @ApiProperty({
-        type: String,
-        description: 'Product Description',
-    })
-    description: string
+  @IsString()
+  @ApiProperty({
+    type: String,
+    description: 'Product Description',
+  })
+  description: string;
 
-    @ApiProperty({
-        type: String,
-        description: 'Category ID',
-    })
-    @IsString()
-    categoryId: string;
+  @ApiProperty({
+    type: String,
+    description: 'Category ID',
+  })
+  @IsString()
+  categoryId: string;
 
-    @IsNumberString()
-    @ApiProperty({
-        type: Number,
-        description: 'Product price',
-    })
-    price: number;
+  @ApiProperty({
+    type: String,
+    description: 'SubCategory ID',
+  })
+  @IsString()
+  subcategoryId: string;
 
-    @IsUrl()
-    @IsOptional()
-    @ApiProperty({
-        type: String,
-        description: 'Product Video URL',
-    })
-    videoUrl: string;
+  @IsNumberString()
+  @ApiProperty({
+    type: Number,
+    description: 'Product price',
+  })
+  price: number;
 
-    @IsString()
-    @IsEnum(currency_enums)
-    @ApiProperty({
-        type: String,
-        description: 'Currency',
-    })
-    currency: string;
+  @IsUrl()
+  @IsOptional()
+  @ApiProperty({
+    type: String,
+    description: 'Product Video URL',
+  })
+  videoUrl: string;
 
-    @IsString()
-    @IsOptional()
-    @ApiProperty({
-        type: String,
-        description: 'Product SkU',
-    })
-    sku: string;
-  
-    @IsNumber()
-    @IsOptional()
-    @ApiProperty({
-        type: Number,
-        description: 'Sale Price (Optional)',
-    })
-    salePrice?: number;
-  
-    @IsBoolean()
-    @IsOptional()
-    @ApiProperty({
-        type: Boolean,
-        description: 'In Stock',
-    })
-    inStock: boolean;
-  
-    @IsBoolean()
-    @IsOptional()
-    @ApiProperty({
-        type: Boolean,
-        description: 'Is the product taxable?',
-    })
-    isTaxable: boolean;
-  
-    @IsBoolean()
-    @IsOptional()
-    @ApiProperty({
-        type: Boolean,
-        description: 'Product in Flash sale',
-    })
-    inFlashSale: boolean;
-  
-    @IsString()
-    @IsDefined()
-    @ApiProperty({
-        type: String,
-        description: 'Product Unit',
-    })
-    unit: string;
-  
-    @IsNumber()
-    @IsOptional()
-    @ApiProperty({
-        type: Number,
-        description: 'Product Height',
-    })
-    height?: number;
-  
-    @IsNumber()
-    @IsOptional()
-    @ApiProperty({
-        type: Number,
-        description: 'Product Width',
-    })
-    width?: number;
-  
-    @IsNumber()
-    @IsOptional()
-    @ApiProperty({
-        type: Number,
-        description: 'Product Length',
-    })
-    length?: number;
-  
-    @IsJSON()
-    @IsOptional()
-    @ApiProperty({
-        type: JSON,
-        description: 'Product Images [URL]',
-    })
-    images?: {
-      id: number;
-      url: string;
-    }[];
-  
-    @IsString()
-    @IsDefined()
-    @ApiProperty({
-        type: String,
-        description: 'Manufacturer',
-    })
-    manufacturer: string;
-  
-    @IsBoolean()
-    @IsOptional()
-    @ApiProperty({
-        type: Boolean,
-        description: 'Product is in wishlist',
-    })
-    inWishlist: boolean;
+  @IsString()
+  @IsEnum(currency_enums)
+  @ApiProperty({
+    type: String,
+    description: 'Currency',
+  })
+  currency: string;
 
+  @IsString()
+  @IsOptional()
+  @ApiProperty({
+    type: String,
+    description: 'Product SkU',
+  })
+  sku: string;
+
+  @IsNumber()
+  @IsOptional()
+  @ApiProperty({
+    type: Number,
+    description: 'Sale Price (Optional)',
+  })
+  salePrice?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  @ApiProperty({
+    type: Boolean,
+    description: 'In Stock',
+  })
+  inStock: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  @ApiProperty({
+    type: Boolean,
+    description: 'Is the product taxable?',
+  })
+  isTaxable: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  @ApiProperty({
+    type: Boolean,
+    description: 'Product in Flash sale',
+  })
+  inFlashSale: boolean;
+
+  @IsString()
+  @IsDefined()
+  @ApiProperty({
+    type: String,
+    description: 'Product Unit',
+  })
+  unit: string;
+
+  @IsNumber()
+  @IsOptional()
+  @ApiProperty({
+    type: Number,
+    description: 'Product Height',
+  })
+  height?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @ApiProperty({
+    type: Number,
+    description: 'Product Width',
+  })
+  width?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @ApiProperty({
+    type: Number,
+    description: 'Product Length',
+  })
+  length?: number;
+
+  @IsJSON()
+  @IsOptional()
+  @ApiProperty({
+    type: JSON,
+    description: 'Product Images [URL]',
+  })
+  images?: {
+    id: number;
+    url: string;
+  }[];
+
+  @IsString()
+  @IsDefined()
+  @ApiProperty({
+    type: String,
+    description: 'Manufacturer',
+  })
+  manufacturer: string;
+
+  @IsBoolean()
+  @IsOptional()
+  @ApiProperty({
+    type: Boolean,
+    description: 'Product is in wishlist',
+  })
+  inWishlist: boolean;
 }

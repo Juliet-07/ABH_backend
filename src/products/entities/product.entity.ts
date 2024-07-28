@@ -14,9 +14,9 @@ import { BaseEntity } from '../../common/base.entity';
 import { ProductStatusEnums } from '../../constants';
 import { Cart } from '../../cart/entities/cart.entity';
 import { Order } from '../../orders/entities/order.entity';
+import { Subcategory } from 'src/category/entities/subcategory.entity';
 
-
-const currency_enums = Object.keys(Currencies)
+const currency_enums = Object.keys(Currencies);
 @Entity()
 export class Product extends BaseEntity {
   @Column()
@@ -40,22 +40,25 @@ export class Product extends BaseEntity {
   @Column({ nullable: true })
   categoryId: string;
 
+  @Column({ nullable: true })
+  subcategoryId: string;
+
   @Column({ name: 'sale_price', nullable: true })
   salePrice: number;
 
   @Column({ default: 'EN' })
   language: string;
 
-  @Column({nullable: true})
+  @Column({ nullable: true })
   sku: string;
 
-  @Column({nullable: true})
+  @Column({ nullable: true })
   videoUrl: string;
 
   @Column()
   quantity: number;
 
-  @Column({nullable: true})
+  @Column({ nullable: true })
   size: string;
 
   @Column({ name: 'sold_quantity', nullable: true, default: 0 })
@@ -73,7 +76,7 @@ export class Product extends BaseEntity {
   @Column({ name: 'shipping_class_id', nullable: true })
   shippingClassId: number;
 
-  @Column({default: ProductStatusEnums.PENDING, enum: ProductStatusEnums})
+  @Column({ default: ProductStatusEnums.PENDING, enum: ProductStatusEnums })
   status: string;
 
   @Column({ name: 'product_type', nullable: true })
@@ -91,13 +94,13 @@ export class Product extends BaseEntity {
   @Column({ nullable: true })
   length: number;
 
-  @Column({type: 'json', nullable: true})
+  @Column({ type: 'json', nullable: true })
   images: {
     id: number;
     url: string;
   }[];
 
-  @Column({nullable: true})
+  @Column({ nullable: true })
   featured_image: string;
 
   @Column({ nullable: true })
@@ -112,7 +115,7 @@ export class Product extends BaseEntity {
   @Column({ name: 'is_digital', nullable: true })
   isDigital: boolean;
 
-  @Column({nullable: true})
+  @Column({ nullable: true })
   ratings: number;
 
   @Column({ name: 'total_reviews', nullable: true })
@@ -134,6 +137,10 @@ export class Product extends BaseEntity {
   @ManyToOne(() => Category, (category) => category.products)
   @JoinColumn({ name: 'categoryId' })
   category: Category;
+
+  @ManyToOne(() => Subcategory, (subcategory) => subcategory.products)
+  @JoinColumn({ name: 'subcategoryId' })
+  subcategory: Subcategory;
 
   @ManyToOne(() => Cart, (cart) => cart.products)
   carts: Cart[];

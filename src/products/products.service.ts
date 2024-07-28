@@ -65,6 +65,12 @@ export class ProductsService {
       );
       if (!category) throw new NotFoundException('Invalid Category');
 
+      // Validate sub-category
+      const subcategory = await this.categoryService.findOneSubcategory(
+        createProductDto.subcategoryId,
+      );
+      if (!subcategory) throw new NotFoundException('Invalid SubCategory');
+
       if (!files) throw new BadRequestException('Image Files are empty');
 
       if (!files?.product_images?.length) {
