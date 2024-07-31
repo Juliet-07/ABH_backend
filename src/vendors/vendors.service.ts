@@ -13,18 +13,17 @@ import { UpdateVendorDto } from './dto/update-vendor.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Vendor } from './entities/vendor.entity';
 import { Repository } from 'typeorm';
-import { CACHE_MANAGER, CacheInterceptor } from '@nestjs/cache-manager';
 import { JwtService } from '@nestjs/jwt';
 import { HelpersService } from '../utils/helpers/helpers.service';
 import { MailingService } from '../utils/mailing/mailing.service';
 import { LoginVendorDto } from './dto/login-vendor.dto';
 import { LoginResponse } from '../user/user.interface';
-import { Cache } from 'cache-manager';
 import { VerifyVendorDto } from './dto/verify-vendor.dto';
 import { BlockStatusEnums, VendorStatusEnums } from '../constants';
 import { ManageVendorDto } from './dto/manage-vendor.dto';
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import * as bcrypt from 'bcrypt';
+import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class VendorsService {
@@ -33,12 +32,10 @@ export class VendorsService {
   constructor(
     @InjectRepository(Vendor)
     private vendorRepository: Repository<Vendor>,
-    // private cacheManager: Cache,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private jwtService: JwtService,
     private helpers: HelpersService,
     private mailingService: MailingService,
- 
+    private redisService: RedisService,
   ) { }
 
   async create(
@@ -258,7 +255,7 @@ export class VendorsService {
     }
   }
 
-  @UseInterceptors(CacheInterceptor)
+  
   async findAll(query: PaginateQuery): Promise<Paginated<Vendor>> {
     try {
       return paginate(query, this.vendorRepository, {

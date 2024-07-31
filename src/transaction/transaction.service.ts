@@ -4,9 +4,8 @@ import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { Transaction } from './entities/transaction.entity';
 import { Repository } from 'typeorm';
-import { CACHE_MANAGER, CacheInterceptor } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
 import { PaymentStatusEnum } from 'src/constants';
+import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class TransactionService {
@@ -16,9 +15,8 @@ export class TransactionService {
   constructor(
     @InjectRepository(Transaction)
     private transactionRepository: Repository<Transaction>,
+    private redisService: RedisService,
 
-    // private cacheManager: Cache,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache
   ) { }
 
   // async create(createTransactionDto: CreateTransactionDto): Promise<Transaction> {
@@ -30,36 +28,35 @@ export class TransactionService {
   //   return savedTransaction
   // }
 
-  @UseInterceptors(CacheInterceptor)
+  
   async findAll(): Promise<Transaction[]> {
     // Check if data is in cache
-    const cacheData: Transaction[] = await this.cacheManager.get(this.cacheKey);
-    if (cacheData) {
+    const cacheData = await this.redisService.get({ key: this.cacheKey });
+    if (Array.isArray(cacheData)) {
       console.log('Data loaded from cache');
       return cacheData;
     }
-
     // If not in cache, load data from the database
     const data = await this.transactionRepository.find();
     console.log('Data loaded from database');
 
     // Store data in cache
-    await this.cacheManager.set(this.cacheKey, data);
+    await this.redisService.set({ key: this.cacheKey, value: data, ttl: 3600 });
 
     return data;
   }
 
 
-  @UseInterceptors(CacheInterceptor)
   async findByStatus(status: PaymentStatusEnum): Promise<Transaction[]> {
     // Generate cache key based on status
     const cacheKey = `${this.cacheKeyPrefix}${status}`;
 
     // Check if data is in cache
-    const cacheData: Transaction[] = await this.cacheManager.get(cacheKey);
-    if (cacheData) {
+ 
+    const cachedData = await this.redisService.get({ key: this.cacheKey });
+    if (Array.isArray(cachedData)) {
       console.log('Data loaded from cache');
-      return cacheData;
+      return cachedData;
     }
 
     // If not in cache, load data from the database
@@ -67,7 +64,7 @@ export class TransactionService {
     console.log('Data loaded from database');
 
     // Store data in cache
-    await this.cacheManager.set(cacheKey, data);
+    await this.redisService.set({ key: this.cacheKey, value: data, ttl: 3600 });
 
     return data;
   }

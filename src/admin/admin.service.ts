@@ -5,13 +5,12 @@ import { Admin } from './entities/admin.entity';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CACHE_MANAGER, CacheInterceptor } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
 import { LoginAdminDto } from './dto/login-admin.dto';
 import { LoginResponse } from './admin.interface';
 import { HelpersService } from '../utils/helpers/helpers.service';
 import { MailingService } from '../utils/mailing/mailing.service';
 import { VerifyAdminDto } from './dto/verify-admin.dto';
+import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class AdminService {
@@ -20,11 +19,10 @@ export class AdminService {
   constructor(
     @InjectRepository(Admin)
     private adminRepository: Repository<Admin>,
-    // private cacheManager: Cache,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private jwtService: JwtService,
     private helpers: HelpersService,
-    private mailingSerivce: MailingService
+    private mailingSerivce: MailingService,
+    private redisService: RedisService,
   ) { }
 
   async create(createAdminDto: CreateAdminDto): Promise<void> {
@@ -35,10 +33,7 @@ export class AdminService {
       admin.code = this.helpers.genCode(10)
 
       await this.adminRepository.save(admin);
-
-      // Invalidate cache after a new admin is created
-      await this.cacheManager.del(this.cacheKey);
-
+    
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -121,18 +116,18 @@ export class AdminService {
     }
   }
 
-  @UseInterceptors(CacheInterceptor)
+  
   async findAll(): Promise<Admin[]> {
     try {
-      const cacheData: Admin[] = await this.cacheManager.get(this.cacheKey);
-      if (cacheData) {
+      const cacheData = await this.redisService.get({ key: this.cacheKey });
+      if (Array.isArray(cacheData)) {
         console.log('Data loaded from cache');
         return cacheData;
       }
 
       const data = await this.adminRepository.find();
 
-      await this.cacheManager.set(this.cacheKey, data);
+      await this.redisService.set({ key: this.cacheKey, value: data, ttl: 3600 });
 
       return data;
     } catch (error) {

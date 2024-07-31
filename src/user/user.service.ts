@@ -13,13 +13,12 @@ import { User } from './entities/user.entity';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CACHE_MANAGER, CacheInterceptor } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
 import { LoginUserDto } from './dto/login-user.dto';
 import { LoginResponse } from './user.interface';
 import { HelpersService } from '../utils/helpers/helpers.service';
 import { MailingService } from '../utils/mailing/mailing.service';
 import { VerifyUserDto } from './dto/verify-user.dto';
+import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class UserService {
@@ -28,11 +27,10 @@ export class UserService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    // private cacheManager: Cache,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private jwtService: JwtService,
     private helpers: HelpersService,
     private mailingSerivce: MailingService,
+    private redisService: RedisService,
   ) { }
 
   async create(createUserDto: CreateUserDto): Promise<void> {
@@ -55,8 +53,7 @@ export class UserService {
       await this.userRepository.save(user);
 
       // Invalidate cache after a new user is created
-      await this.cacheManager.del(this.cacheKey);
-    } catch (error) {
+          } catch (error) {
       throw new BadRequestException(error.message);
     }
   }
@@ -225,18 +222,18 @@ export class UserService {
     }
   }
 
-  @UseInterceptors(CacheInterceptor)
+ 
   async findAll(): Promise<User[]> {
     try {
-      const cacheData: User[] = await this.cacheManager.get(this.cacheKey);
-      if (cacheData) {
+      const cacheData = await this.redisService.get({ key: this.cacheKey });
+      if (Array.isArray(cacheData)) {
         console.log('Data loaded from cache');
         return cacheData;
       }
 
       const data = await this.userRepository.find();
 
-      await this.cacheManager.set(this.cacheKey, data);
+      await this.redisService.set({ key: this.cacheKey, value: data, ttl: 3600 });
 
       return data;
     } catch (error) {

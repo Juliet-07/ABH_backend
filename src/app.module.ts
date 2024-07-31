@@ -23,6 +23,7 @@ import { OrdersModule } from './orders/orders.module';
 import { CartModule } from './cart/cart.module';
 import { HydrogenpayService } from './services/hydrogenpay/hydrogenpay.service';
 import { HelpersService } from './utils/helpers/helpers.service';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
@@ -45,21 +46,10 @@ import { HelpersService } from './utils/helpers/helpers.service';
       "entities": [
         "dist/**/*.entity{.ts,.js}"
       ],
-      "ssl": false,
+      "ssl": true,
       "synchronize": true
     }),
-    CacheModule.register({
-      isGlobal: true,
-      isDebug: true,
-      store: redisStore,
-      url: process.env.REDIS_URL as string,
-      // host: process.env.REDIS_HOST,
-      // port: process.env.REDIS_PORT,
-      // username: process.env.REDIS_USERNAME,
-      // password: process.env.REDIS_PASSWORD,
-      ttl: 300, // cache TTL in secondss
-      no_ready_check: true
-    }),
+    
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SECRET,
@@ -69,6 +59,7 @@ import { HelpersService } from './utils/helpers/helpers.service';
     CategoryModule,
     OrdersModule,
     CartModule,
+    RedisModule,
 
   ],
   controllers: [AppController],
@@ -80,7 +71,7 @@ import { HelpersService } from './utils/helpers/helpers.service';
     },
     HydrogenpayService,
     HelpersService,
-    // { provide: APP_GUARD, useClass: AdminAuthGuard },
+        // { provide: APP_GUARD, useClass: AdminAuthGuard },
     // { provide: APP_GUARD, useClass: AuthGuard },
     // { provide: APP_GUARD, useClass: VendorGuard }
   ],
