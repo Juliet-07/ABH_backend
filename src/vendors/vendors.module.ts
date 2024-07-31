@@ -5,13 +5,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Vendor } from './entities/vendor.entity';
 import { HelpersService } from '../utils/helpers/helpers.service';
 import { MailingService } from '../utils/mailing/mailing.service';
-import { FileUploadService } from '../services/file-upload/file-upload.service';
 import { AdminModule } from '../admin/admin.module';
+import { AzureService } from 'src/utils/uploader/azure';
+
 
 @Module({
   imports: [TypeOrmModule.forFeature([Vendor]), AdminModule],
   exports: [VendorsService],
   controllers: [VendorsController],
-  providers: [VendorsService, HelpersService, MailingService, FileUploadService]
+  providers: [VendorsService, HelpersService, MailingService, AzureService]
 })
 export class VendorsModule {}

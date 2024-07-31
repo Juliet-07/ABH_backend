@@ -18,7 +18,6 @@ import { VendorsModule } from './vendors/vendors.module';
 import { AdminAuthGuard } from './auth/admin-auth/admin-auth.guard';
 import { AuthGuard } from './auth/auth.guard';
 import { VendorGuard } from './auth/vendor-guard/vendor.guard';
-import { FileUploadService } from './services/file-upload/file-upload.service';
 import { CategoryModule } from './category/category.module';
 import { OrdersModule } from './orders/orders.module';
 import { CartModule } from './cart/cart.module';
@@ -38,25 +37,26 @@ import { HelpersService } from './utils/helpers/helpers.service';
     VendorsModule,
     TypeOrmModule.forRoot({
       "type": "postgres",
-      "host": process.env.POSTGRES_URI,
-      // "port": Number(process.env.POSTGRES_PORT),
-      "username": process.env.POSTGRES_USER,
-      "password": process.env.POSTGRES_PASSWORD,
-      "database": process.env.POSTGRES_DB,
+      "host": process.env.PG_HOST as string,
+      "port": parseInt(process.env.DB_PORT, 10) || 5432,
+      "username": process.env.POSTGRES_USER as string,
+      "password": process.env.POSTGRES_PASSWORD as string,
+      "database": process.env.POSTGRES_DB as string,
       "entities": [
         "dist/**/*.entity{.ts,.js}"
       ],
-      "ssl": true,
+      "ssl": false,
       "synchronize": true
     }),
     CacheModule.register({
       isGlobal: true,
       isDebug: true,
       store: redisStore,
-      host: process.env.REDIS_HOST,
-      port: process.env.REDIS_PORT,
-      username: process.env.REDIS_USERNAME,
-      password: process.env.REDIS_PASSWORD,
+      url: process.env.REDIS_URL as string,
+      // host: process.env.REDIS_HOST,
+      // port: process.env.REDIS_PORT,
+      // username: process.env.REDIS_USERNAME,
+      // password: process.env.REDIS_PASSWORD,
       ttl: 300, // cache TTL in secondss
       no_ready_check: true
     }),
@@ -69,7 +69,7 @@ import { HelpersService } from './utils/helpers/helpers.service';
     CategoryModule,
     OrdersModule,
     CartModule,
-   
+
   ],
   controllers: [AppController],
   providers: [
@@ -78,7 +78,6 @@ import { HelpersService } from './utils/helpers/helpers.service';
       provide: APP_INTERCEPTOR,
       useClass: ResponseInterceptor,
     },
-    FileUploadService,
     HydrogenpayService,
     HelpersService,
     // { provide: APP_GUARD, useClass: AdminAuthGuard },

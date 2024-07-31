@@ -113,6 +113,11 @@ export class CreateVendorDto {
     })
     cacRegistrationNumber: string;
 
+
+
+
+    cacCertificateUrl: string
+
     // @IsString()
     // @IsStrongPassword()
     // @MinLength(4)

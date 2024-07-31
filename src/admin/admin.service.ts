@@ -82,9 +82,9 @@ export class AdminService {
 
   }
 
-  
 
-  
+
+
 
   async requestForgotPasswordVerificationCode(email: string): Promise<void> {
     try {
@@ -110,8 +110,7 @@ export class AdminService {
         await this.mailingSerivce.send({
           subject: 'Email Verification',
           email: admin.email,
-          name: `${admin.firstName} ${admin.lastName}`,
-          html: `Pls use the OTP code <b style="font-size: 20px;">${forgotPasswordVerificationCode}</b> for verification, code expires by ${new Date(forgotPasswordVerificationCodeExpiresIn).toLocaleDateString()}`
+          html: `${admin.firstName} ${admin.lastName}, Pls use the OTP code <b style="font-size: 20px;">${forgotPasswordVerificationCode}</b> for verification, code expires by ${new Date(forgotPasswordVerificationCodeExpiresIn).toLocaleDateString()}`
         })
       } catch (error) {
 

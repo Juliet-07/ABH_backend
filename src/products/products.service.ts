@@ -10,7 +10,6 @@ import { Product } from './entities/product.entity';
 import { Repository } from 'typeorm';
 import { HelpersService } from '../utils/helpers/helpers.service';
 import { Vendor } from '../vendors/entities/vendor.entity';
-import { FileUploadService } from '../services/file-upload/file-upload.service';
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { ManageProductDto } from './dto/manage-product.dto';
 import { CategoryService } from '../category/category.service';
@@ -22,90 +21,49 @@ export class ProductsService {
     private productRepository: Repository<Product>,
     private categoryService: CategoryService,
     private helpers: HelpersService,
-    private uploadService: FileUploadService,
-  ) {}
 
-  uploadGalleryImages = async (
-    files,
-  ): Promise<{ id: number; url: string }[]> => {
-    try {
-      if (!files) throw new NotFoundException('No Files Found');
+  ) { }
 
-      const uploads = await Promise.all(
-        files.map((file) => {
-          return this.uploadService.uploadFile(file);
-        }),
-      );
 
-      return uploads.map((upload, index) => {
-        return {
-          id: index + 1,
-          url: upload.Location,
-        };
-      });
-    } catch (error) {
-      throw new BadRequestException(error.message);
-    }
-  };
 
   async create(
     createProductDto: CreateProductDto,
     vendor: Partial<Vendor>,
-    files: {
-      product_images?: Express.Multer.File[];
-      featured_image?: Express.Multer.File[];
-    },
+    productImagesUrls: string[], featuredImageUrl: string | null
   ) {
     try {
+      const { categoryId } = createProductDto
       const product = this.productRepository.create(createProductDto);
 
       // Validate category
       const category = await this.categoryService.findOne(
-        createProductDto.categoryId,
+        categoryId,
       );
-      if (!category) throw new NotFoundException('Invalid Category');
 
-      // Validate sub-category
-      const subcategory = await this.categoryService.findOneSubcategory(
-        createProductDto.subcategoryId,
-      );
-      if (!subcategory) throw new NotFoundException('Invalid SubCategory');
-
-      if (!files) throw new BadRequestException('Image Files are empty');
-
-      if (!files?.product_images?.length) {
-        throw new BadRequestException(
-          'You need to upload product gallery images',
-        );
+      if (!category.id) {
+        throw new BadRequestException('Category ID is missing');
       }
 
-      // Upload profile images
-      product.images = await this.uploadGalleryImages(files.product_images);
-
-      if (!files?.featured_image?.length)
-        throw new BadRequestException('Feature image is required');
-      const uploadedFeaturedImage = await this.uploadService.uploadFile(
-        files.featured_image[0],
-      );
-      if (uploadedFeaturedImage) {
-        product.featured_image = uploadedFeaturedImage?.Location;
-      }
 
       // Generate Admin Unique Code
       product.code = this.helpers.genCode(10);
-      product.slug = `${this.helpers.convertProductNameToSlug(product.name)}-${
-        product.code
-      }`;
+      product.slug = `${this.helpers.convertProductNameToSlug(product.name)}-${product.code
+        }`;
       product.vendorId = vendor.id;
       product.createdBy = vendor.id;
 
-      const result = await this.productRepository.save(product);
 
-      // Invalidate cache after a new admin is created
-      // await this.cacheManager.del(this.cacheKey);
+      product.images = productImagesUrls.map((url, index) => ({
+        id: index + 1,
+        url: url,
+      }));
+      product.featured_image = featuredImageUrl;
+
+      const result = await this.productRepository.save(product);
 
       return result;
     } catch (error) {
+      console.error("THE ERROR", error)
       throw new BadRequestException(error.message);
     }
   }
@@ -182,7 +140,21 @@ export class ProductsService {
     return `This action updates a #${id} product`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} product`;
+  async remove(productId: string): Promise<string> {
+    try {
+      const product = await this.productRepository.findOne({
+        where: {
+          id: productId,
+        },
+      });
+
+      if (!product) throw new NotFoundException(`Product not found`);
+
+      await this.productRepository.remove(product);
+
+      return `Product deleted Successfully`
+    } catch (error) {
+      throw error;
+    }
   }
 }

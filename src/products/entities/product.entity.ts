@@ -2,9 +2,9 @@ import {
   Column,
   Entity,
   JoinColumn,
-  ManyToMany,
   ManyToOne,
   OneToMany,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Rating } from '../../ratings/entities/rating.entity';
 import { Vendor } from '../../vendors/entities/vendor.entity';
@@ -14,11 +14,14 @@ import { BaseEntity } from '../../common/base.entity';
 import { ProductStatusEnums } from '../../constants';
 import { Cart } from '../../cart/entities/cart.entity';
 import { Order } from '../../orders/entities/order.entity';
-import { Subcategory } from 'src/category/entities/subcategory.entity';
+
 
 const currency_enums = Object.keys(Currencies);
 @Entity()
 export class Product extends BaseEntity {
+  @PrimaryGeneratedColumn('uuid') // Assuming you're using UUIDs for IDs
+  id: string;
+
   @Column()
   name: string;
 
@@ -138,13 +141,12 @@ export class Product extends BaseEntity {
   @JoinColumn({ name: 'categoryId' })
   category: Category;
 
-  @ManyToOne(() => Subcategory, (subcategory) => subcategory.products)
-  @JoinColumn({ name: 'subcategoryId' })
-  subcategory: Subcategory;
 
   @ManyToOne(() => Cart, (cart) => cart.products)
   carts: Cart[];
 
   @OneToMany(() => Order, (order) => order.product)
   orders: Order[];
+
+
 }

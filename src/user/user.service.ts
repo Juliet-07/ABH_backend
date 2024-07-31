@@ -33,7 +33,7 @@ export class UserService {
     private jwtService: JwtService,
     private helpers: HelpersService,
     private mailingSerivce: MailingService,
-  ) {}
+  ) { }
 
   async create(createUserDto: CreateUserDto): Promise<void> {
     try {
@@ -123,12 +123,11 @@ export class UserService {
         await this.mailingSerivce.send({
           subject: 'Email Verification',
           email: user.email,
-          name: `${user.firstName} ${user.lastName}`,
-          html: `Pls use the OTP code <b style="font-size: 20px;">${verificationCode}</b> for verification, code expires by ${new Date(
+          html: `${user.firstName} ${user.lastName}, Pls use the OTP code <b style="font-size: 20px;">${verificationCode}</b> for verification, code expires by ${new Date(
             verificationCodeExpiresIn,
           ).toLocaleDateString()}`,
         });
-      } catch (error) {}
+      } catch (error) { }
     } catch (error) {
       throw error;
     }
@@ -216,12 +215,11 @@ export class UserService {
         await this.mailingSerivce.send({
           subject: 'Email Verification',
           email: user.email,
-          name: `${user.firstName} ${user.lastName}`,
-          html: `Pls use the OTP code <b style="font-size: 20px;">${verificationCode}</b> for verification, code expires by ${new Date(
+          html: ` ${user.firstName} ${user.lastName}, Pls use the OTP code <b style="font-size: 20px;">${verificationCode}</b> for verification, code expires by ${new Date(
             verificationCodeExpiresIn,
           ).toLocaleDateString()}`,
         });
-      } catch (error) {}
+      } catch (error) { }
     } catch (error) {
       throw error;
     }

@@ -1,66 +1,51 @@
 import { Injectable } from '@nestjs/common';
-import { MailtrapClient } from 'mailtrap';
-// import Mailjet from 'node-mailjet';
-import { Client } from 'node-mailjet';
+import * as nodemailer from 'nodemailer';
 
-interface MailingInterface {
+
+export interface MailingInterface {
   email: string;
-  name: string;
   subject: string;
-  text?: string;
-  html?: string;
+  html: string;
 }
 
 @Injectable()
 export class MailingService {
-  // mailjet = new Client(
-  //     {
-  //         apiKey: process.env.MJ_APIKEY,
-  //         apiSecret: process.env.MJ_SECRETKEY
-  //     })
+  private readonly transporter;
 
-  TOKEN = process.env.MAILTRAP_TOKEN;
-  SENDER_EMAIL = process.env.MAILTRAP_SENDER_EMAIL;
-  sender = { name: 'Mailtrap Test', email: this.SENDER_EMAIL };
-  client = new MailtrapClient({ token: this.TOKEN });
+  constructor() {
+    const SMTP_HOST = process.env.SMTP_HOST as string;
+    const SMTP_PORT = parseInt(process.env.SMTP_PORT as string);
+    const SMTP_USERNAME = process.env.SMTP_USERNAME as string;
+    const SMTP_PASSWORD = process.env.SMTP_PASSWORD as string;
+    const SMTP_STARTTLS_REQUIRED = process.env.SMTP_STARTTLS_REQUIRED === 'true';
 
-  // async send(payload: MailingInterface) {
-  //     try {
-  //         await this.mailjet
-  //             .post('send', { version: 'v3.1' })
-  //             .request({
-  //                 Messages: [
-  //                     {
-  //                         From: {
-  //                             Email: "emmanuel.olusola@pmt.ng",
-  //                             Name: "ABH Ecommerce"
-  //                         },
-  //                         To: [
-  //                             {
-  //                                 Email: payload.email,
-  //                                 Name: payload.name
-  //                             }
-  //                         ],
-  //                         Subject: payload.subject,
-  //                         TextPart: payload.text,
-  //                         HTMLPart: payload.html
-  //                     }
-  //                 ]
-  //             })
-  //     } catch (error) {
-  //         throw new Error(error)
-  //     }
-  // }
+    this.transporter = nodemailer.createTransport({
+      host: SMTP_HOST || 'live.smtp.mailtrap.io',
+      port: SMTP_PORT || 587,
+      auth: {
+        user: SMTP_USERNAME || 'api',
+        pass: SMTP_PASSWORD || '5a2460ef951e4415adaa5e16f50e8a3a',
+        authMethod: 'PLAIN,LOGIN',
+      },
+      debug: true,
+      tls: {
+        rejectUnauthorized: SMTP_STARTTLS_REQUIRED,
+      },
+    } as nodemailer.TransportOptions);
+  }
 
   async send(payload: MailingInterface) {
-    this.client
-      .send({
-        from: this.sender,
-        to: [{ email: payload.email}],
+    try {
+      await this.transporter.sendMail({
+        from: `"ABH" ${process.env.SENDERS_EMAIL}`,
+        to: payload.email,
         subject: payload.subject,
-        text: payload.text,
-      })
-      .then(console.log)
-      .catch(console.error);
+        html: payload.html,
+      });
+      console.log('Email sent successfully');
+    } catch (error) {
+      console.log('Email not sent');
+      console.log('Error:', error);
+    }
   }
 }

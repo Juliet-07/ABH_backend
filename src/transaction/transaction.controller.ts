@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UsePipes, ValidationPipe, Query, BadRequestException, UseGuards } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { Transaction } from './entities/transaction.entity';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { PaymentStatusEnum } from 'src/constants';
+import { AdminAuthGuard } from 'src/auth/admin-auth/admin-auth.guard';
 
 @ApiTags('Transaction')
 @Controller('transaction')
@@ -16,11 +18,30 @@ export class TransactionController {
   //   return this.transactionService.create(createTransactionDto);
   // }
 
-  // @Get()
-  // findAll(): Promise<Transaction[]> {
-  //   return this.transactionService.findAll();
-  // }
+  @UseGuards(AdminAuthGuard)
+  @UsePipes(new ValidationPipe())
+  @ApiBearerAuth('JWT-auth')
+  @Get()
+  findAll(): Promise<Transaction[]> {
+    return this.transactionService.findAll();
+  }
 
+
+  @UseGuards(AdminAuthGuard)
+  @UsePipes(new ValidationPipe())
+  @ApiBearerAuth('JWT-auth')
+  @Get('status')
+  async getByStatus(
+    @Query('status') status: PaymentStatusEnum,
+  ): Promise<Transaction[]> {
+    // Validate status (Optional: ensure the status is a valid enum value)
+    if (!Object.values(PaymentStatusEnum).includes(status as PaymentStatusEnum)) {
+      throw new BadRequestException('Invalid status value');
+    }
+
+    // Call the service method to fetch transactions by status
+    return this.transactionService.findByStatus(status);
+  }
   // @Get(':id')
   // findOne(@Param('id') id: string) {
   //   return this.transactionService.findOne(+id);

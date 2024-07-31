@@ -21,9 +21,8 @@ import { LoginVendorDto } from './dto/login-vendor.dto';
 import { LoginResponse } from '../user/user.interface';
 import { Cache } from 'cache-manager';
 import { VerifyVendorDto } from './dto/verify-vendor.dto';
-import { VendorStatusEnums } from '../constants';
+import { BlockStatusEnums, VendorStatusEnums } from '../constants';
 import { ManageVendorDto } from './dto/manage-vendor.dto';
-import { FileUploadService } from '../services/file-upload/file-upload.service';
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import * as bcrypt from 'bcrypt';
 
@@ -38,31 +37,16 @@ export class VendorsService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private jwtService: JwtService,
     private helpers: HelpersService,
-    private mailingSerivce: MailingService,
-    private fileUploadService: FileUploadService,
-  ) {}
+    private mailingService: MailingService,
+ 
+  ) { }
 
   async create(
     createVendorDto: CreateVendorDto,
-    file: Express.Multer.File,
   ): Promise<Vendor> {
     try {
       const vendor = this.vendorRepository.create(createVendorDto);
 
-      // Upload CAC File
-
-      if (file) {
-        if (file.mimetype !== 'application/pdf')
-          throw new BadRequestException('File must be PDF');
-        if (file.size >= 1000000)
-          throw new BadRequestException('File should not be more than 1MB');
-        const result = await this.fileUploadService.uploadFile(file);
-
-        if (!result) throw new Error('Something bad happended with the upload')
-
-        vendor.cacCertificateUrl = result?.Location
-
-      }
 
       // Generate Vendor Unique Code
       vendor.code = this.helpers.genCode(10);
@@ -76,6 +60,7 @@ export class VendorsService {
 
       return result;
     } catch (error) {
+      console.error("the ERROR", error)
       throw new BadRequestException(error.message);
     }
   }
@@ -99,6 +84,7 @@ export class VendorsService {
         },
         select: ['id', 'password', 'lastLoginAt', 'status']
       });
+      console.log(vendor)
       if (!vendor) throw new NotFoundException('Vendor Not Found');
       const isPasswordCorrect = await vendor.comparePassword(password);
       if (!isPasswordCorrect)
@@ -141,15 +127,14 @@ export class VendorsService {
 
       // Send Email For Token
       try {
-        await this.mailingSerivce.send({
+        await this.mailingService.send({
           subject: 'Email Verification',
           email: vendor.email,
-          name: `${vendor.firstName} ${vendor.lastName}`,
-          html: `Pls use the OTP code <b style="font-size: 20px;">${verificationCode}</b> for verification, code expires by ${new Date(
+          html: `name: ${vendor.firstName} ${vendor.lastName},Pls use the OTP code <b style="font-size: 20px;">${verificationCode}</b> for verification, code expires by ${new Date(
             verificationCodeExpiresIn,
           ).toLocaleDateString()}`,
         });
-      } catch (error) {}
+      } catch (error) { }
     } catch (error) {
       throw error;
     }
@@ -217,20 +202,20 @@ export class VendorsService {
       // Update DB and set verification status
       const updateData = {
         status,
-        ...(status === VendorStatusEnums.ACTIVE && {password})
+        ...(status === VendorStatusEnums.ACTIVE && { password })
       };
 
-       await this.vendorRepository.update(vendor.id, updateData);
-       
+      await this.vendorRepository.update(vendor.id, updateData);
+
       //  Send Email to user
 
       const text = `Hello ${vendor.firstName}, your account has been verified and active now. Login with your registered email and password ${rawPassword} \n \n \n Kindly ensure you change your paassword on login`
 
-      await this.mailingSerivce.send({
+      await this.mailingService.send({
         subject: 'Vendor Account Approved',
-        text,
+        html: text,
         email: vendor.email,
-        name: `${vendor.firstName} ${vendor.lastName}`
+
       })
 
       // TODO: Remove this before Production
@@ -260,15 +245,14 @@ export class VendorsService {
 
       // Send Email For Token
       try {
-        await this.mailingSerivce.send({
+        await this.mailingService.send({
           subject: 'Email Verification',
           email: vendor.email,
-          name: `${vendor.firstName} ${vendor.lastName}`,
-          html: `Pls use the OTP code <b style="font-size: 20px;">${verificationCode}</b> for verification, code expires by ${new Date(
+          html: `  ${vendor.firstName} ${vendor.lastName}, Pls use the OTP code <b style="font-size: 20px;">${verificationCode}</b> for verification, code expires by ${new Date(
             verificationCodeExpiresIn,
           ).toLocaleDateString()}`,
         });
-      } catch (error) {}
+      } catch (error) { }
     } catch (error) {
       throw error;
     }
@@ -300,6 +284,26 @@ export class VendorsService {
     const data = await this.vendorRepository.findOne({ where: { id } });
 
     return data;
+  }
+
+  async blockAndUnblockVendor(vendorId: string): Promise<string> {
+    try {
+      const vendor = await this.vendorRepository.findOne({
+        where: {
+          id: vendorId
+        }
+      });
+
+      if (!vendor) throw new NotFoundException(`Vendor not found`);
+
+      // Toggle the vendor's status
+      vendor.status = vendor.status === BlockStatusEnums.BLOCKED ? BlockStatusEnums.ACTIVE : BlockStatusEnums.BLOCKED;
+      await this.vendorRepository.save(vendor);
+
+      return `Vendor ${vendor.status === BlockStatusEnums.BLOCKED ? 'blocked' : 'unblocked'} successfully`;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
   }
 
   findOne(id: number) {

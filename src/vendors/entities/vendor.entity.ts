@@ -1,15 +1,11 @@
 import {
-    BeforeInsert,
     Column,
-    CreateDateColumn,
-    DeleteDateColumn,
     Entity,
     OneToMany,
-    PrimaryGeneratedColumn,
     UpdateDateColumn
 } from "typeorm";
 import * as bcrypt from 'bcrypt';
-import { VendorStatusEnums } from "../../constants";
+import { BlockStatusEnums, VendorStatusEnums } from "../../constants";
 import { BaseEntity } from "../../common/base.entity";
 import { Product } from "../../products/entities/product.entity";
 import { Order } from "../../orders/entities/order.entity";
@@ -29,10 +25,10 @@ export class Vendor extends BaseEntity {
     @Column({ unique: true })
     phoneNumber: string;
 
-    @Column({nullable: true})
+    @Column({ nullable: true })
     alternatePhoneNumber: string;
 
-    @Column({nullable: true})
+    @Column({ nullable: true })
     address: string;
 
     @Column()
@@ -50,7 +46,7 @@ export class Vendor extends BaseEntity {
     @Column()
     state: string;
 
-    @Column({enum: VendorStatusEnums, default: VendorStatusEnums.PENDING})
+    @Column({ enum: VendorStatusEnums, default: VendorStatusEnums.PENDING })
     status: string;
 
     // Operational Details
@@ -105,8 +101,11 @@ export class Vendor extends BaseEntity {
     })
     lastPasswordResetAt: Date
 
-    @Column({nullable: true, select: false})
+    @Column({ nullable: true, select: false })
     password: string;
+
+    @Column({ enum: BlockStatusEnums, default: BlockStatusEnums.ACTIVE })
+    block: string
 
     // @BeforeInsert()
     // async hashPassword() {

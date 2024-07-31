@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsString } from "class-validator";
+import { IsArray, IsString } from "class-validator";
 
 export class CreateCategoryDto {
     @IsString()
@@ -8,6 +8,12 @@ export class CreateCategoryDto {
         description: 'Category Name',
     })
     name: string;
+ 
+    @IsArray()
+    subcategories: string[]
+
+    @IsString()
+    image: string;
 
     @IsString()
     @ApiProperty({

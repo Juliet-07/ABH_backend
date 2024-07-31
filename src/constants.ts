@@ -53,3 +53,9 @@ export enum ShippingMethodEnums {
     NIPOST = "NIPOST",
     OFFLINE = "OFFLINE",
 }
+
+
+export enum BlockStatusEnums {
+    BLOCKED = "BLOCKED",
+    ACTIVE = "ACTIVE",
+}

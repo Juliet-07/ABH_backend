@@ -4,12 +4,12 @@ import { CategoryController } from './category.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Category } from './entities/category.entity';
 import { AdminModule } from '../admin/admin.module';
-import { Subcategory } from './entities/subcategory.entity';
+import { AzureService } from 'src/utils/uploader/azure';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Category, Subcategory]), AdminModule],
+  imports: [TypeOrmModule.forFeature([Category]), AdminModule],
   exports: [CategoryService],
   controllers: [CategoryController],
-  providers: [CategoryService],
+  providers: [CategoryService, AzureService],
 })
 export class CategoryModule {}

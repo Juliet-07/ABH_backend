@@ -16,6 +16,7 @@ import {
   UploadedFiles,
   Req,
   Put,
+  BadRequestException,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -28,46 +29,58 @@ import { Product } from './entities/product.entity';
 import { AdminAuthGuard } from '../auth/admin-auth/admin-auth.guard';
 import { ProductStatusEnums } from '../constants';
 import { ManageProductDto } from './dto/manage-product.dto';
+import { AzureService } from 'src/utils/uploader/azure';
 
-const pngFileFilter = (req, file, callback) => {
-  if (!['image/jpg', 'image/jpeg', 'image/png'].includes(file.mimetype)) {
-    req.fileValidationError =
-      'Invalid file type, pls upload either a Jpg, Jpeg or Png';
-    return callback(
-      new Error('Invalid file type, pls upload either a Jpg, Jpeg or Png'),
-      false,
-    );
-  }
 
-  return callback(null, true);
-};
 
 @ApiTags('Products')
 @Controller('products')
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(
+    private readonly productsService: ProductsService,
+    private readonly azureService: AzureService,
+  ) { }
 
+
+  @UseGuards(VendorGuard)
   @HttpCode(HttpStatus.CREATED)
   @Post()
   @UsePipes(new ValidationPipe())
-  @UseGuards(VendorGuard)
   @ApiBearerAuth('JWT-auth')
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: 'product_images', maxCount: 20 },
       { name: 'featured_image', maxCount: 1 },
-    ], {
-      fileFilter: pngFileFilter
-    })
+    ])
   )
-  create(
+  async create(
     @Body() createProductDto: CreateProductDto,
     @Request() req,
-    @UploadedFiles() files: { product_images?: Express.Multer.File[], featured_image?: Express.Multer.File[] },
-    // @UploadedFile() file: Express.Multer.File,
+    @UploadedFiles() files: { product_images?: Express.Multer.File[], featured_image?: Express.Multer.File[] }
   ) {
-    return this.productsService.create(createProductDto, req.vendor, files);
+    console.log('Files:', files);
+
+    const vendor = req.vendor;
+    console.log('Vendor:', vendor);
+
+    // Handle missing files
+    if (!files.product_images) {
+      throw new BadRequestException('No product images uploaded');
+    }
+
+    // Upload product images and get their URLs
+    const productImagesUrls = await this.azureService.uploadMultipleToBlobStorage(files.product_images || []);
+
+    // Upload featured image and get its URL
+    const featuredImageUrl = files.featured_image?.length
+      ? await this.azureService.uploadFileToBlobStorage(files.featured_image[0])
+      : null;
+
+
+    return this.productsService.create(createProductDto, vendor, productImagesUrls, featuredImageUrl);
   }
+
+
 
   // For Admins
   @UseGuards(AdminAuthGuard)
@@ -129,8 +142,10 @@ export class ProductsController {
     return this.productsService.update(id, updateProductDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.productsService.remove(+id);
+  @UseGuards(AdminAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @Delete(':productId')
+  remove(@Param('productId') productId: string) {
+    return this.productsService.remove(productId);
   }
 }

@@ -16,6 +16,7 @@ import {
   Put,
   UseInterceptors,
   UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
 import { VendorsService } from './vendors.service';
 import { CreateVendorDto } from './dto/create-vendor.dto';
@@ -31,21 +32,35 @@ import { VendorGuard } from '../auth/vendor-guard/vendor.guard';
 import { Vendor } from './entities/vendor.entity';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
+import { AzureService } from 'src/utils/uploader/azure';
+import { BlockStatusEnums } from 'src/constants';
 
 @ApiTags('Vendors')
 @Controller('vendors')
 export class VendorsController {
-  constructor(private readonly vendorsService: VendorsService) {}
+  constructor(
+    private readonly vendorsService: VendorsService,
+    private readonly azureService: AzureService,
+
+  ) { }
 
   // Create Vendor
   @Post()
   @UsePipes(new ValidationPipe())
   @UseInterceptors(FileInterceptor('file'))
-  create(
+  async create(
     @Body() createVendorDto: CreateVendorDto,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<Vendor> {
-    return this.vendorsService.create(createVendorDto, file);
+
+    const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(file);
+    if (!uploadedImageUrl) {
+      throw new BadRequestException('Failed to upload image to Category Image');
+    }
+    return this.vendorsService.create({
+      ...createVendorDto,
+      cacCertificateUrl: uploadedImageUrl
+    });
   }
 
   //  Vendor Login
@@ -119,4 +134,12 @@ export class VendorsController {
   remove(@Param('id') id: string) {
     return this.vendorsService.remove(+id);
   }
+
+  @Patch('/block-status/:vendorId')
+  async toggleBlockVendor(
+    @Param('vendorId') vendorId: string,
+  ): Promise<string> {
+    return this.vendorsService.blockAndUnblockVendor(vendorId);
+  }
 }
+

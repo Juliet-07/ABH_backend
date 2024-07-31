@@ -1,11 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  ArrayNotEmpty,
-  IsArray,
   IsBoolean,
   IsDefined,
   IsEnum,
-  IsInt,
   IsJSON,
   IsNumber,
   IsNumberString,
@@ -57,8 +54,6 @@ export class CreateProductDto {
     type: String,
     description: 'SubCategory ID',
   })
-  @IsString()
-  subcategoryId: string;
 
   @IsNumberString()
   @ApiProperty({

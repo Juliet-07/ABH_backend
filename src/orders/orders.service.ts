@@ -43,7 +43,7 @@ export class OrdersService {
     private helper: HelpersService,
     private cartService: CartService,
     private hydrogenPayService: HydrogenpayService,
-  ) {}
+  ) { }
 
   async create(createOrderDto: CreateOrderDto, userId: string) {
     try {
@@ -348,4 +348,22 @@ export class OrdersService {
       throw new BadRequestException(error.message);
     }
   }
+
+
+  async trackOder(orderId: string): Promise<Order> {
+    try {
+      const order = await this.orderRepository.findOne({
+        where: {
+          id: orderId
+        }
+      })
+
+      if (!order) throw new NotFoundException(`Order not found`)
+
+      return order;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
 }

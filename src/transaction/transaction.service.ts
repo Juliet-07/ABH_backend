@@ -6,14 +6,17 @@ import { Transaction } from './entities/transaction.entity';
 import { Repository } from 'typeorm';
 import { CACHE_MANAGER, CacheInterceptor } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { PaymentStatusEnum } from 'src/constants';
 
 @Injectable()
 export class TransactionService {
   cacheKey = 'all_transaction'
+  cacheKeyPrefix = 'transactions:status:'
 
   constructor(
     @InjectRepository(Transaction)
     private transactionRepository: Repository<Transaction>,
+
     // private cacheManager: Cache,
     @Inject(CACHE_MANAGER) private cacheManager: Cache
   ) { }
@@ -45,6 +48,30 @@ export class TransactionService {
 
     return data;
   }
+
+
+  @UseInterceptors(CacheInterceptor)
+  async findByStatus(status: PaymentStatusEnum): Promise<Transaction[]> {
+    // Generate cache key based on status
+    const cacheKey = `${this.cacheKeyPrefix}${status}`;
+
+    // Check if data is in cache
+    const cacheData: Transaction[] = await this.cacheManager.get(cacheKey);
+    if (cacheData) {
+      console.log('Data loaded from cache');
+      return cacheData;
+    }
+
+    // If not in cache, load data from the database
+    const data = await this.transactionRepository.find({ where: { status } });
+    console.log('Data loaded from database');
+
+    // Store data in cache
+    await this.cacheManager.set(cacheKey, data);
+
+    return data;
+  }
+
 
   findOne(id: number) {
     return `This action returns a #${id} transaction`;

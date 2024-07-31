@@ -10,6 +10,11 @@ import {
   ValidationPipe,
   UseGuards,
   Put,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -18,44 +23,50 @@ import { Category } from './entities/category.entity';
 import { AdminAuthGuard } from '../auth/admin-auth/admin-auth.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
-import { CreateSubcategoryDto } from './dto/create-subcategory.dto';
-import { Subcategory } from './entities/subcategory.entity';
-import { UpdateSubcategoryDto } from './dto/update-subcategory.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { AzureService } from 'src/utils/uploader/azure';
 
 @ApiTags('Category')
 @Controller('category')
 export class CategoryController {
-  constructor(private readonly categoryService: CategoryService) {}
+  constructor(
+    private readonly categoryService: CategoryService,
+    private readonly azureService: AzureService
+  ) { }
 
   @UseGuards(AdminAuthGuard)
   @Post()
   @UsePipes(new ValidationPipe())
   @ApiBearerAuth('JWT-auth')
-  create(@Body() createCategoryDto: CreateCategoryDto): Promise<Category> {
-    return this.categoryService.create(createCategoryDto);
+  @UseInterceptors(FileInterceptor('image'))
+  async create(
+    @Body() createCategoryDto: CreateCategoryDto,
+    @UploadedFile() image: Express.Multer.File,): Promise<Category> {
+    const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(image);
+    if (!uploadedImageUrl) {
+      throw new BadRequestException('Failed to upload image to Category Image');
+    }
+    return this.categoryService.create({
+      ...createCategoryDto,
+      image: uploadedImageUrl
+    });
   }
 
-  @UseGuards(AdminAuthGuard)
-  @Post('/subcategory')
-  @UsePipes(new ValidationPipe())
-  @ApiBearerAuth('JWT-auth')
-  createSubcategory(
-    @Body() createSubcategoryDto: CreateSubcategoryDto,
-  ): Promise<Subcategory> {
-    return this.categoryService.createSubcategory(createSubcategoryDto);
-  }
+
 
   @Get()
   findAll(@Paginate() query: PaginateQuery): Promise<Paginated<Category>> {
     return this.categoryService.findAll(query);
   }
 
-  @Get('/subcategory')
-  findAllSubcategory(
-    @Paginate() query: PaginateQuery,
-  ): Promise<Paginated<Subcategory>> {
-    return this.categoryService.findAllSubcategory(query);
+
+  @HttpCode(HttpStatus.OK)
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    return await this.categoryService.findOne(id);
   }
+
+
 
   @Put(':id')
   @UseGuards(AdminAuthGuard)
@@ -67,15 +78,6 @@ export class CategoryController {
     return this.categoryService.update(id, updateCategoryDto);
   }
 
-  @Put('/subcategory/:id')
-  @UseGuards(AdminAuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  updateSubcategory(
-    @Param('id') id: string,
-    @Body() updatesubcategoryDto: UpdateSubcategoryDto,
-  ) {
-    return this.categoryService.updateSubcategory(id, updatesubcategoryDto);
-  }
 
   @Patch(':id')
   @UseGuards(AdminAuthGuard)
@@ -84,27 +86,11 @@ export class CategoryController {
     return this.categoryService.update(id, updateCategoryDto);
   }
 
-  @Put('/subcategory/:id')
-  @UseGuards(AdminAuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  patchSubcategory(
-    @Param('id') id: string,
-    @Body() updatesubcategoryDto: UpdateSubcategoryDto,
-  ) {
-    return this.categoryService.updateSubcategory(id, updatesubcategoryDto);
-  }
 
   @Delete(':id')
   @UseGuards(AdminAuthGuard)
   @ApiBearerAuth('JWT-auth')
   remove(@Param('id') id: string) {
     return this.categoryService.remove(id);
-  }
-
-  @Delete('/subcategory/:id')
-  @UseGuards(AdminAuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  removeSubcategory(@Param('id') id: string) {
-    return this.categoryService.removeSubcategory(id);
   }
 }

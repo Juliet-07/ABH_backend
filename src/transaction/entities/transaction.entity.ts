@@ -3,8 +3,12 @@ import { BaseEntity } from '../../common/base.entity';
 import { Order } from '../../orders/entities/order.entity';
 import { PaymentGatewayEnums, PaymentStatusEnum } from '../../constants';
 
+
+
 @Entity()
 export class Transaction extends BaseEntity {
+
+
     @Column()
     reference: string;
 
@@ -26,10 +30,12 @@ export class Transaction extends BaseEntity {
     @Column({ nullable: true, default: 'ONLINE' })
     paymentMethod: string;
 
-    @Column({ nullable: true, enum: PaymentGatewayEnums, default: PaymentGatewayEnums.HYDROGENPAY})
+    @Column({ nullable: true, enum: PaymentGatewayEnums, default: PaymentGatewayEnums.HYDROGENPAY })
     paymentGateway: string;
 
     // Reference from Payment Provider
-    @Column({ nullable: true})
+    @Column({ nullable: true })
     paymentReference: string;
+
+
 }

@@ -13,7 +13,7 @@ import { ConfirmTransactionStatusDto } from './dto/confirm-transaction-status.dt
 
 @Controller('orders')
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(private readonly ordersService: OrdersService) { }
 
   @Post()
   @UseGuards(AuthGuard)
@@ -67,4 +67,15 @@ export class OrdersController {
   confirmTransactionStatus(@Param('transactionId') transactionId: string, @Req() req, @Body() confirmTransactionStatusDto: ConfirmTransactionStatusDto) {
     return this.ordersService.confirmTransactionStatus(transactionId, req.user.id, confirmTransactionStatusDto);
   }
+
+  @Get(':orderId')
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ValidationPipe())
+  @ApiBearerAuth('JWT-auth')
+  TrackOrder(@Param("orderId") orderId: string) {
+    return this.ordersService.trackOder(orderId)
+  }
+
+
 }
