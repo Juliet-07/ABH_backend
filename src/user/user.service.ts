@@ -53,7 +53,8 @@ export class UserService {
       await this.userRepository.save(user);
 
       // Invalidate cache after a new user is created
-          } catch (error) {
+    } catch (error) {
+      console.error("The ERROR", error)
       throw new BadRequestException(error.message);
     }
   }
@@ -222,7 +223,7 @@ export class UserService {
     }
   }
 
- 
+
   async findAll(): Promise<User[]> {
     try {
       const cacheData = await this.redisService.get({ key: this.cacheKey });

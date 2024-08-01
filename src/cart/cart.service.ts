@@ -62,6 +62,7 @@ export class CartService {
 
       return cart;
     } catch (error) {
+      console.error("THE ERROR", error)
       throw new BadRequestException(error.message);
     }
   }

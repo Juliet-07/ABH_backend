@@ -17,8 +17,8 @@ export class Category extends BaseEntity {
   @Column()
   description: string;
 
-  @Column()
-  image: string;
+  @Column({ type: 'varchar', default: '' })
+  image: string
 
  
   @OneToMany(() => Product, product => product.category, { cascade: true, onDelete: 'CASCADE' })

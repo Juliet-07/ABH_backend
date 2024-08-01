@@ -47,7 +47,7 @@ import { RedisModule } from './redis/redis.module';
         "dist/**/*.entity{.ts,.js}"
       ],
       "ssl": true,
-      "synchronize": true
+      "synchronize": false
     }),
     
     JwtModule.register({

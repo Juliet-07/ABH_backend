@@ -127,6 +127,7 @@ export class OrdersService {
 
       return orders;
     } catch (error) {
+      console.log("THE ERROR", error)
       throw new BadRequestException(error.message);
     }
   }
