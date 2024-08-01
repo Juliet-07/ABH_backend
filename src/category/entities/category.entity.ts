@@ -8,19 +8,19 @@ export class Category extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   name: string;
 
   @Column('text', { array: true })
   subcategories: string[]
 
-  @Column()
+  @Column({ type: 'varchar' })
   description: string;
 
   @Column({ type: 'varchar', default: '' })
   image: string
 
- 
+
   @OneToMany(() => Product, product => product.category, { cascade: true, onDelete: 'CASCADE' })
   products: Product[];
 

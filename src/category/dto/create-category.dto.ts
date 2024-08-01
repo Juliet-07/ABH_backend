@@ -10,7 +10,7 @@ export class CreateCategoryDto {
     name: string;
  
     @IsArray()
-    subcategories: string[]
+    subcategories: string[] 
 
     @IsString()
     @IsNotEmpty()
