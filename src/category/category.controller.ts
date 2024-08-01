@@ -36,7 +36,7 @@ export class CategoryController {
 
   @UseGuards(AdminAuthGuard)
   @Post()
-  @UsePipes(new ValidationPipe())
+  //@UsePipes(new ValidationPipe())
   @ApiBearerAuth('JWT-auth')
   @UseInterceptors(FileInterceptor('image'))
   async create(
@@ -46,10 +46,12 @@ export class CategoryController {
     if (!uploadedImageUrl) {
       throw new BadRequestException('Failed to upload image to Category Image');
     }
-    return this.categoryService.create({
+    const categoryData = {
       ...createCategoryDto,
-      image: uploadedImageUrl
-    });
+      image: uploadedImageUrl,
+    };
+
+    return await this.categoryService.create(categoryData);
   }
 
 

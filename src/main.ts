@@ -9,7 +9,7 @@ import * as morgan from 'morgan';
 
 async function bootstrap() {
   const server = express();
-  const port = process.env.API_PORT;
+  const port = process.env.API_PORT || 5500;
   if (!port) throw new Error('No API_PORT is defined in the environmental variables')
   const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
   app.useGlobalFilters(new ValidationExceptionFilter());
