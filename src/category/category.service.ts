@@ -19,7 +19,16 @@ export class CategoryService {
   ) { }
   async create(createCategoryDto: CreateCategoryDto & { image: any }) {
     try {
-      const category = this.categoryRepository.create(createCategoryDto);
+
+      const { name, subcategories, description, image } = createCategoryDto;
+
+      const category = this.categoryRepository.create({
+        name,
+        subcategories,
+        description,
+        image,
+      });
+      // const category = this.categoryRepository.create(createCategoryDto);
       const result = await this.categoryRepository.save(category);
 
       return result

@@ -9,7 +9,7 @@ export class Category extends BaseEntity {
   @Column({ type: 'varchar' })
   name: string;
 
-  @Column('json')
+  @Column('text', { array: true })
   subcategories: string[];
 
   @Column({ type: 'varchar' })
