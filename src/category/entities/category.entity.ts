@@ -1,18 +1,16 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany } from 'typeorm';
 import { BaseEntity } from '../../common/base.entity';
 import { Product } from '../../products/entities/product.entity';
 
 
 @Entity()
 export class Category extends BaseEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
 
   @Column({ type: 'varchar' })
   name: string;
 
-  @Column('text', { array: true })
-  subcategories: string[]
+  @Column('json')
+  subcategories: string[];
 
   @Column({ type: 'varchar' })
   description: string;

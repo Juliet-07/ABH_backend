@@ -6,17 +6,16 @@ import {
   Entity,
   OneToMany,
   PrimaryColumn,
-  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Order } from '../../orders/entities/order.entity';
-
+import { v4 as uuidv4 } from 'uuid';
 
 @Entity()
 export class User {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryColumn()
+  id: string;
 
   @Column()
   firstName: string;
@@ -34,7 +33,7 @@ export class User {
   code: string;
 
   @Column({ nullable: true })
-  referredBy: number;
+  referredBy: string;
 
   @Column({ default: false })
   verified: boolean;
@@ -71,10 +70,14 @@ export class User {
     this.password = await bcrypt.hash(this.password, 10);
   }
 
+  @BeforeInsert()
+  generateId() {
+    this.id = uuidv4();
+  }
+
   async comparePassword(password: string): Promise<boolean> {
     return await bcrypt.compare(password, this.password);
   }
-
 
   @OneToMany(() => Order, (order) => order.user)
   orders: Order[];
@@ -93,8 +96,4 @@ export class User {
 
   @DeleteDateColumn({ type: 'timestamp' })
   deletedAt: Date;
-
-
-
-  
 }

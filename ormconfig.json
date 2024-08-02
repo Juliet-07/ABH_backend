@@ -1,12 +1,14 @@
 {
     "type": "postgres",
-    "host": "localhost",
+    "host": "gbubemi.postgres.database.azure.com",
     "port": 5432,
-    "username": "postgres",
-    "password": "a6ymn9Z6wy7GwboRB9hr",
-    "database": "iv-assessment-db",
-    "entities": [
-        "dist/**/*.entity{.ts,.js}"
-    ],
-    "synchronize": true
-}
+    "username": "zoomtime",
+    "password": "webnet123@",
+    "database": "aid_Dev",
+    "entities": ["dist/**/*.entity{.ts,.js}"],
+    "migrations": ["dist/migrations/*{.ts,.js}"],
+    "cli": {
+      "migrationsDir": "src/migrations"
+    },
+    "synchronize": false
+  }

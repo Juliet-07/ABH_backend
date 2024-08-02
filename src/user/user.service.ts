@@ -1,11 +1,8 @@
 import {
   BadRequestException,
-  Inject,
   Injectable,
-  MisdirectedException,
   NotFoundException,
   UnauthorizedException,
-  UseInterceptors,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -54,21 +51,19 @@ export class UserService {
 
       // Invalidate cache after a new user is created
     } catch (error) {
-      console.error("The ERROR", error)
+      console.error('The ERROR', error);
       throw new BadRequestException(error.message);
     }
   }
 
-  async validateReferredBy(code: string): Promise<number> {
+  async validateReferredBy(code: string): Promise<string> {
     // Get Valid Referrer.
-
     const referrer = await this.userRepository.findOne({ where: { code } });
 
     if (!referrer) throw new Error('Invalid Referrer Code');
 
     return referrer.id;
   }
-
   async login(loginUserDto: LoginUserDto): Promise<LoginResponse> {
     try {
       const { email, password } = loginUserDto;

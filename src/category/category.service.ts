@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -10,6 +10,8 @@ import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 @Injectable()
 export class CategoryService {
   cacheKey = 'all_category';
+
+  private readonly logger = new Logger(CategoryService.name);
   constructor(
     @InjectRepository(Category)
     private categoryRepository: Repository<Category>,
@@ -18,10 +20,14 @@ export class CategoryService {
   async create(createCategoryDto: CreateCategoryDto & { image: any }) {
     try {
       const category = this.categoryRepository.create(createCategoryDto);
-      return await this.categoryRepository.save(category);
+      const result = await this.categoryRepository.save(category);
+
+      return result
     } catch (error) {
       console.log(error)
+      this.logger.error('Unable to create  category', error)
       throw new BadRequestException(error.message);
+
 
     }
   }

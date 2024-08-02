@@ -36,7 +36,7 @@ export class CategoryController {
 
   @UseGuards(AdminAuthGuard)
   @Post()
-  //@UsePipes(new ValidationPipe())
+  @UsePipes(new ValidationPipe())
   @ApiBearerAuth('JWT-auth')
   @UseInterceptors(FileInterceptor('image'))
   async create(

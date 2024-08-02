@@ -17,20 +17,25 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "typeorm": "typeorm-ts-node-commonjs",
+    "migration:generate": "npm run typeorm -- migration:generate -d dist/dataSource.js",
+    "migration:run": "npm run typeorm -- migration:run -d dist/dataSource.js",
+    "migration:revert": "npm run typeorm -- migration:revert -d dist/dataSource.js"
   },
   "dependencies": {
     "@azure/storage-blob": "^12.24.0",
     "@liaoliaots/nestjs-redis": "^9.0.5",
-    "@nestjs/cache-manager": "^1.0.0",
-    "@nestjs/common": "^9.0.0",
+    "@nestjs/common": "^10.3.10",
     "@nestjs/config": "^2.3.2",
     "@nestjs/core": "^9.4.2",
     "@nestjs/jwt": "^10.1.0",
     "@nestjs/mapped-types": "*",
     "@nestjs/platform-express": "^9.4.2",
+    "@nestjs/platform-socket.io": "^10.3.10",
     "@nestjs/swagger": "^7.0.3",
     "@nestjs/typeorm": "^9.0.1",
+    "@nestjs/websockets": "^10.3.10",
     "@redis/client": "^1.6.0",
     "aws-sdk": "^2.1635.0",
     "axios": "^1.7.2",
@@ -52,8 +57,10 @@
     "redis": "^4.7.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.2.0",
+    "socket.io": "^4.7.5",
     "swagger-ui-express": "^4.6.3",
-    "typeorm": "^0.3.16"
+    "typeorm": "^0.3.16",
+    "webpack": "^5.93.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^9.0.0",
