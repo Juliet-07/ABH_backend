@@ -51,7 +51,7 @@ import { Transaction } from './transaction/entities/transaction.entity';
       database: process.env.POSTGRES_DB as string,
       entities: [Category, Vendor, User, Admin, Product, Cart, Rating, Order, Notification, Transaction],
       ssl: true,
-      synchronize: false,  // Ensure this is false for production
+      synchronize: true,  // Ensure this is false for production
       migrations: [__dirname + '/../migrations/*{.ts,.js}'],
     }),
 

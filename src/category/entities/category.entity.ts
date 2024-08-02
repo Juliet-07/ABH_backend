@@ -19,7 +19,7 @@ export class Category extends BaseEntity {
   image: string
 
 
-  @OneToMany(() => Product, product => product.category, { cascade: true, onDelete: 'CASCADE' })
+  @OneToMany(() => Product, (product) => product.vendor)
   products: Product[];
 
 
