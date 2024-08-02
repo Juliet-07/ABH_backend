@@ -34,24 +34,40 @@ export class CategoryController {
     private readonly azureService: AzureService
   ) { }
 
-  @UseGuards(AdminAuthGuard)
+  //@UseGuards(AdminAuthGuard)
   @Post()
-  @UsePipes(new ValidationPipe())
   @ApiBearerAuth('JWT-auth')
-  @UseInterceptors(FileInterceptor('image'))
   async create(
     @Body() createCategoryDto: CreateCategoryDto,
-    @UploadedFile() image: Express.Multer.File,): Promise<Category> {
-    const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(image);
-    if (!uploadedImageUrl) {
-      throw new BadRequestException('Failed to upload image to Category Image');
-    }
-    const categoryData = {
-      ...createCategoryDto,
-      image: uploadedImageUrl,
-    };
+  ) {
+    return await this.categoryService.create(createCategoryDto);
+  }
 
-    return await this.categoryService.create(categoryData);
+  //@UseGuards(AdminAuthGuard)
+  @Patch('upload/:categoryId') 
+  @ApiBearerAuth('JWT-auth')
+  @UseInterceptors(FileInterceptor('image'))
+  async uploadImage(
+    @Param('categoryId') categoryId: string, // Extract categoryId from the URL
+    @UploadedFile() image: Express.Multer.File,
+  ): Promise<Category> {
+    try {
+      // Upload the image to Azure Blob Storage
+      const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(image);
+
+      if (!uploadedImageUrl) {
+        throw new BadRequestException('Failed to upload image to Azure Blob Storage');
+      }
+
+      // Call the service method to update the category
+      const updatedCategory = await this.categoryService.uploadImage(categoryId, uploadedImageUrl);
+
+      return updatedCategory;
+    } catch (error) {
+      // Log and throw the error
+      throw new BadRequestException(error.message);
+    }
+
   }
 
 

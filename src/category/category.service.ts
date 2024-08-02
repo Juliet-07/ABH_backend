@@ -17,16 +17,16 @@ export class CategoryService {
     private categoryRepository: Repository<Category>,
 
   ) { }
-  async create(createCategoryDto: CreateCategoryDto & { image: any }) {
+  async create(createCategoryDto: CreateCategoryDto) {
     try {
 
-      const { name, subcategories, description, image } = createCategoryDto;
+      const { name, subcategories, description } = createCategoryDto;
 
       const category = this.categoryRepository.create({
         name,
         subcategories,
         description,
-        image,
+
       });
       // const category = this.categoryRepository.create(createCategoryDto);
       const result = await this.categoryRepository.save(category);
@@ -40,6 +40,34 @@ export class CategoryService {
 
     }
   }
+
+
+  async uploadImage(categoryId: string, image: string) {
+    try {
+      // Check if the category exists
+      const category = await this.categoryRepository.findOne({
+        where: { id: categoryId },
+      });
+  
+      if (!category) {
+        throw new NotFoundException('Category not found');
+      }
+  
+      // Update the image field
+      await this.categoryRepository.update(categoryId, { image });
+  
+      // Fetch the updated category (optional)
+      const updatedCategory = await this.categoryRepository.findOne({
+        where: { id: categoryId },
+      });
+  
+      return updatedCategory;
+    } catch (error) {
+      this.logger.error('Unable to update category image', error);
+      throw new BadRequestException(error.message);
+    }
+  }
+  
 
 
 
