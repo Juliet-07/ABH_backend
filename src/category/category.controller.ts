@@ -34,7 +34,7 @@ export class CategoryController {
     private readonly azureService: AzureService
   ) { }
 
-  //@UseGuards(AdminAuthGuard)
+  @UseGuards(AdminAuthGuard)
   @Post()
   @ApiBearerAuth('JWT-auth')
   async create(
@@ -43,8 +43,8 @@ export class CategoryController {
     return await this.categoryService.create(createCategoryDto);
   }
 
-  //@UseGuards(AdminAuthGuard)
-  @Patch('upload/:categoryId') 
+  @UseGuards(AdminAuthGuard)
+  @Patch('upload/:categoryId')
   @ApiBearerAuth('JWT-auth')
   @UseInterceptors(FileInterceptor('image'))
   async uploadImage(
