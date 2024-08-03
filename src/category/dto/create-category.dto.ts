@@ -8,7 +8,7 @@ export class CreateCategoryDto {
         description: 'Category Name',
     })
     name: string;
- 
+
     @IsArray()
     @IsString({ each: true })
     subcategories: string[];
@@ -20,4 +20,6 @@ export class CreateCategoryDto {
         description: 'Category Description',
     })
     description: string;
+
+
 }

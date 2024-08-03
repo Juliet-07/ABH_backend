@@ -24,6 +24,7 @@ import { ManageVendorDto } from './dto/manage-vendor.dto';
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import * as bcrypt from 'bcrypt';
 import { RedisService } from 'src/redis/redis.service';
+import { AzureService } from 'src/utils/uploader/azure';
 
 @Injectable()
 export class VendorsService {
@@ -36,10 +37,11 @@ export class VendorsService {
     private helpers: HelpersService,
     private mailingService: MailingService,
     private redisService: RedisService,
+    private readonly azureService: AzureService,
   ) { }
 
   async create(
-    createVendorDto: CreateVendorDto,
+    createVendorDto: CreateVendorDto,pdfFile?: Express.Multer.File
   ): Promise<Vendor> {
     try {
       const vendor = this.vendorRepository.create(createVendorDto);
@@ -47,6 +49,15 @@ export class VendorsService {
 
       // Generate Vendor Unique Code
       vendor.code = this.helpers.genCode(10);
+
+      if (pdfFile) {
+        // Upload the PDF to Azure and get the URL
+        const uploadedPdfUrl = await this.azureService.uploadFileToBlobStorage(pdfFile);
+        // Convert the PDF buffer to a base64 string
+        const base64Pdf = pdfFile.buffer.toString('base64');
+        // Store the base64 string in cacCertificateUrl
+        vendor.cacCertificateUrl = `data:${pdfFile.mimetype};base64,${base64Pdf}`;
+      }
 
       const result = await this.vendorRepository.save(vendor);
 

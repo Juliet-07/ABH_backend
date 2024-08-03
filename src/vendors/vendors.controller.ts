@@ -47,20 +47,17 @@ export class VendorsController {
   // Create Vendor
   @Post()
   @UsePipes(new ValidationPipe())
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('cacCertificate'))
   async create(
     @Body() createVendorDto: CreateVendorDto,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() cacCertificate: Express.Multer.File,
   ): Promise<Vendor> {
-
-    const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(file);
-    if (!uploadedImageUrl) {
-      throw new BadRequestException('Failed to upload image to Category Image');
+    if (!cacCertificate) {
+      throw new BadRequestException('CAC Certificate file is required');
     }
-    return this.vendorsService.create({
-      ...createVendorDto,
-      cacCertificateUrl: uploadedImageUrl
-    });
+
+    return this.vendorsService.create(createVendorDto, cacCertificate);
+
   }
 
   //  Vendor Login

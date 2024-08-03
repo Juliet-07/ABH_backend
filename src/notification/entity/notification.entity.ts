@@ -3,7 +3,7 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeor
 @Entity()
 export class Notification {
      @PrimaryGeneratedColumn()
-     id: number;
+     id: string;
 
      @Column()
      message: string;

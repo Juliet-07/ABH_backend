@@ -2,7 +2,7 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Notification } from './entity/notification.entity';
-import { CreateNotificationDataType, GetNotificationDataType } from './dto/notification.dto';
+import { CreateNotificationDataType, GetNotificationDataType, GetOneNotificationDataType } from './dto/notification.dto';
 
 
 @Injectable()
@@ -37,6 +37,23 @@ export class NotificationService {
                })
 
                return notifications;
+          } catch (error) {
+               throw new InternalServerErrorException(error.message)
+          }
+     }
+
+
+     async getOneNotification(payload: GetOneNotificationDataType) {
+          try {
+               const { notificationId, receiverId } = payload;
+               const notification = await this.notificationRepository.findOne({
+                    where: {
+                         id: notificationId,
+                         receiverId: receiverId
+                    }
+               })
+
+               return notification
           } catch (error) {
                throw new InternalServerErrorException(error.message)
           }

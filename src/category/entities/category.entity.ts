@@ -15,11 +15,11 @@ export class Category extends BaseEntity {
   @Column({ type: 'varchar' })
   description: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', default: '' })
   image: string
 
 
-  @OneToMany(() => Product, (product) => product.vendor)
+  @OneToMany(() => Product, product => product.category, { cascade: true, onDelete: 'CASCADE' })
   products: Product[];
 
 

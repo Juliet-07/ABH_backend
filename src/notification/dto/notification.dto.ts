@@ -11,3 +11,12 @@ export type CreateNotificationDataType = {
 export type GetNotificationDataType = {
      receiverId: string
 }
+
+
+
+
+export type GetOneNotificationDataType = {
+
+     notificationId: string
+     receiverId: string
+}

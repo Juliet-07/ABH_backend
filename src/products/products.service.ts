@@ -13,6 +13,8 @@ import { Vendor } from '../vendors/entities/vendor.entity';
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { ManageProductDto } from './dto/manage-product.dto';
 import { CategoryService } from '../category/category.service';
+import { id } from '../../node_modules/webpack/lib/optimize/ConcatenatedModule';
+import { AzureService } from 'src/utils/uploader/azure';
 
 @Injectable()
 export class ProductsService {
@@ -21,7 +23,7 @@ export class ProductsService {
     private productRepository: Repository<Product>,
     private categoryService: CategoryService,
     private helpers: HelpersService,
-
+    private readonly azureService: AzureService,
   ) { }
 
 
@@ -29,7 +31,8 @@ export class ProductsService {
   async create(
     createProductDto: CreateProductDto,
     vendor: Partial<Vendor>,
-    productImagesUrls: string[], featuredImageUrl: string | null
+    productImages: Express.Multer.File[], // Accepting multiple image files
+    featuredImage?: Express.Multer.File, 
   ) {
     try {
       const { categoryId } = createProductDto
@@ -53,11 +56,29 @@ export class ProductsService {
       product.createdBy = vendor.id;
 
 
-      product.images = productImagesUrls.map((url, index) => ({
-        id: index + 1,
-        url: url,
-      }));
-      product.featured_image = featuredImageUrl;
+      // product.images = productImagesUrls.map((url, index) => ({
+      //   id: index + 1,
+      //   url: url,
+      // }));
+      // product.featured_image = featuredImageUrl;
+
+      if (productImages && productImages.length > 0) {
+        const imageUrls = await Promise.all(productImages.map(async (file, index) => {
+          const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(file);
+          const base64Image = file.buffer.toString('base64');
+          return {
+            id: index + 1, // Ensure this is a number if required by your model
+            url: `data:${file.mimetype};base64,${base64Image}`,  // Store base64 image
+          };
+        }));
+        product.images = imageUrls;
+      }
+
+      if (featuredImage) {
+        const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(featuredImage);
+        const base64Image = featuredImage.buffer.toString('base64');
+        product.featured_image = `data:${featuredImage.mimetype};base64,${base64Image}`;
+      }
 
       const result = await this.productRepository.save(product);
 
@@ -132,8 +153,18 @@ export class ProductsService {
     }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} product`;
+ async  findOneProduct(id: string) {
+    try {
+      const product = await this.productRepository.findOne({where: {
+        id: id
+      }})
+
+      if(!product) throw new NotFoundException(`Product not found`)
+
+        return product
+    } catch (error) {
+      throw error;
+    }
   }
 
   update(id: string, updateProductDto: UpdateProductDto) {

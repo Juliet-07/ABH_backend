@@ -15,7 +15,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { NotificationService } from './notification.service';
 import { NotificationSocketEnum } from './socket.enum';
-import { CreateNotificationDataType } from './dto/notification.dto';
+import { CreateNotificationDataType, GetNotificationDataType, GetOneNotificationDataType } from './dto/notification.dto';
 
 
 @WebSocketGateway({
@@ -63,6 +63,45 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
       );
     } catch (error) {
       this.logger.error(`NotificationGateway.handleCreateNotification error: ${error.message}`);
+    }
+  }
+
+  @SubscribeMessage(NotificationSocketEnum.LIST_ONE_NOTIFICATION)
+  async handleGetNotificationsForReceiver(
+    @MessageBody() payload: GetNotificationDataType,
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      const getNotification = await this.notificationService.getNotificationsForReceiver(payload);
+
+      client.emit(
+        NotificationSocketEnum.ONE_NOTIFICATION_LISTED,
+        JSON.stringify({
+          notification: getNotification,
+        }),
+      );
+    } catch (error) {
+      this.logger.error(`NotificationGateway.handleGetNotificationsForReceiver error: ${error.message}`);
+    }
+  }
+
+
+  @SubscribeMessage(NotificationSocketEnum.LIST_NOTIFICATION)
+  async handleGetOneNotification(
+    @MessageBody() payload: GetOneNotificationDataType,
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      const listOneNotification = await this.notificationService.getOneNotification(payload);
+
+      client.emit(
+        NotificationSocketEnum.NOTIFICATION_LISTED,
+        JSON.stringify({
+          notification: listOneNotification,
+        }),
+      );
+    } catch (error) {
+      this.logger.error(`NotificationGateway.handleGetNotificationsForReceiver error: ${error.message}`);
     }
   }
 }

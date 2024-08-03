@@ -42,6 +42,7 @@ export class ProductsController {
   ) { }
 
 
+
   @UseGuards(VendorGuard)
   @HttpCode(HttpStatus.CREATED)
   @Post()
@@ -61,23 +62,17 @@ export class ProductsController {
     console.log('Files:', files);
 
     const vendor = req.vendor;
-    console.log('Vendor:', vendor);
-
-    // Handle missing files
     if (!files.product_images) {
       throw new BadRequestException('No product images uploaded');
     }
 
-    // Upload product images and get their URLs
-    const productImagesUrls = await this.azureService.uploadMultipleToBlobStorage(files.product_images || []);
+    return this.productsService.create(
+      createProductDto,
+      vendor,
+      files.product_images || [],
+      files.featured_image?.[0] || null,
 
-    // Upload featured image and get its URL
-    const featuredImageUrl = files.featured_image?.length
-      ? await this.azureService.uploadFileToBlobStorage(files.featured_image[0])
-      : null;
-
-
-    return this.productsService.create(createProductDto, vendor, productImagesUrls, featuredImageUrl);
+    );
   }
 
 
@@ -132,11 +127,15 @@ export class ProductsController {
     return this.productsService.manageProductStatus(manageProductDto, id);
   }
 
+  @UseGuards(AdminAuthGuard)
+  @HttpCode(HttpStatus.OK)
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.productsService.findOne(+id);
+  async findOne(@Param('id') id: string) {
+    return await this.productsService.findOneProduct(id);
   }
 
+  @UseGuards(AdminAuthGuard)
+  @HttpCode(HttpStatus.OK)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
     return this.productsService.update(id, updateProductDto);

@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Category } from './entities/category.entity';
 import { Repository } from 'typeorm';
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
+import { AzureService } from 'src/utils/uploader/azure';
 
 
 @Injectable()
@@ -15,59 +16,35 @@ export class CategoryService {
   constructor(
     @InjectRepository(Category)
     private categoryRepository: Repository<Category>,
+    private readonly azureService: AzureService,
 
   ) { }
-  async create(createCategoryDto: CreateCategoryDto) {
+  async create(createCategoryDto: CreateCategoryDto, imageFile: Express.Multer.File): Promise<Category> {
     try {
-
       const { name, subcategories, description } = createCategoryDto;
+
+      // Upload the image to Azure and get the URL
+      const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(imageFile);
+      // Convert the image buffer to a base64 string
+      const base64Image = imageFile.buffer.toString('base64');
 
       const category = this.categoryRepository.create({
         name,
         subcategories,
         description,
-
+        // Combine the URL and base64 string in the image field
+        image: `data:${imageFile.mimetype};base64,${base64Image}`,
       });
-      // const category = this.categoryRepository.create(createCategoryDto);
+
       const result = await this.categoryRepository.save(category);
 
-      return result
+      return result;
     } catch (error) {
-      console.log(error)
-      this.logger.error('Unable to create  category', error)
-      throw new BadRequestException(error.message);
-
-
-    }
-  }
-
-
-  async uploadImage(categoryId: string, image: string) {
-    try {
-      // Check if the category exists
-      const category = await this.categoryRepository.findOne({
-        where: { id: categoryId },
-      });
-  
-      if (!category) {
-        throw new NotFoundException('Category not found');
-      }
-  
-      // Update the image field
-      await this.categoryRepository.update(categoryId, { image });
-  
-      // Fetch the updated category (optional)
-      const updatedCategory = await this.categoryRepository.findOne({
-        where: { id: categoryId },
-      });
-  
-      return updatedCategory;
-    } catch (error) {
-      this.logger.error('Unable to update category image', error);
+      this.logger.error('Unable to create category', error);
       throw new BadRequestException(error.message);
     }
+
   }
-  
 
 
 
