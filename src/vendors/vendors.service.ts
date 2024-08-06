@@ -10,8 +10,6 @@ import {
 
 import { CreateVendorDto } from './dto/create-vendor.dto';
 import { UpdateVendorDto } from './dto/update-vendor.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Vendor } from './entities/vendor.entity';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { HelpersService } from '../utils/helpers/helpers.service';
@@ -21,18 +19,20 @@ import { LoginResponse } from '../user/user.interface';
 import { VerifyVendorDto } from './dto/verify-vendor.dto';
 import { BlockStatusEnums, VendorStatusEnums } from '../constants';
 import { ManageVendorDto } from './dto/manage-vendor.dto';
-import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import * as bcrypt from 'bcrypt';
 import { RedisService } from 'src/redis/redis.service';
 import { AzureService } from 'src/utils/uploader/azure';
+import { Model } from 'mongoose';
+import { InjectModel } from '@nestjs/mongoose';
+import { Vendor } from './schema/vendor.schema';
+
 
 @Injectable()
 export class VendorsService {
   cacheKey = 'all_vendor';
 
   constructor(
-    @InjectRepository(Vendor)
-    private vendorRepository: Repository<Vendor>,
+    @InjectModel(Vendor.name) private vendorModel: Model<Vendor>,
     private jwtService: JwtService,
     private helpers: HelpersService,
     private mailingService: MailingService,
@@ -41,25 +41,32 @@ export class VendorsService {
   ) { }
 
   async create(
-    createVendorDto: CreateVendorDto,pdfFile?: Express.Multer.File
+    createVendorDto: CreateVendorDto, pdfFile?: Express.Multer.File
   ): Promise<Vendor> {
     try {
-      const vendor = this.vendorRepository.create(createVendorDto);
-
 
       // Generate Vendor Unique Code
-      vendor.code = this.helpers.genCode(10);
+      const code = this.helpers.genCode(10);
+
+      let cacCertificateUrl: string | undefined;
 
       if (pdfFile) {
         // Upload the PDF to Azure and get the URL
         const uploadedPdfUrl = await this.azureService.uploadFileToBlobStorage(pdfFile);
+
         // Convert the PDF buffer to a base64 string
         const base64Pdf = pdfFile.buffer.toString('base64');
+
         // Store the base64 string in cacCertificateUrl
-        vendor.cacCertificateUrl = `data:${pdfFile.mimetype};base64,${base64Pdf}`;
+        cacCertificateUrl = `data:${pdfFile.mimetype};base64,${base64Pdf}`;
       }
 
-      const result = await this.vendorRepository.save(vendor);
+      // Create the vendor with or without the PDF URL
+      const result = await this.vendorModel.create({
+        ...createVendorDto,
+        code,
+        cacCertificateUrl
+      });
 
       // Invalidate cache after a new vendor is created
       // await this.cacheManager.del(this.cacheKey);
@@ -76,7 +83,7 @@ export class VendorsService {
   async validateReferredBy(code: string): Promise<string> {
     // Get Valid Referrer.
 
-    const referrer = await this.vendorRepository.findOne({ where: { code } });
+    const referrer = await this.vendorModel.findOne({ code });
 
     if (!referrer) throw new Error('Invalid Referrer Code');
 
@@ -86,33 +93,42 @@ export class VendorsService {
   async login(loginVendorDto: LoginVendorDto): Promise<LoginResponse> {
     try {
       const { email, password } = loginVendorDto;
-      const vendor = await this.vendorRepository.findOne({
-        where: {
-          email,
-        },
-        select: ['id', 'password', 'lastLoginAt', 'status']
-      });
-      console.log(vendor)
+  
+      if (!email || !password) {
+        throw new BadRequestException('Email and password are required');
+      }
+  
+      const vendor = await this.vendorModel.findOne({ email }).select('password status');
+  
       if (!vendor) throw new NotFoundException('Vendor Not Found');
-      const isPasswordCorrect = await vendor.comparePassword(password);
-      if (!isPasswordCorrect)
-        throw new UnauthorizedException('Incorrect Password');
-
+      if (!vendor.password) throw new BadRequestException('Vendor password is not set or is missing.');
+  
+      console.log('Password:', password);
+      console.log('Vendor Password:', vendor.password);
+  
+      const isPasswordCorrect = await bcrypt.compare(password, vendor.password);
+  
+      if (!isPasswordCorrect) throw new UnauthorizedException('Incorrect Password');
+  
       if (vendor.status !== VendorStatusEnums.ACTIVE)
         throw new ForbiddenException(`ACCOUNT ${vendor.status}`);
-
+  
       const lastLoginAt = new Date().toISOString();
-      await this.vendorRepository.update(vendor.id, {
-        lastLoginAt,
-      });
-      const payload = { id: vendor.id, email, lastLoginAt };
+      await this.vendorModel.findOneAndUpdate(
+        { _id: vendor.id },
+        { $set: { lastLoginAt } }
+      );
+  
+      const payload = { _id: vendor._id, email, lastLoginAt };
       return {
         accessToken: await this.jwtService.signAsync(payload),
       };
     } catch (error) {
+      console.error(error);
       throw new BadRequestException(error.message);
     }
   }
+  
 
   async requstVerification(email: string): Promise<void> {
     try {
@@ -120,7 +136,7 @@ export class VendorsService {
         throw new BadRequestException("Email can't be empty");
       }
 
-      const vendor = await this.vendorRepository.findOne({ where: { email } });
+      const vendor = await this.vendorModel.findOne({ email });
       if (!vendor) throw new NotFoundException('Vendor not found');
       if (vendor.verified)
         throw new BadRequestException('Vendor already verified');
@@ -128,9 +144,11 @@ export class VendorsService {
       const { token: verificationCode, expiresIn: verificationCodeExpiresIn } =
         this.helpers.generateVerificationCode();
 
-      await this.vendorRepository.update(vendor.id, {
-        verificationCode,
-        verificationCodeExpiresIn,
+      await this.vendorModel.findOneAndUpdate({ _id: vendor.id }, {
+        $set: {
+          verificationCode,
+          verificationCodeExpiresIn,
+        }
       });
 
       // Send Email For Token
@@ -152,10 +170,10 @@ export class VendorsService {
     try {
       const { code, email } = verifyVendorDto;
 
-      const vendor = await this.vendorRepository.findOne({
-        where: {
-          email,
-        },
+      const vendor = await this.vendorModel.findOne({
+
+        email,
+
       });
 
       if (!vendor)
@@ -183,7 +201,7 @@ export class VendorsService {
         verificationCodeExpiresIn: null,
       };
 
-      await this.vendorRepository.update(vendor.id, updateData);
+      await this.vendorModel.findOneAndUpdate({ _id: vendor.id }, updateData);
     } catch (error) {
       throw error;
     }
@@ -196,16 +214,18 @@ export class VendorsService {
     try {
       const { status } = manageVendorDto;
 
-      const vendor = await this.vendorRepository.findOne({
-        where: {
-          id,
-        },
+      const vendor = await this.vendorModel.findOne({
+
+        _id: id,
+
       });
 
       if (!vendor) throw new NotFoundException(`Vendor not found`);
 
       const rawPassword = this.helpers.generateDefaultPassword(20)
-      const password = await bcrypt.hash(rawPassword, 10);
+
+      const saltRounds = await bcrypt.genSalt(9);
+      const password = await bcrypt.hash(rawPassword, saltRounds);
 
       // Update DB and set verification status
       const updateData = {
@@ -213,11 +233,11 @@ export class VendorsService {
         ...(status === VendorStatusEnums.ACTIVE && { password })
       };
 
-      await this.vendorRepository.update(vendor.id, updateData);
+      await this.vendorModel.findOneAndUpdate({ _id: vendor.id }, updateData);
 
       //  Send Email to user
 
-      const text = `Hello ${vendor.firstName}, your account has been verified and active now. Login with your registered email and password ${rawPassword} \n \n \n Kindly ensure you change your paassword on login`
+      const text = `Hello ${vendor.firstName}, your account has been verified and active now. Login with your registered email and password ${rawPassword}    .\n \n \n Kindly ensure you change your password on login`
 
       await this.mailingService.send({
         subject: 'Vendor Account Approved',
@@ -240,15 +260,17 @@ export class VendorsService {
         throw new BadRequestException("Email can't be empty");
       }
 
-      const vendor = await this.vendorRepository.findOne({ where: { email } });
+      const vendor = await this.vendorModel.findOne({ where: { email } });
       if (!vendor) throw new NotFoundException('Vendor not found');
 
       const { token: verificationCode, expiresIn: verificationCodeExpiresIn } =
         this.helpers.generateVerificationCode();
 
-      await this.vendorRepository.update(vendor.id, {
-        verificationCode,
-        verificationCodeExpiresIn,
+      await this.vendorModel.findOneAndUpdate({ _id: vendor.id }, {
+        $set: {
+          verificationCode,
+          verificationCodeExpiresIn,
+        }
       });
 
       // Send Email For Token
@@ -266,49 +288,60 @@ export class VendorsService {
     }
   }
 
-  
-  async findAll(query: PaginateQuery): Promise<Paginated<Vendor>> {
-    try {
-      return paginate(query, this.vendorRepository, {
-        sortableColumns: ['createdAt'],
-        nullSort: 'last',
-        defaultSortBy: [['createdAt', 'DESC']],
-        // searchableColumns: ['name', 'color', 'age'],
-        // select: ['id', 'name', 'color', 'age', 'lastVetVisit'],
-        filterableColumns: {
-          // name: [FilterOperator.EQ, FilterSuffix.NOT],
-          // age: true,
-          status: true
-        },
-      })
 
-      // return data;
+  async findAll(page = 1, limit = 10): Promise<{ items: Vendor[], total: number }> {
+    try {
+      // Ensure page and limit are numbers
+      const currentPage = Number(page);
+      const pageSize = Number(limit);
+
+      // Validate page and limit
+      if (currentPage < 1 || pageSize < 1) {
+        throw new BadRequestException('Page number and limit must be greater than zero');
+      }
+
+      // Fetch paginated items
+      const [items, total] = await Promise.all([
+        this.vendorModel.find()
+          .skip((currentPage - 1) * pageSize)
+          .limit(pageSize)
+          .exec(),
+        this.vendorModel.countDocuments().exec(),
+      ]);
+
+      return {
+        items,
+        total,
+      };
     } catch (error) {
       throw new BadRequestException(error.message);
     }
   }
 
   async findVendorWithToken(id: string | any): Promise<Vendor> {
-    const data = await this.vendorRepository.findOne({ where: { id } });
+    const data = await this.vendorModel.findOne({ id });
 
     return data;
   }
 
   async blockAndUnblockVendor(vendorId: string): Promise<string> {
     try {
-      const vendor = await this.vendorRepository.findOne({
-        where: {
-          id: vendorId
-        }
-      });
+      // Find the vendor by ID
+      const vendor = await this.vendorModel.findById(vendorId);
 
-      if (!vendor) throw new NotFoundException(`Vendor not found`);
+      if (!vendor) {
+        throw new NotFoundException('Vendor not found');
+      }
 
       // Toggle the vendor's status
-      vendor.status = vendor.status === BlockStatusEnums.BLOCKED ? BlockStatusEnums.ACTIVE : BlockStatusEnums.BLOCKED;
-      await this.vendorRepository.save(vendor);
+      const newStatus = vendor.status === BlockStatusEnums.BLOCKED
+        ? BlockStatusEnums.ACTIVE
+        : BlockStatusEnums.BLOCKED;
 
-      return `Vendor ${vendor.status === BlockStatusEnums.BLOCKED ? 'blocked' : 'unblocked'} successfully`;
+      // Update the vendor's status
+      await this.vendorModel.findByIdAndUpdate(vendorId, { status: newStatus });
+
+      return `Vendor ${newStatus === BlockStatusEnums.BLOCKED ? 'blocked' : 'unblocked'} successfully`;
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -319,7 +352,7 @@ export class VendorsService {
   }
 
   async update(id: number, updateVendorDto: UpdateVendorDto) {
-    await this.vendorRepository.update(id, updateVendorDto);
+    await this.vendorModel.findOneAndUpdate({ _id: id }, updateVendorDto);
   }
 
   remove(id: number) {

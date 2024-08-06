@@ -5,84 +5,85 @@ import {
 } from '@nestjs/common';
 import { CreateCartDto } from './dto/create-cart.dto';
 import { UpdateCartDto } from './dto/update-cart.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Cart } from './entities/cart.entity';
-import { Repository } from 'typeorm';
 import { AddToCartDto } from './dto/add-to-cart.dto';
-import { Product } from '../products/entities/product.entity';
 import { SynchronizeCartDto } from './dto/synchronize-cart.dto';
 import { ProductStatusEnums } from '../constants';
 import { HelpersService } from '../utils/helpers/helpers.service';
 import { DeliveryEstimateDto } from './dto/delivery-estimate.dto';
+import { Model } from 'mongoose';
+import { InjectModel } from '@nestjs/mongoose';
+import { Cart } from './schema/cart.schema';
+import { Product } from 'src/products/schema/product.schema';
 
 @Injectable()
 export class CartService {
   constructor(
-    @InjectRepository(Cart)
-    private cartRepository: Repository<Cart>,
-
-    @InjectRepository(Product)
-    private productRepository: Repository<Product>,
+    @InjectModel(Cart.name) private cartModel: Model<Cart>,
+    @InjectModel(Product.name) private productModel: Model<Product>,
 
     private helperService: HelpersService
-  ) {}
+  ) { }
   async addToCart(addToCartDto: AddToCartDto, userId: string) {
     try {
-      let cart: Cart;
-      // Get the cart if created
-      cart = await this.cartRepository.findOne({ where: { userId } });
+      // Retrieve the cart for the user or create a new one if it doesn't exist
+      let cart = await this.cartModel.findOne({ userId });
 
-      // Validate if product quantity is still available
-      const { productId } = addToCartDto;
-      const product = await this.productRepository.findOne({
-        where: { id: productId },
-      });
+      // Validate if product exists and is approved
+      const { productId, quantity } = addToCartDto;
+      const product = await this.productModel.findById(productId);
       if (!product) {
         throw new NotFoundException('Product Not Found');
       }
       if (product.status !== ProductStatusEnums.APPROVED) {
-        throw new NotFoundException('Product Not Found');
+        throw new BadRequestException('Product is not approved');
       }
-      if (product.quantity - product.soldQuantity < addToCartDto.quantity) {
+      if (product.quantity - product.soldQuantity < quantity) {
         throw new BadRequestException('Product quantity is not available');
       }
 
-      if (cart) {
-        const productExists = cart.products.find(
-          (product) => product.productId === productId,
-        );
-        if (productExists) throw new Error('Product Exists in cart');
-      } else {
-        cart = await this.cartRepository.create({ userId, products: [] });
+      if (!cart) {
+        // Create a new cart if it does not exist
+        cart = await this.cartModel.create({ userId, products: [] });
       }
 
-      cart.products.push(addToCartDto);
+      // Check if the product is already in the cart
+      const existingProductIndex = cart.products.findIndex(
+        (item) => item.productId === productId,
+      );
 
-      cart = await this.cartRepository.save(cart);
+      if (existingProductIndex > -1) {
+        // Update the quantity of the existing product in the cart
+        cart.products[existingProductIndex].quantity += quantity;
+      } else {
+        // Add new product to the cart
+        cart.products.push({ ...addToCartDto });
+      }
+
+      // Save the updated cart
+      await cart.save();
 
       return cart;
     } catch (error) {
-      console.error("THE ERROR", error)
+      console.error('Error while adding to cart:', error);
       throw new BadRequestException(error.message);
     }
   }
-
   async synchronizeCart(syncCartDto: SynchronizeCartDto, userId: string) {
     try {
       let cart: Cart;
       // Get the cart if created
-      cart = await this.cartRepository.findOne({ where: { userId } });
+      cart = await this.cartModel.findOne({ userId });
 
       if (!cart) {
-        cart = await this.cartRepository.create({ userId, products: [] });
+        cart = await this.cartModel.create({ userId, products: [] });
       }
 
       // Validate if product quantity is still available
       let itemsToAdd = await Promise.all(
         syncCartDto.items.map(async (item) => {
           const { productId, quantity } = item;
-          const product = await this.productRepository.findOne({
-            where: { id: productId },
+          const product = await this.productModel.findOne({
+            _id: productId
           });
           if (!product) {
             throw new NotFoundException('Product Not Found');
@@ -102,7 +103,7 @@ export class CartService {
       // Filter null values (Basically products that exists in cart)
       itemsToAdd = itemsToAdd.filter((item) => item !== null);
       cart.products = [...cart.products, ...itemsToAdd];
-      cart = await this.cartRepository.save(cart);
+      cart = await this.cartModel.create(cart);
       return cart;
     } catch (error) {
       throw new BadRequestException(error.message);
@@ -116,12 +117,12 @@ export class CartService {
   ) {
     try {
       // Get the cart if created
-      const cart = await this.cartRepository.findOne({ where: { userId } });
+      const cart = await this.cartModel.findOne({ userId });
 
       if (!cart) throw new Error('Cart does not exist, pls add to cart');
 
       // Validate if product quantity is still available
-      const product = await this.productRepository.findOne({
+      const product = await this.productModel.findOne({
         where: { id: productId },
       });
       if (!product) {
@@ -138,7 +139,7 @@ export class CartService {
         return product;
       });
 
-      const result = await this.cartRepository.save(cart);
+      const result = await this.cartModel.create(cart);
 
       return result;
     } catch (error) {
@@ -148,15 +149,15 @@ export class CartService {
 
   async validateCart(userId: string) {
     try {
-      const cart = await this.cartRepository.findOne({ where: { userId } });
+      const cart = await this.cartModel.findOne({ userId });
 
       if (!cart.products?.length)
         throw new BadRequestException('No Products in Cart');
 
       const validitems = await Promise.all(
         cart.products.map(async (product$) => {
-          const product = await this.productRepository.findOne({
-            where: { id: product$.productId },
+          const product = await this.productModel.findOne({
+            _id: product$.productId
           });
           if (!product) {
             throw new NotFoundException('Product Not Found');
@@ -187,7 +188,7 @@ export class CartService {
 
   async removeProductFromCart(userId: string, productId: string) {
     try {
-      const cart = await this.cartRepository.findOne({ where: { userId } });
+      const cart = await this.cartModel.findOne({ userId });
 
       if (!cart) throw new NotFoundException('No cart found');
 
@@ -201,9 +202,9 @@ export class CartService {
       if (!productToDelete)
         throw new NotFoundException('Product not found in cart');
 
-      const result = await this.cartRepository.update(cart.id, {
+      const result = await this.cartModel.findOneAndUpdate({_id:cart.id}, {$set:{
         products: cart.products.filter((item) => item.productId !== productId),
-      });
+    }});
 
       return result;
     } catch (error) {
@@ -216,7 +217,7 @@ export class CartService {
     deliveryEstimateDto: DeliveryEstimateDto,
   ) {
     try {
-      const cart = await this.cartRepository.findOne({ where: { userId: id } });
+      const cart = await this.cartModel.findOne({ userId: id } );
 
       if (!cart) throw new Error('Invalid Cart');
       if (!cart.products.length) throw new Error('No products in cart');
@@ -243,13 +244,13 @@ export class CartService {
   }
 
   async findOne(id: string) {
-    const result = await this.cartRepository.findOne({ where: { userId: id } });
+    const result = await this.cartModel.findOne({ where: { userId: id } });
     if (result && result.products?.length) {
       const products = await Promise.all(
         result?.products.map(async (item) => {
-          const product = await this.productRepository.findOne({
-            where: { id: item.productId },
-          });
+          const product = await this.productModel.findOne(
+            { _id: item.productId },
+          );
           if (!product) return null;
           return {
             product,

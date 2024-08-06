@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, HttpCode, HttpStatus, UsePipes, ValidationPipe, Req, UseInterceptors, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Request, UseGuards, HttpCode, HttpStatus, UsePipes, ValidationPipe, Req, UseInterceptors, Put, Query, BadRequestException } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
@@ -6,7 +6,6 @@ import { AuthGuard } from '../auth/auth.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { VendorGuard } from '../auth/vendor-guard/vendor.guard';
 import { Paginate, PaginateQuery } from 'nestjs-paginate';
-import { TransactionInterceptor } from '../common/transaction.interceptor';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { AdminAuthGuard } from '../auth/admin-auth/admin-auth.guard';
 import { ConfirmTransactionStatusDto } from './dto/confirm-transaction-status.dto';
@@ -19,7 +18,6 @@ export class OrdersController {
   @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.CREATED)
   @UsePipes(new ValidationPipe())
-  @UseInterceptors(TransactionInterceptor)
   @ApiBearerAuth('JWT-auth')
   create(@Body() createOrderDto: CreateOrderDto, @Req() req) {
     return this.ordersService.create(createOrderDto, req.user.id);
@@ -30,24 +28,71 @@ export class OrdersController {
   @HttpCode(HttpStatus.OK)
   @UsePipes(new ValidationPipe())
   @ApiBearerAuth('JWT-auth')
-  findAll(@Paginate() query: PaginateQuery) {
-    return this.ordersService.findAll(query);
+  findAll(
+    @Query('page') page = 1,
+    @Query('limit') limit = 10) {
+
+    const pageNumber = Number(page);
+    const limitNumber = Number(limit);
+
+    return this.ordersService.findAll(pageNumber, limitNumber);
   }
 
+
   @Get('vendor/me')
-  @UseGuards(VendorGuard)
+  @UseGuards(VendorGuard) // Ensure the guard is correctly implemented
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth('JWT-auth')
-  fetchVendorOrders(@Req() req, @Paginate() query: PaginateQuery) {
-    return this.ordersService.fetchMyOrders(req.vendor.id, query, 'vendor');
+  async fetchVendorOrders(
+    @Request() req: any,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10
+  ) {
+    try {
+      // Ensure limit and page are numbers
+      const pageNumber = Number(page);
+      const limitNumber = Number(limit);
+
+
+
+      // Ensure page and limit are positive integers
+      if (pageNumber < 1 || limitNumber < 1) {
+        throw new BadRequestException('Page number and limit must be greater than zero');
+      }
+
+      // Call the service method
+      return await this.ordersService.fetchMyOrders(req.vendor.id, limitNumber, pageNumber, 'vendorId');
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
   }
+
 
   @Get('user/me')
   @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth('JWT-auth')
-  fetchUserOrders(@Req() req, @Paginate() query: PaginateQuery) {
-    return this.ordersService.fetchMyOrders(req.user.id, query, 'user');
+  async fetchUserOrders(
+    @Request() req: any,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10
+  ) {
+    try {
+      // Ensure limit and page are numbers
+      const pageNumber = Number(page);
+      const limitNumber = Number(limit);
+
+      // Ensure page and limit are positive integers
+      if (pageNumber < 1 || limitNumber < 1) {
+        throw new BadRequestException('Page number and limit must be greater than zero');
+      }
+
+      // Call the service method
+      return await this.ordersService.fetchMyOrders(req.user?.id, limitNumber, pageNumber, 'user');
+    } catch (error) {
+      console.error('Error fetching user orders:', error);
+      throw new BadRequestException('Failed to fetch user orders.');
+    }
   }
 
   @Put('status/:id')

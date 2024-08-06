@@ -18,7 +18,7 @@ export class AdminController {
   // @UseGuards(AdminAuthGuard)
   @Post()
   @UsePipes(new ValidationPipe())
-  create(@Body() createAdminDto: CreateAdminDto): Promise<void> {
+  create(@Body() createAdminDto: CreateAdminDto) {
     return this.adminService.create(createAdminDto);
   }
 

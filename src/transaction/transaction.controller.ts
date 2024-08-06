@@ -1,8 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UsePipes, ValidationPipe, Query, BadRequestException, UseGuards } from '@nestjs/common';
+import { Controller, Get, UsePipes, ValidationPipe, Query, BadRequestException, UseGuards } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
-import { CreateTransactionDto } from './dto/create-transaction.dto';
-import { UpdateTransactionDto } from './dto/update-transaction.dto';
-import { Transaction } from './entities/transaction.entity';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PaymentStatusEnum } from 'src/constants';
 import { AdminAuthGuard } from 'src/auth/admin-auth/admin-auth.guard';
@@ -22,7 +19,7 @@ export class TransactionController {
   @UsePipes(new ValidationPipe())
   @ApiBearerAuth('JWT-auth')
   @Get()
-  findAll(): Promise<Transaction[]> {
+  findAll() {
     return this.transactionService.findAll();
   }
 
@@ -33,7 +30,7 @@ export class TransactionController {
   @Get('status')
   async getByStatus(
     @Query('status') status: PaymentStatusEnum,
-  ): Promise<Transaction[]> {
+  ){
     // Validate status (Optional: ensure the status is a valid enum value)
     if (!Object.values(PaymentStatusEnum).includes(status as PaymentStatusEnum)) {
       throw new BadRequestException('Invalid status value');

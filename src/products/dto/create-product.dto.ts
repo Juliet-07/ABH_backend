@@ -1,9 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  IsArray,
   IsBoolean,
   IsDefined,
   IsEnum,
   IsJSON,
+  IsNotEmpty,
   IsNumber,
   IsNumberString,
   IsOptional,
@@ -11,6 +13,7 @@ import {
   IsUrl,
 } from 'class-validator';
 import { Currencies } from '../../utils/constants';
+
 
 const currency_enums = Object.keys(Currencies);
 
@@ -22,6 +25,15 @@ export class CreateProductDto {
   })
   name: string;
 
+  //@IsString()
+  @IsArray()
+  @IsNotEmpty()
+  color: string[];
+
+  @IsOptional()
+  @IsArray()
+  discount?: number[]
+
   @IsNumberString()
   @ApiProperty({
     type: Number,
@@ -29,12 +41,13 @@ export class CreateProductDto {
   })
   quantity: number;
 
-  @IsString()
+  
+  @IsArray()
   @ApiProperty({
     type: String,
     description: 'Size',
   })
-  size: string;
+  size: string[];
 
   @IsString()
   @ApiProperty({
