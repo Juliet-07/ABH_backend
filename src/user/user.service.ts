@@ -75,11 +75,8 @@ export class UserService {
     try {
       const { email, password } = loginUserDto;
       const user = await this.userModel.findOne({
-        where: {
-          email,
-        },
-        select: ['id', 'email', 'password'],
-      });
+        email,
+      }).select('password status');
       if (!user) throw new NotFoundException('User Not Found');
       const isPasswordCorrect = await bcrypt.compare(password, user.password);
       if (!isPasswordCorrect)
@@ -88,7 +85,7 @@ export class UserService {
       // if (!user.verified) throw new MisdirectedException('Pls verify your account')
 
       const lastLoginAt = new Date().toISOString();
-      await this.userModel.findOneAndUpdate({ _id: user.id }, {
+      await this.userModel.findOneAndUpdate({ _id: user._id }, {
         $set: {
           lastLoginAt,
         }
@@ -177,18 +174,18 @@ export class UserService {
     }
   }
   // getProfile
-  async getProfile(user_: any): Promise<User> {
+  async getProfile(userId: string): Promise<User> {
     try {
-      const { id, email } = user_;
+     
 
       const user = await this.userModel.findOne({
-        _id: id,
-        email,
+        _id: userId,
+        
 
       });
 
       if (!user)
-        throw new NotFoundException(`User with the email ${email} not found`);
+        throw new NotFoundException(`User with the email ${userId} not found`);
 
       return user;
     } catch (error) {
@@ -208,16 +205,18 @@ export class UserService {
         throw new BadRequestException("Email can't be empty");
       }
 
-      const user = await this.userModel.findOne({ email  });
+      const user = await this.userModel.findOne({ email });
       if (!user) throw new NotFoundException('User not found');
 
       const { token: verificationCode, expiresIn: verificationCodeExpiresIn } =
         this.helpers.generateVerificationCode();
 
-      await this.userModel.findOneAndUpdate({_id:user.id}, {$et:{
-        verificationCode,
-        verificationCodeExpiresIn,
-     } });
+      await this.userModel.findOneAndUpdate({ _id: user.id }, {
+        $et: {
+          verificationCode,
+          verificationCodeExpiresIn,
+        }
+      });
 
       // Send Email For Token
       try {
@@ -264,7 +263,7 @@ export class UserService {
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
-    await this.userModel.findOneAndUpdate({_id: id}, updateUserDto);
+    await this.userModel.findOneAndUpdate({ _id: id }, updateUserDto);
   }
 
   remove(id: number) {

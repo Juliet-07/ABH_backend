@@ -103,9 +103,7 @@ export class VendorsService {
       if (!vendor) throw new NotFoundException('Vendor Not Found');
       if (!vendor.password) throw new BadRequestException('Vendor password is not set or is missing.');
   
-      console.log('Password:', password);
-      console.log('Vendor Password:', vendor.password);
-  
+        
       const isPasswordCorrect = await bcrypt.compare(password, vendor.password);
   
       if (!isPasswordCorrect) throw new UnauthorizedException('Incorrect Password');
