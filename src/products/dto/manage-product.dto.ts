@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsDefined, IsEnum, IsString, ValidateIf } from "class-validator";
+import { IsDefined, IsEnum, IsNumber, IsOptional, IsString, ValidateIf } from "class-validator";
 import { ProductStatusEnums } from "../../constants";
 
 
@@ -17,4 +17,8 @@ export class ManageProductDto {
     @ValidateIf((o: ManageProductDto) => o.status === ProductStatusEnums.DECLINED)
     @IsDefined({ message: 'Comments must be defined when product is declined' })
     comments: string;
+
+    @IsNumber()
+    @IsOptional()
+    sellingPrice: number
 }

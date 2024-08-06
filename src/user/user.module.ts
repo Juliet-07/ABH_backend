@@ -1,16 +1,21 @@
 import { Module } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UserController } from './user.controller';
-import { User } from './entities/user.entity';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { HelpersService } from '../utils/helpers/helpers.service';
 import { MailingService } from '../utils/mailing/mailing.service';
-import { AdminModule } from '../admin/admin.module';
+import { MongooseModule } from '@nestjs/mongoose';
+import { UserSchema } from './schema/user.schem';
+import { AdminService } from 'src/admin/admin.service';
+import { AdminSchema } from 'src/admin/schema/admin.schema';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User,]), AdminModule],
+  imports: [  MongooseModule.forFeature([
+    { name: 'User', schema: UserSchema },
+    { name: 'Admin', schema: AdminSchema }
+
+  ])],
   exports: [UserService],
   controllers: [UserController],
-  providers: [UserService, HelpersService, MailingService],
+  providers: [UserService, HelpersService, MailingService, AdminService],
 })
 export class UserModule { }

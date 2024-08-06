@@ -1,11 +1,10 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Category } from './entities/category.entity';
-import { Repository } from 'typeorm';
-import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { AzureService } from 'src/utils/uploader/azure';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Category } from './schema/category.schema';
 
 
 @Injectable()
@@ -14,8 +13,7 @@ export class CategoryService {
 
   private readonly logger = new Logger(CategoryService.name);
   constructor(
-    @InjectRepository(Category)
-    private categoryRepository: Repository<Category>,
+    @InjectModel(Category.name) private categoryModel: Model<Category>,
     private readonly azureService: AzureService,
 
   ) { }
@@ -28,15 +26,15 @@ export class CategoryService {
       // Convert the image buffer to a base64 string
       const base64Image = imageFile.buffer.toString('base64');
 
-      const category = this.categoryRepository.create({
+      const category = {
         name,
         subcategories,
         description,
         // Combine the URL and base64 string in the image field
         image: `data:${imageFile.mimetype};base64,${base64Image}`,
-      });
+      };
 
-      const result = await this.categoryRepository.save(category);
+      const result = await this.categoryModel.create(category);
 
       return result;
     } catch (error) {
@@ -48,17 +46,30 @@ export class CategoryService {
 
 
 
-  findAll(query: PaginateQuery): Promise<Paginated<Category>> {
+  async findAll(page = 1, limit = 10): Promise<{ items: Category[], total: number }> {
     try {
-      return paginate(query, this.categoryRepository, {
-        sortableColumns: ['createdAt', 'name'],
-        nullSort: 'last',
-        defaultSortBy: [['createdAt', 'DESC']],
-        filterableColumns: {
-          name: true,
-          id: true,
-        },
-      });
+      // Ensure page and limit are numbers
+      const currentPage = Number(page);
+      const pageSize = Number(limit);
+
+      // Validate page and limit
+      if (currentPage < 1 || pageSize < 1) {
+        throw new BadRequestException('Page number and limit must be greater than zero');
+      }
+
+      // Fetch paginated items
+      const [items, total] = await Promise.all([
+        this.categoryModel.find()
+          .skip((currentPage - 1) * pageSize)
+          .limit(pageSize)
+          .exec(),
+        this.categoryModel.countDocuments().exec(),
+      ]);
+
+      return {
+        items,
+        total,
+      };
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -67,7 +78,7 @@ export class CategoryService {
 
 
   async findOne(id: string): Promise<Category> {
-    const category = await this.categoryRepository.findOne({ where: { id } });
+    const category = await this.categoryModel.findOne({ _id: id });
     if (!category) {
       throw new NotFoundException(`Category with id ${id} not found`);
     }
@@ -77,7 +88,9 @@ export class CategoryService {
 
   async update(id: string, updateCategoryDto: UpdateCategoryDto) {
     try {
-      await this.categoryRepository.update(id, updateCategoryDto);
+      await this.categoryModel.findOneAndUpdate(
+        { id }, { $set: { updateCategoryDto } }
+      );
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -87,8 +100,8 @@ export class CategoryService {
 
   async remove(id: string) {
     try {
-      const result = await this.categoryRepository.delete(id);
-      if (result.affected === 0) {
+      const result = await this.categoryModel.findOneAndDelete({ id });
+      if (!result) {
         throw new BadRequestException('Category not found');
       }
     } catch (error) {

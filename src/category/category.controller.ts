@@ -15,23 +15,21 @@ import {
   BadRequestException,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-import { Category } from './entities/category.entity';
 import { AdminAuthGuard } from '../auth/admin-auth/admin-auth.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { AzureService } from 'src/utils/uploader/azure';
 
 @ApiTags('Category')
 @Controller('category')
 export class CategoryController {
   constructor(
     private readonly categoryService: CategoryService,
-    private readonly azureService: AzureService
+
   ) { }
 
   @UseGuards(AdminAuthGuard)
@@ -41,7 +39,7 @@ export class CategoryController {
   @UseInterceptors(FileInterceptor('image'))
   async create(
     @Body() createCategoryDto: CreateCategoryDto,
-    @UploadedFile() image: Express.Multer.File,): Promise<Category> {
+    @UploadedFile() image: Express.Multer.File,) {
     (image);
     if (!image) {
       throw new BadRequestException('Image file is required');
@@ -52,8 +50,15 @@ export class CategoryController {
 
 
   @Get()
-  findAll(@Paginate() query: PaginateQuery): Promise<Paginated<Category>> {
-    return this.categoryService.findAll(query);
+  async findAll(
+    @Query('page') page = 1,  
+    @Query('limit') limit = 10
+  ) {
+
+    // Convert query parameters to numbers
+    const pageNumber = Number(page);
+    const limitNumber = Number(limit);
+    return await this.categoryService.findAll(pageNumber, limitNumber);
   }
 
 

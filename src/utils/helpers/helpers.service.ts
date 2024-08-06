@@ -24,15 +24,7 @@ export class HelpersService {
     public generateDefaultPassword (length) {
             // Ensure the minimum length is at least 10
             length = Math.max(length, 10);
-        
-            // Regex pattern explanation:
-            // (?=.*\d) - at least one digit
-            // (?=.*\W+) - or at least one non-word character
-            // (?![.\n]) - does not contain a dot or a newline
-            // (?=.*[A-Z]) - at least one uppercase letter
-            // (?=.*[a-z]) - at least one lowercase letter
-            // .* - zero or more of any character except newline
-        
+                            
             const uppercaseLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
             const lowercaseLetters = 'abcdefghijklmnopqrstuvwxyz';
             const digits = '0123456789';

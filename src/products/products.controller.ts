@@ -17,6 +17,7 @@ import {
   Req,
   Put,
   BadRequestException,
+  Query,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -24,12 +25,11 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { VendorGuard } from '../auth/vendor-guard/vendor.guard';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
-import { Paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
-import { Product } from './entities/product.entity';
 import { AdminAuthGuard } from '../auth/admin-auth/admin-auth.guard';
 import { ProductStatusEnums } from '../constants';
 import { ManageProductDto } from './dto/manage-product.dto';
-import { AzureService } from 'src/utils/uploader/azure';
+import { CreateWholeSaleProductDto } from './dto/wholesale-product.dto';
+import { SampleProductDto } from './dto/sample-product.dto';
 
 
 
@@ -38,14 +38,14 @@ import { AzureService } from 'src/utils/uploader/azure';
 export class ProductsController {
   constructor(
     private readonly productsService: ProductsService,
-    private readonly azureService: AzureService,
+
   ) { }
 
 
 
   @UseGuards(VendorGuard)
   @HttpCode(HttpStatus.CREATED)
-  @Post()
+  @Post('retail')
   @UsePipes(new ValidationPipe())
   @ApiBearerAuth('JWT-auth')
   @UseInterceptors(
@@ -75,38 +75,127 @@ export class ProductsController {
     );
   }
 
+  @UseGuards(VendorGuard)
+  @UseGuards(AdminAuthGuard)
+  @HttpCode(HttpStatus.CREATED)
+  @Post('wholesale')
+  @UsePipes(new ValidationPipe())
+  @ApiBearerAuth('JWT-auth')
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'product_images', maxCount: 20 },
+      { name: 'featured_image', maxCount: 1 },
+    ])
+  )
+  async AddWholesaleProduct(
+    @Body() payload: CreateWholeSaleProductDto,
+    @Request() req,
+    @UploadedFiles() files: { product_images?: Express.Multer.File[], featured_image?: Express.Multer.File[] }
+  ) {
+    console.log('Files:', files);
+
+    const vendor = req.vendor;
+    if (!files.product_images) {
+      throw new BadRequestException('No product images uploaded');
+    }
+
+    return this.productsService.create(
+      payload,
+      vendor,
+      files.product_images || [],
+      files.featured_image?.[0] || null,
+
+    );
+  }
+
+
+  @UseGuards(VendorGuard)
+  @UseGuards(AdminAuthGuard)
+  @HttpCode(HttpStatus.CREATED)
+  @Post('sample')
+  @UsePipes(new ValidationPipe())
+  @ApiBearerAuth('JWT-auth')
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'product_images', maxCount: 20 },
+      { name: 'featured_image', maxCount: 1 },
+    ])
+  )
+  async AddSampleProduct(
+    @Body() payload: SampleProductDto,
+    @Request() req,
+    @UploadedFiles() files: { product_images?: Express.Multer.File[], featured_image?: Express.Multer.File[] }
+  ) {
+    console.log('Files:', files);
+
+    const vendor = req.vendor;
+    if (!files.product_images) {
+      throw new BadRequestException('No product images uploaded');
+    }
+
+    return this.productsService.create(
+      payload,
+      vendor,
+      files.product_images || [],
+      files.featured_image?.[0] || null,
+
+    );
+  }
+
+
 
 
   // For Admins
   @UseGuards(AdminAuthGuard)
   @Get()
   @ApiBearerAuth('JWT-auth')
-  findAllForAdmin(
-    @Paginate() query: PaginateQuery,
-  ): Promise<Paginated<Product>> {
-    return this.productsService.findAll(query);
+  async findAllForAdmin(
+    @Query('status') status: string,
+    @Query('limit') limit = 10,
+    @Query('page') page = 1,
+  ) {
+
+    const filter = status ? { status } : { status: ProductStatusEnums.APPROVED };
+
+    return await this.productsService.findAll({
+      filter,
+      limit,
+      page
+    });
   }
 
-  // For Vendors
-  @UseGuards(VendorGuard)
-  @Get('/me')
-  @ApiBearerAuth('JWT-auth')
-  findAllForVendors(
-    @Paginate() query: PaginateQuery,
-    @Req() req,
-  ): Promise<Paginated<Product>> {
-    query.filter = { ...query.filter, ...{ vendorId: req.vendor.id } };
-    return this.productsService.findAll(query);
-  }
+  // For Vendorsimport { Cart } from '../cart/entities/cart.entity';
+  // @UseGuards(VendorGuard)
+  // @Get('/me')
+  // @ApiBearerAuth('JWT-auth')
+  // findAllForVendors(
+
+  //   @Req() req,
+  // ): Promise<Paginated<Product>> {
+  //   query.filter = { ...query.filter, ...{ vendorId: req.vendor.id } };
+  //   return this.productsService.findAll(vendorId: req.vendor.id);
+  // }
 
   // For Users
   @Get('/all')
-  findAll(@Paginate() query: PaginateQuery): Promise<Paginated<Product>> {
-    query.filter = {
-      ...query.filter,
-      ...{ status: ProductStatusEnums.APPROVED },
-    };
-    return this.productsService.findAll(query);
+  async findAll(
+    @Query('status') status: string,
+    @Query('limit') limit = 10,
+    @Query('page') page = 1,
+  ) {
+    try {
+      // Apply default filter if status is not provided
+      const filter = status ? { status } : { status: ProductStatusEnums.APPROVED };
+
+      // Call the service method with pagination and filter
+      return await this.productsService.findAll({
+        filter,
+        limit,
+        page
+      });
+    } catch (error) {
+      throw new BadRequestException('Failed to fetch products');
+    }
   }
 
   @Get('top-products')

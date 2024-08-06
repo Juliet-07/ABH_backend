@@ -29,11 +29,9 @@ import { LoginVendorDto } from './dto/login-vendor.dto';
 import { VerifyVendorDto } from './dto/verify-vendor.dto';
 import { ManageVendorDto } from './dto/manage-vendor.dto';
 import { VendorGuard } from '../auth/vendor-guard/vendor.guard';
-import { Vendor } from './entities/vendor.entity';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { Paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { AzureService } from 'src/utils/uploader/azure';
-import { BlockStatusEnums } from 'src/constants';
+
 
 @ApiTags('Vendors')
 @Controller('vendors')
@@ -51,7 +49,7 @@ export class VendorsController {
   async create(
     @Body() createVendorDto: CreateVendorDto,
     @UploadedFile() cacCertificate: Express.Multer.File,
-  ): Promise<Vendor> {
+  ) {
     if (!cacCertificate) {
       throw new BadRequestException('CAC Certificate file is required');
     }
@@ -107,8 +105,8 @@ export class VendorsController {
   @UseGuards(AdminAuthGuard)
   @Get()
   @ApiBearerAuth('JWT-auth')
-  findAll(@Paginate() query: PaginateQuery): Promise<Paginated<Vendor>> {
-    return this.vendorsService.findAll(query);
+  findAll() {
+    return this.vendorsService.findAll();
   }
 
   @UseGuards(AdminAuthGuard)

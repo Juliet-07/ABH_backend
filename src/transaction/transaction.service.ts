@@ -1,11 +1,10 @@
-import { Inject, Injectable, UseInterceptors } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { Injectable } from '@nestjs/common';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
-import { Transaction } from './entities/transaction.entity';
-import { Repository } from 'typeorm';
 import { PaymentStatusEnum } from 'src/constants';
 import { RedisService } from 'src/redis/redis.service';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Transaction } from './schema/transaction.schema';
 
 @Injectable()
 export class TransactionService {
@@ -13,8 +12,8 @@ export class TransactionService {
   cacheKeyPrefix = 'transactions:status:'
 
   constructor(
-    @InjectRepository(Transaction)
-    private transactionRepository: Repository<Transaction>,
+    
+    @InjectModel(Transaction.name) private transactionModel: Model<Transaction>,
     private redisService: RedisService,
 
   ) { }
@@ -37,7 +36,7 @@ export class TransactionService {
       return cacheData;
     }
     // If not in cache, load data from the database
-    const data = await this.transactionRepository.find();
+    const data = await this.transactionModel.find();
     console.log('Data loaded from database');
 
     // Store data in cache
@@ -60,7 +59,7 @@ export class TransactionService {
     }
 
     // If not in cache, load data from the database
-    const data = await this.transactionRepository.find({ where: { status } });
+    const data = await this.transactionModel.find({ where: { status } });
     console.log('Data loaded from database');
 
     // Store data in cache

@@ -6,24 +6,24 @@ import {
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { User } from './entities/user.entity';
 import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { LoginUserDto } from './dto/login-user.dto';
 import { LoginResponse } from './user.interface';
 import { HelpersService } from '../utils/helpers/helpers.service';
 import { MailingService } from '../utils/mailing/mailing.service';
 import { VerifyUserDto } from './dto/verify-user.dto';
 import { RedisService } from 'src/redis/redis.service';
+import * as bcrypt from 'bcrypt';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { User } from './schema/user.schem';
 
 @Injectable()
 export class UserService {
   cacheKey = 'all_user';
 
   constructor(
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
+    @InjectModel(User.name) private userModel: Model<User>,
     private jwtService: JwtService,
     private helpers: HelpersService,
     private mailingSerivce: MailingService,
@@ -32,24 +32,31 @@ export class UserService {
 
   async create(createUserDto: CreateUserDto): Promise<void> {
     try {
-      const { referralCode } = createUserDto;
-      delete createUserDto.referralCode;
+      const { referralCode, password, ...rest } = createUserDto;
 
-      const user = this.userRepository.create(createUserDto);
-
-      let referredBy;
+      // Initialize a new User instance
+      const user = new this.userModel({
+        ...rest, // Spread the rest of the properties from createUserDto
+      });
 
       if (referralCode) {
-        referredBy = await this.validateReferredBy(referralCode);
+        const referredBy = await this.validateReferredBy(referralCode);
         user.referredBy = referredBy;
       }
+
+      // Hash the password
+      const saltRounds = 10; // Use a constant or configurable value for salt rounds
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+      user.password = hashedPassword;
 
       // Generate User Unique Code
       user.code = this.helpers.genCode(10);
 
-      await this.userRepository.save(user);
+      // Save the user to the database
+      await user.save();
 
-      // Invalidate cache after a new user is created
+      // Optionally: Invalidate cache here if necessary
+
     } catch (error) {
       console.error('The ERROR', error);
       throw new BadRequestException(error.message);
@@ -58,7 +65,7 @@ export class UserService {
 
   async validateReferredBy(code: string): Promise<string> {
     // Get Valid Referrer.
-    const referrer = await this.userRepository.findOne({ where: { code } });
+    const referrer = await this.userModel.findOne({ code });
 
     if (!referrer) throw new Error('Invalid Referrer Code');
 
@@ -67,24 +74,23 @@ export class UserService {
   async login(loginUserDto: LoginUserDto): Promise<LoginResponse> {
     try {
       const { email, password } = loginUserDto;
-      const user = await this.userRepository.findOne({
-        where: {
-          email,
-        },
-        select: ['id', 'email', 'password'],
-      });
+      const user = await this.userModel.findOne({
+        email,
+      }).select('password status');
       if (!user) throw new NotFoundException('User Not Found');
-      const isPasswordCorrect = await user.comparePassword(password);
+      const isPasswordCorrect = await bcrypt.compare(password, user.password);
       if (!isPasswordCorrect)
         throw new UnauthorizedException('Incorrect Password');
 
       // if (!user.verified) throw new MisdirectedException('Pls verify your account')
 
       const lastLoginAt = new Date().toISOString();
-      await this.userRepository.update(user.id, {
-        lastLoginAt,
+      await this.userModel.findOneAndUpdate({ _id: user._id }, {
+        $set: {
+          lastLoginAt,
+        }
       });
-      const payload = { id: user.id, email, lastLoginAt };
+      const payload = { _id: user._id, email, lastLoginAt };
       return {
         accessToken: await this.jwtService.signAsync(payload),
       };
@@ -99,16 +105,18 @@ export class UserService {
         throw new BadRequestException("Email can't be empty");
       }
 
-      const user = await this.userRepository.findOne({ where: { email } });
+      const user = await this.userModel.findOne({ email });
       if (!user) throw new NotFoundException('User not found');
       if (user.verified) throw new BadRequestException('User already verified');
 
       const { token: verificationCode, expiresIn: verificationCodeExpiresIn } =
         this.helpers.generateVerificationCode();
 
-      await this.userRepository.update(user.id, {
-        verificationCode,
-        verificationCodeExpiresIn,
+      await this.userModel.findOneAndUpdate({ _id: user.id }, {
+        $set: {
+          verificationCode,
+          verificationCodeExpiresIn,
+        }
       });
 
       // Send Email For Token
@@ -130,10 +138,10 @@ export class UserService {
     try {
       const { code, email } = verifyUserDto;
 
-      const user = await this.userRepository.findOne({
-        where: {
-          email,
-        },
+      const user = await this.userModel.findOne({
+
+        email,
+
       });
 
       if (!user)
@@ -160,30 +168,35 @@ export class UserService {
         verificationCodeExpiresIn: null,
       };
 
-      await this.userRepository.update(user.id, updateData);
+      await this.userModel.findOneAndUpdate({ _id: user.id }, updateData);
     } catch (error) {
       throw error;
     }
   }
   // getProfile
-  async getProfile(user_: any): Promise<User> {
+  async getProfile(userId: string): Promise<User> {
     try {
-      const { id, email } = user_;
+     
 
-      const user = await this.userRepository.findOne({
-        where: {
-          email,
-          id,
-        },
+      const user = await this.userModel.findOne({
+        _id: userId,
+        
+
       });
 
       if (!user)
-        throw new NotFoundException(`User with the email ${email} not found`);
+        throw new NotFoundException(`User with the email ${userId} not found`);
 
       return user;
     } catch (error) {
       throw error;
     }
+  }
+
+  async findAll() {
+    const users = await this.userModel.find()
+
+    return users;
   }
 
   async requestForgotPasswordVerificationCode(email: string): Promise<void> {
@@ -192,15 +205,17 @@ export class UserService {
         throw new BadRequestException("Email can't be empty");
       }
 
-      const user = await this.userRepository.findOne({ where: { email } });
+      const user = await this.userModel.findOne({ email });
       if (!user) throw new NotFoundException('User not found');
 
       const { token: verificationCode, expiresIn: verificationCodeExpiresIn } =
         this.helpers.generateVerificationCode();
 
-      await this.userRepository.update(user.id, {
-        verificationCode,
-        verificationCodeExpiresIn,
+      await this.userModel.findOneAndUpdate({ _id: user.id }, {
+        $et: {
+          verificationCode,
+          verificationCodeExpiresIn,
+        }
       });
 
       // Send Email For Token
@@ -219,26 +234,26 @@ export class UserService {
   }
 
 
-  async findAll(): Promise<User[]> {
-    try {
-      const cacheData = await this.redisService.get({ key: this.cacheKey });
-      if (Array.isArray(cacheData)) {
-        console.log('Data loaded from cache');
-        return cacheData;
-      }
+  // async findAll(): Promise<User[]> {
+  //   try {
+  //     const cacheData = await this.redisService.get({ key: this.cacheKey });
+  //     if (Array.isArray(cacheData)) {
+  //       console.log('Data loaded from cache');
+  //       return cacheData;
+  //     }
 
-      const data = await this.userRepository.find();
+  //     const data = await this.userRepository.find();
 
-      await this.redisService.set({ key: this.cacheKey, value: data, ttl: 3600 });
+  //     await this.redisService.set({ key: this.cacheKey, value: data, ttl: 3600 });
 
-      return data;
-    } catch (error) {
-      throw new BadRequestException(error.message);
-    }
-  }
+  //     return data;
+  //   } catch (error) {
+  //     throw new BadRequestException(error.message);
+  //   }
+  // }
 
   async findUserWithToken(id: string | any): Promise<User> {
-    const data = await this.userRepository.findOne({ where: { id } });
+    const data = await this.userModel.findOne({ where: { id } });
 
     return data;
   }
@@ -248,7 +263,7 @@ export class UserService {
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
-    await this.userRepository.update(id, updateUserDto);
+    await this.userModel.findOneAndUpdate({ _id: id }, updateUserDto);
   }
 
   remove(id: number) {
