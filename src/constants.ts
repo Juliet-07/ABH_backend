@@ -59,3 +59,11 @@ export enum BlockStatusEnums {
     BLOCKED = "BLOCKED",
     ACTIVE = "ACTIVE",
 }
+
+
+
+export enum ProductTypeEnums {
+    WHOLESALE = 'WHOLESALE',
+    RETAIL = 'RETAIL',
+    SAMPLE_PRODUCT = 'SAMPLE_PRODUCT'
+}

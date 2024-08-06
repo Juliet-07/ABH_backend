@@ -30,6 +30,8 @@ import { AdminAuthGuard } from '../auth/admin-auth/admin-auth.guard';
 import { ProductStatusEnums } from '../constants';
 import { ManageProductDto } from './dto/manage-product.dto';
 import { AzureService } from 'src/utils/uploader/azure';
+import { SampleProductDto } from './dto/sample-product.dto';
+import { CreateWholeSaleProductDto } from './dto/wholesale-product.dto';
 
 
 
@@ -45,7 +47,7 @@ export class ProductsController {
 
   @UseGuards(VendorGuard)
   @HttpCode(HttpStatus.CREATED)
-  @Post()
+  @Post('retail')
   @UsePipes(new ValidationPipe())
   @ApiBearerAuth('JWT-auth')
   @UseInterceptors(
@@ -68,6 +70,74 @@ export class ProductsController {
 
     return this.productsService.create(
       createProductDto,
+      vendor,
+      files.product_images || [],
+      files.featured_image?.[0] || null,
+
+    );
+  }
+
+
+  @UseGuards(VendorGuard)
+  @UseGuards(AdminAuthGuard)
+  @HttpCode(HttpStatus.CREATED)
+  @Post('wholesale')
+  @UsePipes(new ValidationPipe())
+  @ApiBearerAuth('JWT-auth')
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'product_images', maxCount: 20 },
+      { name: 'featured_image', maxCount: 1 },
+    ])
+  )
+  async AddWholesaleProduct(
+    @Body() payload: CreateWholeSaleProductDto,
+    @Request() req,
+    @UploadedFiles() files: { product_images?: Express.Multer.File[], featured_image?: Express.Multer.File[] }
+  ) {
+    console.log('Files:', files);
+
+    const vendor = req.vendor;
+    if (!files.product_images) {
+      throw new BadRequestException('No product images uploaded');
+    }
+
+    return this.productsService.create(
+      payload,
+      vendor,
+      files.product_images || [],
+      files.featured_image?.[0] || null,
+
+    );
+  }
+
+
+  @UseGuards(VendorGuard)
+  @UseGuards(AdminAuthGuard)
+  @HttpCode(HttpStatus.CREATED)
+  @Post('sample')
+  @UsePipes(new ValidationPipe())
+  @ApiBearerAuth('JWT-auth')
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'product_images', maxCount: 20 },
+      { name: 'featured_image', maxCount: 1 },
+    ])
+  )
+  async AddSampleProduct(
+    @Body() payload: SampleProductDto,
+    @Request() req,
+    @UploadedFiles() files: { product_images?: Express.Multer.File[], featured_image?: Express.Multer.File[] }
+  ) {
+    console.log('Files:', files);
+
+    const vendor = req.vendor;
+    if (!files.product_images) {
+      throw new BadRequestException('No product images uploaded');
+    }
+
+    return this.productsService.create(
+      payload,
       vendor,
       files.product_images || [],
       files.featured_image?.[0] || null,

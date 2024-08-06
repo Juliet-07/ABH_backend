@@ -11,10 +11,16 @@ import {
   IsUrl,
 } from 'class-validator';
 import { Currencies } from '../../utils/constants';
+import { ProductTypeEnums } from 'src/constants';
 
 const currency_enums = Object.keys(Currencies);
 
 export class CreateProductDto {
+
+  @IsEnum(ProductTypeEnums)
+  productType: ProductTypeEnums = ProductTypeEnums.RETAIL;
+
+  
   @IsString()
   @ApiProperty({
     type: String,
