@@ -24,7 +24,7 @@ export class VendorGuard implements CanActivate {
       // 💡 We're assigning the payload to the request object here
       // so that we can access it in our route handlers
       // Fetch Vendor
-      const vendor = await this.vendorService.findOne(payload.id)
+      const vendor = await this.vendorService.listOneVendor(payload.id)
       if (!vendor) throw new UnauthorizedException('Not Authorized')
       request['vendor'] = payload;
     } catch {

@@ -30,16 +30,15 @@ export class SampleProductDto {
      })
      name: string;
 
-    
-     @IsArray()
+
+     
      @IsNotEmpty()
-     color: string[];
+     color: string;
 
 
 
      @IsOptional()
-     @IsArray()
-     discount: number[];
+     discount: number;
 
      @IsNumberString()
      @ApiProperty({
@@ -54,7 +53,7 @@ export class SampleProductDto {
           type: String,
           description: 'Size',
      })
-     size: string[];
+     size: string;
 
      @IsString()
      @ApiProperty({
@@ -196,4 +195,6 @@ export class SampleProductDto {
           description: 'Product is in wishlist',
      })
      inWishlist: boolean;
+
+
 }

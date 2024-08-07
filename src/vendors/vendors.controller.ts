@@ -22,7 +22,6 @@ import { VendorsService } from './vendors.service';
 import { CreateVendorDto } from './dto/create-vendor.dto';
 import { UpdateVendorDto } from './dto/update-vendor.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { AuthGuard } from '../auth/auth.guard';
 import { AdminAuthGuard } from '../auth/admin-auth/admin-auth.guard';
 import { LoginResponse } from '../user/user.interface';
 import { LoginVendorDto } from './dto/login-vendor.dto';
@@ -31,6 +30,7 @@ import { ManageVendorDto } from './dto/manage-vendor.dto';
 import { VendorGuard } from '../auth/vendor-guard/vendor.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AzureService } from 'src/utils/uploader/azure';
+import { VendorStatusEnums } from 'src/constants';
 
 
 @ApiTags('Vendors')
@@ -83,7 +83,7 @@ export class VendorsController {
   }
 
   // Manage Vendor Account Status
-  @UseGuards(AdminAuthGuard)
+   @UseGuards(AdminAuthGuard)
   @HttpCode(HttpStatus.OK)
   @Put('manage-account-status/:id')
   @UsePipes(new ValidationPipe())
@@ -102,18 +102,24 @@ export class VendorsController {
     return req.vendors;
   }
 
-  @UseGuards(AdminAuthGuard)
+  //@UseGuards(AdminAuthGuard)
   @Get()
-  @ApiBearerAuth('JWT-auth')
-  findAll() {
-    return this.vendorsService.findAll();
+  async findAll(
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+    @Query('filter.status') status?: VendorStatusEnums
+  ) {
+    const filter = status ? { status } : undefined;
+    return this.vendorsService.findAll(page, limit, filter);
   }
+
+
 
   @UseGuards(AdminAuthGuard)
   @Get(':id')
   @ApiBearerAuth('JWT-auth')
   findOne(@Param('id') id: string) {
-    return this.vendorsService.findOne(+id);
+    return this.vendorsService.listOneVendor(id);
   }
 
   @UseGuards(VendorGuard)

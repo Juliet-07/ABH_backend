@@ -89,7 +89,7 @@ export class CategoryService {
   async update(id: string, updateCategoryDto: UpdateCategoryDto) {
     try {
       await this.categoryModel.findOneAndUpdate(
-        { id }, { $set: { updateCategoryDto } }
+         {_id:id }, updateCategoryDto 
       );
     } catch (error) {
       throw new BadRequestException(error.message);
@@ -100,7 +100,7 @@ export class CategoryService {
 
   async remove(id: string) {
     try {
-      const result = await this.categoryModel.findOneAndDelete({ id });
+      const result = await this.categoryModel.findOneAndDelete({ _id: id });
       if (!result) {
         throw new BadRequestException('Category not found');
       }
