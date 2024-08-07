@@ -393,7 +393,7 @@ export class OrdersService {
 
       // Update the order status
       const updatedOrder = await this.orderModel.findByIdAndUpdate(
-        id,
+        {_id: id},
         update,
         { new: true } // Return the updated document
       );

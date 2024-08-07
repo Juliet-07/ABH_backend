@@ -18,6 +18,8 @@ import { Product } from './schema/product.schema';
 import { CreateWholeSaleProductDto } from './dto/wholesale-product.dto';
 import { SampleProductDto } from './dto/sample-product.dto';
 import { ProductTypeEnums } from 'src/constants';
+import { MailingService } from 'src/utils/mailing/mailing.service';
+import { VendorsService } from 'src/vendors/vendors.service';
 
 @Injectable()
 export class ProductsService {
@@ -29,7 +31,9 @@ export class ProductsService {
     private categoryService: CategoryService,
     private helpers: HelpersService,
     private readonly azureService: AzureService,
-    private readonly redisService: RedisService
+    private readonly redisService: RedisService,
+    private mailingService: MailingService,
+    private vendorService: VendorsService
   ) { }
 
 
@@ -250,38 +254,56 @@ export class ProductsService {
     id: string,
   ): Promise<string> {
     try {
-
-
-      const product = await this.productModel.findOne({ _id: id });
+      const product = await this.productModel.findOne({ _id: id }).populate('vendor');
 
       if (!product) throw new NotFoundException(`Product not found`);
-
 
       const updatedProduct = await this.productModel.findOneAndUpdate(
         { _id: id },
         manageProductDto,
-        { new: true } // Return the updated document
+        { new: true }
       );
 
-      // Log the sellingPrice or the entire product object
+      if (!updatedProduct) {
+        throw new BadRequestException('Failed to update product');
+      }
 
-      //  Send Email to user
 
-      // const text = `Hello ${vendor.firstName}, your account has been verified and active now. Login with your registered email and password ${rawPassword} \n \n \n Kindly ensure you change your paassword on login`
+      const vendor = await this.vendorService.listOneVendor(product.vendorId)
 
-      // await this.mailingSerivce.send({
-      //   subject: 'Vendor Account Approved',
-      //   text,
-      //   email: vendor.email,
-      //   name: `${vendor.firstName} ${vendor.lastName}`
-      // })
+      // Prepare email content based on status
+      let emailSubject = '';
+      let emailText = '';
 
-      // TODO: Remove this before Production
-      return null;
+      switch (manageProductDto.status) {
+        case 'APPROVED':
+          emailSubject = 'Product Approved';
+          emailText = `Hello ${vendor.firstName},\n\nYour product "${product.name}" has been approved and is now active on our platform.`;
+          break;
+        case 'DECLINED':
+          emailSubject = 'Product Declined';
+          emailText = `Hello ${vendor.firstName},\n\nWe regret to inform you that your product "${product.name}" has been declined.\n\nReason: ${manageProductDto.comments}\n\nPlease review our guidelines and make necessary adjustments before resubmitting.`;
+          break;
+        // Add more cases as needed for other statuses
+      }
+
+      // Send email if subject and text are set
+      if (emailSubject && emailText) {
+        await this.mailingService.send({
+          subject: emailSubject,
+          html: emailText,
+          email: vendor.email,
+
+        });
+      }
+
+      return `Product status updated to ${manageProductDto.status}`;
     } catch (error) {
       throw error;
     }
   }
+
+
 
   async findOneProduct(id: string) {
     try {

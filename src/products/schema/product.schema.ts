@@ -14,26 +14,18 @@ export class Product {
   name: string;
 
   @Prop({
-    type: [String],
-    required: true,
-    validate: {
-      validator: (v: string[]) => v.length > 0,
-      message: 'At least one color must be specified',
-    },
+    type: [String], required: true
   })
-  color: string[];
+  color: string;
 
-  @Prop({ type: [Number] })
-  discount?: number[];
+  @Prop({ type: Number })
+  discount?: number;
 
   @Prop({ type: Number })
   maximumOrderPerCarton?: number;
 
   @Prop({ type: Number })
   unitPerCarton?: number;
-
-  @Prop({ type: String, required: true })
-  brand: string
 
   @Prop({ required: true })
   slug: string;
@@ -71,8 +63,8 @@ export class Product {
   @Prop({ type: Number, required: true })
   quantity: number;
 
-  @Prop({ type: [String], required: false })
-  size?: string[];
+  @Prop({ type: String, required: false })
+  size?: string;
 
   @Prop({ type: Number, default: 0 })
   soldQuantity: number;

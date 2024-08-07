@@ -10,6 +10,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ProductSchema } from './schema/product.schema';
 import { VendorSchema } from 'src/vendors/schema/vendor.schema';
 import { AdminSchema } from 'src/admin/schema/admin.schema';
+import { MailingService } from 'src/utils/mailing/mailing.service';
 
 @Module({
   imports: [MongooseModule.forFeature([
@@ -21,6 +22,6 @@ import { AdminSchema } from 'src/admin/schema/admin.schema';
    VendorsModule, AdminModule, CategoryModule],
   exports: [ProductsService],
   controllers: [ProductsController],
-  providers: [ProductsService, HelpersService, AzureService]
+  providers: [ProductsService, HelpersService, AzureService, MailingService]
 })
 export class ProductsModule {}

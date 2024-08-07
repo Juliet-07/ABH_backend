@@ -1,11 +1,9 @@
 import {
   BadRequestException,
   ForbiddenException,
-  Inject,
   Injectable,
   NotFoundException,
   UnauthorizedException,
-  UseInterceptors,
 } from '@nestjs/common';
 
 import { CreateVendorDto } from './dto/create-vendor.dto';
@@ -209,7 +207,7 @@ export class VendorsService {
 
   async manageVendorRegistration(
     manageVendorDto: ManageVendorDto,
-    id: string | any,
+    id: string,
   ): Promise<string> {
     try {
       const { status } = manageVendorDto;
@@ -270,7 +268,7 @@ export class VendorsService {
         throw new BadRequestException("Email can't be empty");
       }
 
-      const vendor = await this.vendorModel.findOne({ where: { email } });
+      const vendor = await this.vendorModel.findOne({ email  });
       if (!vendor) throw new NotFoundException('Vendor not found');
 
       const { token: verificationCode, expiresIn: verificationCodeExpiresIn } =
@@ -299,26 +297,43 @@ export class VendorsService {
   }
 
 
-  async findAll(page = 1, limit = 10): Promise<{ items: Vendor[], total: number }> {
+  async findAll(
+    page = 1, 
+    limit = 10, 
+    filter?: { status?: VendorStatusEnums }
+  ): Promise<{ items: Vendor[], total: number }> {
     try {
       // Ensure page and limit are numbers
       const currentPage = Number(page);
       const pageSize = Number(limit);
-
+  
       // Validate page and limit
       if (currentPage < 1 || pageSize < 1) {
         throw new BadRequestException('Page number and limit must be greater than zero');
       }
-
-      // Fetch paginated items
+  
+      // Prepare the filter
+      let statusFilter: { status: VendorStatusEnums | { $in: VendorStatusEnums[] } } = { status: VendorStatusEnums.ACTIVE };
+  
+      if (filter?.status) {
+        if (filter.status === VendorStatusEnums.PENDING || 
+            filter.status === VendorStatusEnums.BLOCKED || 
+            filter.status === VendorStatusEnums.DECLINED) {
+          statusFilter = { status: filter.status };
+        } else if (filter.status === 'ACTIVE') {
+          statusFilter = { status: { $in: [VendorStatusEnums.PENDING, VendorStatusEnums.BLOCKED, VendorStatusEnums.DECLINED] } };
+        }
+      }
+  
+      // Fetch paginated items based on the query
       const [items, total] = await Promise.all([
-        this.vendorModel.find()
+        this.vendorModel.find(statusFilter)
           .skip((currentPage - 1) * pageSize)
           .limit(pageSize)
           .exec(),
-        this.vendorModel.countDocuments().exec(),
+        this.vendorModel.countDocuments(statusFilter).exec(),
       ]);
-
+  
       return {
         items,
         total,
@@ -327,6 +342,7 @@ export class VendorsService {
       throw new BadRequestException(error.message);
     }
   }
+   
 
   async findVendorWithToken(id: string | any): Promise<Vendor> {
     const data = await this.vendorModel.findOne({ id });
@@ -344,7 +360,7 @@ export class VendorsService {
       }
 
       // Toggle the vendor's status
-      const newStatus = vendor.status === BlockStatusEnums.BLOCKED
+      const newStatus = vendor.block === BlockStatusEnums.BLOCKED
         ? BlockStatusEnums.ACTIVE
         : BlockStatusEnums.BLOCKED;
 
@@ -357,8 +373,16 @@ export class VendorsService {
     }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} vendor`;
+  async listOneVendor(id: string) {
+    try {
+      const vendor = await this.vendorModel.findById(id)
+
+      if (!vendor) throw new NotFoundException(`Vendor with ${id} not found`)
+
+        return vendor;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
   }
 
   async update(id: number, updateVendorDto: UpdateVendorDto) {

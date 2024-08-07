@@ -21,11 +21,10 @@ export class CreateWholeSaleProductDto {
 
 
      @IsArray()
-     @IsNotEmpty()
-     color: string[];
+     color: string;
 
      @IsOptional()
-     discount?: number[]
+     discount?: number
 
      @IsNumberString()
      quantity: number;
@@ -34,16 +33,13 @@ export class CreateWholeSaleProductDto {
      unit: string;
 
 
-     @IsArray()
+     
      @ApiProperty({
           type: String,
           description: 'Size',
      })
-     size: string[];
+     size: string;
 
-
-     @IsString()
-     brand: string;
 
      @IsNotEmpty()
      price: number;

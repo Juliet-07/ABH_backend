@@ -14,7 +14,6 @@ import {
   Request,
   UseInterceptors,
   UploadedFiles,
-  Req,
   Put,
   BadRequestException,
   Query,
@@ -164,17 +163,7 @@ export class ProductsController {
     });
   }
 
-  // For Vendorsimport { Cart } from '../cart/entities/cart.entity';
-  // @UseGuards(VendorGuard)
-  // @Get('/me')
-  // @ApiBearerAuth('JWT-auth')
-  // findAllForVendors(
-
-  //   @Req() req,
-  // ): Promise<Paginated<Product>> {
-  //   query.filter = { ...query.filter, ...{ vendorId: req.vendor.id } };
-  //   return this.productsService.findAll(vendorId: req.vendor.id);
-  // }
+ 
 
   // For Users
   @Get('/all')

@@ -5,7 +5,6 @@ import {
   IsDefined,
   IsEnum,
   IsJSON,
-  IsNotEmpty,
   IsNumber,
   IsNumberString,
   IsOptional,
@@ -25,14 +24,13 @@ export class CreateProductDto {
   })
   name: string;
 
+
   //@IsString()
-  @IsArray()
-  @IsNotEmpty()
-  color: string[];
+  
+  color: string;
 
   @IsOptional()
-  @IsArray()
-  discount?: number[]
+  discount?: number
 
   @IsNumberString()
   @ApiProperty({
@@ -41,13 +39,13 @@ export class CreateProductDto {
   })
   quantity: number;
 
-  
+
   @IsArray()
   @ApiProperty({
     type: String,
     description: 'Size',
   })
-  size: string[];
+  size: string;
 
   @IsString()
   @ApiProperty({
