@@ -28,6 +28,10 @@ export class Order {
      @Prop({ type: Number, required: true })
      quantity: number;
 
+
+     @Prop({required: true})
+     totalAmount: number;
+
      @Prop({
           type: {
                street: { type: String, required: true },

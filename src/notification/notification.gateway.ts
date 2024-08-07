@@ -1,6 +1,7 @@
 import {
   Logger,
   Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   SubscribeMessage,
@@ -16,6 +17,7 @@ import { Server, Socket } from 'socket.io';
 import { NotificationService } from './notification.service';
 import { NotificationSocketEnum } from './socket.enum';
 import { CreateNotificationDataType, GetNotificationDataType, GetOneNotificationDataType } from './dto/notification.dto';
+import { JwtService } from '@nestjs/jwt';
 
 
 @WebSocketGateway({
@@ -29,7 +31,11 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
 
   private readonly logger = new Logger(NotificationGateway.name);
 
-  constructor(private readonly notificationService: NotificationService) { }
+  constructor(
+    private readonly notificationService: NotificationService,
+    private jwtService: JwtService,
+
+  ) { }
 
   @WebSocketServer()
   server: Server;
@@ -72,6 +78,14 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
     @ConnectedSocket() client: Socket,
   ) {
     try {
+
+      const token = client.handshake.query.token as string;
+      if (!token) throw new UnauthorizedException('Token is required');
+
+      // Verify the token
+      const decodedToken = this.jwtService.verify(token);
+       payload.receiverId = decodedToken._id
+
       const getNotification = await this.notificationService.getNotificationsForReceiver(payload);
 
       client.emit(
@@ -92,6 +106,14 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
     @ConnectedSocket() client: Socket,
   ) {
     try {
+
+      const token = client.handshake.query.token as string;
+      if (!token) throw new UnauthorizedException('Token is required');
+
+      // Verify the token
+      const decodedToken = this.jwtService.verify(token);
+       payload.receiverId = decodedToken._id
+
       const listOneNotification = await this.notificationService.getOneNotification(payload);
 
       client.emit(

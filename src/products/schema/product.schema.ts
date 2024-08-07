@@ -108,11 +108,11 @@ export class Product {
   @Prop({ type: Number, required: false })
   length?: number;
 
-  @Prop({ type: [{ id: Number, url: String }], required: false })
-  images?: { id: number; url: string }[];
+  @Prop({ type: [{ id: Number, url: String }], required: true })
+  images: { id: number; url: string }[];
 
-  @Prop({ type: String, required: false })
-  featuredImage?: string;
+  @Prop({ type: String, required: true })
+  featured_image: string;
 
   @Prop({ type: String, required: false })
   manufacturer?: string;

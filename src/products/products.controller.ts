@@ -57,7 +57,7 @@ export class ProductsController {
   async create(
     @Body() createProductDto: CreateProductDto,
     @Request() req,
-    @UploadedFiles() files: { product_images?: Express.Multer.File[], featured_image?: Express.Multer.File[] }
+    @UploadedFiles() files: { product_images: Express.Multer.File[], featured_image: Express.Multer.File[] }
   ) {
     console.log('Files:', files);
 
@@ -90,7 +90,7 @@ export class ProductsController {
   async AddWholesaleProduct(
     @Body() payload: CreateWholeSaleProductDto,
     @Request() req,
-    @UploadedFiles() files: { product_images?: Express.Multer.File[], featured_image?: Express.Multer.File[] }
+    @UploadedFiles() files: { product_images: Express.Multer.File[], featured_image: Express.Multer.File[] }
   ) {
     console.log('Files:', files);
 
@@ -124,7 +124,7 @@ export class ProductsController {
   async AddSampleProduct(
     @Body() payload: SampleProductDto,
     @Request() req,
-    @UploadedFiles() files: { product_images?: Express.Multer.File[], featured_image?: Express.Multer.File[] }
+    @UploadedFiles() files: { product_images: Express.Multer.File[], featured_image: Express.Multer.File[] }
   ) {
     console.log('Files:', files);
 

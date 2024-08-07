@@ -10,7 +10,6 @@ import {
 
 import { CreateVendorDto } from './dto/create-vendor.dto';
 import { UpdateVendorDto } from './dto/update-vendor.dto';
-import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { HelpersService } from '../utils/helpers/helpers.service';
 import { MailingService } from '../utils/mailing/mailing.service';
@@ -25,6 +24,8 @@ import { AzureService } from 'src/utils/uploader/azure';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { Vendor } from './schema/vendor.schema';
+import { NotificationService } from 'src/notification/notification.service';
+import { CreateNotificationDataType } from 'src/notification/dto/notification.dto';
 
 
 @Injectable()
@@ -38,6 +39,7 @@ export class VendorsService {
     private mailingService: MailingService,
     private redisService: RedisService,
     private readonly azureService: AzureService,
+    private readonly notificationService: NotificationService
   ) { }
 
   async create(
@@ -244,6 +246,16 @@ export class VendorsService {
 
       })
 
+      const data: CreateNotificationDataType = {
+        message: "Your account has been approved",
+        receiverId: vendor.id, 
+      };
+      
+      await this.notificationService.createNotification(data);
+       
+     
+
+
       // TODO: Remove this before Production
       return text;
 
@@ -337,7 +349,7 @@ export class VendorsService {
         : BlockStatusEnums.BLOCKED;
 
       // Update the vendor's status
-      await this.vendorModel.findByIdAndUpdate(vendorId, { status: newStatus });
+      await this.vendorModel.findByIdAndUpdate(vendorId, { block: newStatus });
 
       return `Vendor ${newStatus === BlockStatusEnums.BLOCKED ? 'blocked' : 'unblocked'} successfully`;
     } catch (error) {

@@ -1,11 +1,10 @@
-import { Controller, Get, Post, Body, Patch, Param, Request, UseGuards, HttpCode, HttpStatus, UsePipes, ValidationPipe, Req, UseInterceptors, Put, Query, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Request, UseGuards, HttpCode, HttpStatus, UsePipes, ValidationPipe, Req, Put, Query, BadRequestException } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { VendorGuard } from '../auth/vendor-guard/vendor.guard';
-import { Paginate, PaginateQuery } from 'nestjs-paginate';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { AdminAuthGuard } from '../auth/admin-auth/admin-auth.guard';
 import { ConfirmTransactionStatusDto } from './dto/confirm-transaction-status.dto';
@@ -19,8 +18,13 @@ export class OrdersController {
   @HttpCode(HttpStatus.CREATED)
   @UsePipes(new ValidationPipe())
   @ApiBearerAuth('JWT-auth')
-  create(@Body() createOrderDto: CreateOrderDto, @Req() req) {
-    return this.ordersService.create(createOrderDto, req.user.id);
+  create(
+    @Body() createOrderDto: CreateOrderDto,
+    @Request() req,
+) {
+
+    const userId = req.user;
+    return this.ordersService.create(createOrderDto, userId);
   }
 
   @Get()
