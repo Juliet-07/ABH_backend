@@ -113,7 +113,8 @@ export class OrdersService {
 
   async create(createOrderDto: CreateOrderDto, userId: string) {
     try {
-      const cart = await this.cartModel.findOne({ userId });
+      const cart = await this.cartModel.findOne({ userId: userId });
+      console.log(cart)
 
       if (!cart) throw new NotFoundException('No Cart');
 

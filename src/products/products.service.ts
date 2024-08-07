@@ -17,6 +17,7 @@ import { RedisService } from 'src/redis/redis.service';
 import { Product } from './schema/product.schema';
 import { CreateWholeSaleProductDto } from './dto/wholesale-product.dto';
 import { SampleProductDto } from './dto/sample-product.dto';
+import { ProductTypeEnums } from 'src/constants';
 
 @Injectable()
 export class ProductsService {
@@ -37,7 +38,7 @@ export class ProductsService {
     createProductDto: CreateProductDto,
     vendorId: string,
     productImages: Express.Multer.File[], // Accepting multiple image files
-    featuredImage?: Express.Multer.File,
+    featuredImage: Express.Multer.File,
   ): Promise<Product> {
     try {
       const { categoryId, ...productData } = createProductDto;
@@ -48,7 +49,7 @@ export class ProductsService {
         throw new BadRequestException('Category not found');
       }
 
-      const vendor = await this.vendorModel.findOne({ _id:vendorId })
+      const vendor = await this.vendorModel.findOne({ _id: vendorId })
 
       if (!vendor) throw new NotFoundException(`Vendor not found `)
 
@@ -82,7 +83,7 @@ export class ProductsService {
       if (featuredImage) {
         const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(featuredImage);
         const base64Image = featuredImage.buffer.toString('base64');
-        product.featuredImage = `data:${featuredImage.mimetype};base64,${base64Image}`;
+        product.featured_image = `data:${featuredImage.mimetype};base64,${base64Image}`;
       }
 
       // Save the product
@@ -101,8 +102,8 @@ export class ProductsService {
   async sampleProduct(
     payload: SampleProductDto,
     vendorId: string,
-    productImages: Express.Multer.File[], // Accepting multiple image files
-    featuredImage?: Express.Multer.File,
+    productImages: Express.Multer.File[],
+    featuredImage: Express.Multer.File,
   ): Promise<Product> {
     try {
       const { categoryId, ...productData } = payload
@@ -154,7 +155,7 @@ export class ProductsService {
       if (featuredImage) {
         const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(featuredImage);
         const base64Image = featuredImage.buffer.toString('base64');
-        product.featuredImage = `data:${featuredImage.mimetype};base64,${base64Image}`;
+        product.featured_image = `data:${featuredImage.mimetype};base64,${base64Image}`;
       }
 
 
@@ -173,7 +174,7 @@ export class ProductsService {
 
   async createWholesaleProduct(payload: CreateWholeSaleProductDto, vendorId: string,
     productImages: Express.Multer.File[],
-    featuredImage?: Express.Multer.File,): Promise<Product> {
+    featuredImage: Express.Multer.File,): Promise<Product> {
 
 
     try {
@@ -224,7 +225,7 @@ export class ProductsService {
       if (featuredImage) {
         const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(featuredImage);
         const base64Image = featuredImage.buffer.toString('base64');
-        product.featuredImage = `data:${featuredImage.mimetype};base64,${base64Image}`;
+        product.featured_image = `data:${featuredImage.mimetype};base64,${base64Image}`;
       }
 
       const result = await product.save();
@@ -249,22 +250,20 @@ export class ProductsService {
     id: string,
   ): Promise<string> {
     try {
-      
 
-      const product = await this.productModel.findOne({_id: id });
+
+      const product = await this.productModel.findOne({ _id: id });
 
       if (!product) throw new NotFoundException(`Product not found`);
 
-         
+
       const updatedProduct = await this.productModel.findOneAndUpdate(
         { _id: id },
         manageProductDto,
         { new: true } // Return the updated document
       );
-  
+
       // Log the sellingPrice or the entire product object
-      console.log('Updated Product:', updatedProduct);
-      console.log('Selling Price:', updatedProduct?.sellingPrice);
 
       //  Send Email to user
 
@@ -351,4 +350,57 @@ export class ProductsService {
     }
 
   }
+
+
+  async getAllRetailProduct(vendorId: string) {
+    try {
+      const products = await this.productModel.find({
+        vendorId: vendorId,
+        productType: ProductTypeEnums.RETAIL
+      }).exec();
+
+      if (!products.length) {
+        throw new NotFoundException('No retail products found for this vendor');
+      }
+      return products
+    } catch (error) {
+      throw error
+    }
+  }
+
+
+
+  async getAllWholeSaleProduct(vendorId: string) {
+    try {
+      const products = await this.productModel.find({
+        vendorId: vendorId,
+        productType: ProductTypeEnums.WHOLESALE
+      }).exec();
+
+      if (!products.length) {
+        throw new NotFoundException('No retail products found for this vendor');
+      }
+      return products
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async getAllSampleProduct(vendorId: string) {
+    try {
+      const products = await this.productModel.find({
+        vendorId: vendorId,
+        productType: ProductTypeEnums.SAMPLE_PRODUCT
+      }).exec();
+
+      if (!products.length) {
+        throw new NotFoundException('No retail products found for this vendor');
+      }
+      return products
+    } catch (error) {
+      throw error
+    }
+  }
+
+
 }

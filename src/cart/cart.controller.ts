@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Request,
   HttpStatus,
   HttpCode,
   UsePipes,
@@ -19,22 +20,25 @@ import { CreateCartDto } from './dto/create-cart.dto';
 import { UpdateCartDto } from './dto/update-cart.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
-import { Request } from 'express';
 import { AddToCartDto } from './dto/add-to-cart.dto';
 import { SynchronizeCartDto } from './dto/synchronize-cart.dto';
 import { DeliveryEstimateDto } from './dto/delivery-estimate.dto';
 
 @Controller('cart')
 export class CartController {
-  constructor(private readonly cartService: CartService) {}
+  constructor(private readonly cartService: CartService) { }
 
   @Put('/add')
   @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.OK)
   @UsePipes(new ValidationPipe())
   @ApiBearerAuth('JWT-auth')
-  addToCart(@Body() addToCartDto: AddToCartDto, @Req() req) {
-    return this.cartService.addToCart(addToCartDto, req.user.id);
+  addToCart(
+    @Body() addToCartDto: AddToCartDto,
+    @Request() req,
+  ) {
+    const userId = req.user
+    return this.cartService.addToCart(addToCartDto, userId);
   }
 
   @Put('/:productId')
