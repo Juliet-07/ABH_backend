@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsString, IsArray, IsNumber, IsOptional, IsNumberString, IsJSON, IsBoolean, IsDefined, IsUrl, IsNotEmpty } from 'class-validator';
+import { IsEnum, IsString, IsNumber, IsOptional, IsNumberString, IsJSON, IsBoolean, IsDefined, IsUrl, IsNotEmpty } from 'class-validator';
 import { ProductTypeEnums } from 'src/constants';
 import { Currencies } from 'src/utils/constants';
 
@@ -20,7 +20,7 @@ export class CreateWholeSaleProductDto {
      subcategoryId: string;
 
 
-     @IsArray()
+
      color: string;
 
      @IsOptional()
@@ -33,7 +33,7 @@ export class CreateWholeSaleProductDto {
      unit: string;
 
 
-     
+
      @ApiProperty({
           type: String,
           description: 'Size',
@@ -100,7 +100,7 @@ export class CreateWholeSaleProductDto {
           type: Number,
           description: 'Sale Price (Optional)',
      })
-     salePrice?: number;
+     sellingPrice?: number;
 
      @IsBoolean()
      @IsOptional()

@@ -10,9 +10,14 @@ export class RedisService {
      private readonly logger = new Logger(RedisService.name);
 
      constructor() {
-          const redisUrl = process.env.REDIS_URL as string;
+          if (process.env.NODE_ENV === 'development') {
+               this.redis_url = 'redis://localhost:6379';
+          } else {
+               // Use provided Redis URL in other environments
+               this.redis_url = process.env.REDIS_URL as string;
+          }
           this.redisClient = redis.createClient({
-               url: redisUrl
+               url: this.redis_url,
           });
 
           this.redisClient

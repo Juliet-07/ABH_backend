@@ -349,31 +349,42 @@ export class ProductsService {
     limit = 10,
     page = 1,
   }: {
-    filter?: Record<string, any>,
-    limit?: number,
-    page?: number,
+    filter?: Record<string, any>;
+    limit?: number;
+    page?: number;
   }) {
     try {
-      // Validate and ensure pagination values are positive integers
       const pageSize = Math.max(1, limit);
       const currentPage = Math.max(1, page);
       const skip = (currentPage - 1) * pageSize;
-
+  
+      const cacheKey = `products:key`;
+  
       // Check cache first
-      const data = await this.productModel.find({});
-
-      return {
-        data,
+      const cachedData = await this.redisService.get({ key: cacheKey });
+      if (cachedData) {
+        return cachedData;
+      }
+  
+      const data = await this.productModel.find({})
+        .skip(skip)
+        .limit(limit);
+  
+      const totalCount = await this.productModel.countDocuments();
+  
+      const result = {
         page: pageSize,
-        currentPage
+        currentPage,
+        totalPages: Math.ceil(totalCount / pageSize),
+        data,
       };
-
-
+  
+      await this.redisService.set({ key: cacheKey, value: result, ttl: 60 * 60 });
+  
+      return result;
     } catch (error) {
       throw error;
-
     }
-
   }
 
 
