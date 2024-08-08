@@ -111,7 +111,7 @@ export class SampleProductDto {
           type: Number,
           description: 'Sale Price (Optional)',
      })
-     salePrice?: number;
+     sellingPrice?: number;
 
      @IsBoolean()
      @IsOptional()
