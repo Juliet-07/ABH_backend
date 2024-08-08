@@ -17,7 +17,6 @@ import { RedisService } from 'src/redis/redis.service';
 import { Product } from './schema/product.schema';
 import { CreateWholeSaleProductDto } from './dto/wholesale-product.dto';
 import { SampleProductDto } from './dto/sample-product.dto';
-import { ProductTypeEnums } from 'src/constants';
 import { MailingService } from 'src/utils/mailing/mailing.service';
 import { VendorsService } from 'src/vendors/vendors.service';
 
@@ -353,7 +352,7 @@ export class ProductsService {
     filter?: Record<string, any>,
     limit?: number,
     page?: number,
-  }): Promise<Product[]> {
+  }) {
     try {
       // Validate and ensure pagination values are positive integers
       const pageSize = Math.max(1, limit);
@@ -363,7 +362,11 @@ export class ProductsService {
       // Check cache first
       const data = await this.productModel.find({});
 
-      return data;
+      return {
+        data,
+        page: pageSize,
+        currentPage
+      };
 
 
     } catch (error) {
@@ -374,17 +377,38 @@ export class ProductsService {
   }
 
 
-  async getAllRetailProduct(vendorId: string) {
+  async getAllRetailProduct(vendorId: string, page = 1, limit = 10) {
     try {
+
+      page = Math.max(page, 1);
+      limit = Math.max(limit, 1);
+
+      // Calculate skip (offset) and limit
+      const skip = (page - 1) * limit;
+
+
       const products = await this.productModel.find({
         vendorId: vendorId,
-        productType: ProductTypeEnums.RETAIL
+        productType: 'RETAIL'
+      })
+        .skip(skip)
+        .limit(limit)
+        .exec();
+
+      const totalCount = await this.productModel.countDocuments({
+        vendorId: vendorId,
+        productType: 'RETAIL'
       }).exec();
 
-      if (!products.length) {
-        throw new NotFoundException('No retail products found for this vendor');
-      }
-      return products
+
+
+      return {
+        products,
+        totalCount,
+        page,
+        limit,
+        totalPages: Math.ceil(totalCount / limit),
+      };
     } catch (error) {
       throw error
     }
@@ -392,33 +416,74 @@ export class ProductsService {
 
 
 
-  async getAllWholeSaleProduct(vendorId: string) {
+  async getAllWholeSaleProduct(vendorId: string, page = 1, limit = 10) {
     try {
+
+
+      page = Math.max(page, 1);
+      limit = Math.max(limit, 1);
+
+
+      const skip = (page - 1) * limit;
+
+
+
       const products = await this.productModel.find({
         vendorId: vendorId,
-        productType: ProductTypeEnums.WHOLESALE
+        productType: 'WHOLESALE'
+      })
+        .skip(skip)
+        .limit(limit)
+        .exec();
+
+      const totalCount = await this.productModel.countDocuments({
+        vendorId: vendorId,
+        productType: 'WHOLESALE'
       }).exec();
 
-      if (!products.length) {
-        throw new NotFoundException('No retail products found for this vendor');
-      }
-      return products
+
+      return {
+        products,
+        totalCount,
+        page,
+        limit,
+        totalPages: Math.ceil(totalCount / limit),
+      };
     } catch (error) {
       throw error
     }
   }
 
-  async getAllSampleProduct(vendorId: string) {
+  async getAllSampleProduct(vendorId: string, page = 1, limit = 10) {
     try {
+
+      page = Math.max(page, 1);
+      limit = Math.max(limit, 1);
+
+      // Calculate skip (offset) and limit
+      const skip = (page - 1) * limit;
+
       const products = await this.productModel.find({
         vendorId: vendorId,
-        productType: ProductTypeEnums.SAMPLE_PRODUCT
+        productType: 'SAMPLE_PRODUCT'
+      })
+        .skip(skip)
+        .limit(limit)
+        .exec();
+
+      const totalCount = await this.productModel.countDocuments({
+        vendorId: vendorId,
+        productType: 'SAMPLE_PRODUCT'
       }).exec();
 
-      if (!products.length) {
-        throw new NotFoundException('No retail products found for this vendor');
-      }
-      return products
+
+      return {
+        products,
+        totalCount,
+        page,
+        limit,
+        totalPages: Math.ceil(totalCount / limit),
+      };
     } catch (error) {
       throw error
     }

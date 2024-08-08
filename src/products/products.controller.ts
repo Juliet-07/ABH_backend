@@ -58,8 +58,7 @@ export class ProductsController {
     @Request() req,
     @UploadedFiles() files: { product_images: Express.Multer.File[], featured_image: Express.Multer.File[] }
   ) {
-    console.log('Files:', files);
-
+    
     const vendor = req.vendor;
     if (!files.product_images) {
       throw new BadRequestException('No product images uploaded');
@@ -143,7 +142,6 @@ export class ProductsController {
 
 
 
-
   // For Admins
   @UseGuards(AdminAuthGuard)
   @Get()
@@ -224,5 +222,32 @@ export class ProductsController {
   @Delete(':productId')
   remove(@Param('productId') productId: string) {
     return this.productsService.remove(productId);
+  }
+
+  @UseGuards(VendorGuard)
+  @HttpCode(HttpStatus.OK)
+  @Get('/list/retail')
+  async listRetail(@Request() req): Promise<any> {
+    const vendorId = req.vendor; 
+    
+    return this.productsService.getAllRetailProduct(vendorId);
+  }
+
+
+  @UseGuards(AdminAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @Get('/list/wholesale')
+  async listWholesale(@Request() req): Promise<any> {
+    const vendorId = req.vendor; 
+    return this.productsService.getAllWholeSaleProduct(vendorId);
+  }
+
+
+  @UseGuards(AdminAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @Get('/list/sample')
+  async listSample(@Request() req): Promise<any> {
+    const vendorId = req.vendor; 
+    return this.productsService.getAllSampleProduct(vendorId);
   }
 }

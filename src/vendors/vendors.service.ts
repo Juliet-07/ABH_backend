@@ -52,7 +52,7 @@ export class VendorsService {
 
       if (pdfFile) {
         // Upload the PDF to Azure and get the URL
-        const uploadedPdfUrl = await this.azureService.uploadFileToBlobStorage(pdfFile);
+        const uploadedPdfUrl = await this.azureService.uploadDocumentToBlobStorage(pdfFile);
 
         // Convert the PDF buffer to a base64 string
         const base64Pdf = pdfFile.buffer.toString('base64');

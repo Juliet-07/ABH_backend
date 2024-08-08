@@ -14,7 +14,7 @@ export class Product {
   name: string;
 
   @Prop({
-    type: [String], required: true
+    type: String, required: true
   })
   color: string;
 
