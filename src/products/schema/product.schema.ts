@@ -88,7 +88,7 @@ export class Product {
   productType: string;
 
 
-  @Prop({ type: String, required: true })
+  @Prop({ type: String, required: false })
   unit: string;
 
   @Prop({ type: Number, required: false })

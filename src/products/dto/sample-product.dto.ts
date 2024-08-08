@@ -31,7 +31,7 @@ export class SampleProductDto {
      name: string;
 
 
-     
+
      @IsNotEmpty()
      color: string;
 
@@ -48,7 +48,7 @@ export class SampleProductDto {
      quantity: number;
 
 
-     
+
      @ApiProperty({
           type: String,
           description: 'Size',
@@ -137,8 +137,7 @@ export class SampleProductDto {
      })
      inFlashSale: boolean;
 
-     @IsString()
-     @IsDefined()
+     @IsOptional()
      @ApiProperty({
           type: String,
           description: 'Product Unit',
