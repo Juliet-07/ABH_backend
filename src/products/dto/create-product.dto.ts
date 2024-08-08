@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsArray,
   IsBoolean,
   IsDefined,
   IsEnum,
@@ -23,10 +22,8 @@ export class CreateProductDto {
     description: 'Product Name',
   })
   name: string;
-
-
-  //@IsString()
-  
+ 
+  @IsString()
   color: string;
 
   @IsOptional()
@@ -40,7 +37,7 @@ export class CreateProductDto {
   quantity: number;
 
 
-  @IsArray()
+  
   @ApiProperty({
     type: String,
     description: 'Size',
