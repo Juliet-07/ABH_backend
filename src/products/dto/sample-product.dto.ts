@@ -48,7 +48,7 @@ export class SampleProductDto {
      quantity: number;
 
 
-     @IsArray()
+     
      @ApiProperty({
           type: String,
           description: 'Size',
