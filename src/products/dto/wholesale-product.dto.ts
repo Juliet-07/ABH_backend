@@ -19,8 +19,8 @@ export class CreateWholeSaleProductDto {
      @IsString()
      subcategoryId: string;
 
-
-
+     
+     @IsNotEmpty()
      color: string;
 
      @IsOptional()
