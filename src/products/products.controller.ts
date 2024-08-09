@@ -233,7 +233,7 @@ export class ProductsController {
 
   @UseGuards(VendorGuard)
   @HttpCode(HttpStatus.OK)
-  @Delete(':productId')
+  @Delete('/delete/:productId')
   removeForVendor(
     @Param('productId') productId: string,
     @Request() req,
