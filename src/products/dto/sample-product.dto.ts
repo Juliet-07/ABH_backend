@@ -48,7 +48,7 @@ export class SampleProductDto {
      quantity: number;
 
 
-
+     @IsString()
      @ApiProperty({
           type: String,
           description: 'Size',
@@ -140,7 +140,7 @@ export class SampleProductDto {
      @IsOptional()
      @ApiProperty({
           type: String,
-          description: 'Product Unit',
+          description: 'Unit per carton Unit',
      })
      unit: string;
 

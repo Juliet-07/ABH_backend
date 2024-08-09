@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
-import { UpdateProductDto } from './dto/update-product.dto';
+import { UpdateProductDto, UpdateProductsDto } from './dto/update-product.dto';
 import { HelpersService } from '../utils/helpers/helpers.service';
 import { ManageProductDto } from './dto/manage-product.dto';
 import { CategoryService } from '../category/category.service';
@@ -19,6 +19,7 @@ import { CreateWholeSaleProductDto } from './dto/wholesale-product.dto';
 import { SampleProductDto } from './dto/sample-product.dto';
 import { MailingService } from 'src/utils/mailing/mailing.service';
 import { VendorsService } from 'src/vendors/vendors.service';
+import { ProductStatusEnums } from 'src/constants';
 
 @Injectable()
 export class ProductsService {
@@ -320,9 +321,50 @@ export class ProductsService {
     }
   }
 
-  update(id: string, updateProductDto: UpdateProductDto) {
-    return `This action updates a #${id} product`;
+  async updateVendorProduct(productId: string, vendorId: string, payload: UpdateProductsDto) {
+    try {
+      const product = await this.productModel.findOne({ _id: productId, vendorId: vendorId })
+
+      if (!product) throw new NotFoundException(`Product not found `)
+
+      const updatedProduct = await this.productModel.findByIdAndUpdate(
+        productId,
+        { $set: { ...payload, status: 'PENDING' } },
+        { new: true }
+      );
+
+      return updatedProduct;
+    } catch (error) {
+      throw error;
+    }
   }
+
+
+  async removeForVendor(productId: string, vendorId: string): Promise<string> {
+    try {
+      const product = await this.productModel.findOne({ _id: productId, vendorId });
+
+      if (!product) {
+        throw new NotFoundException('Product not found or does not belong to this vendor');
+      }
+
+      if (product.status === 'APPROVED') {
+        throw new BadRequestException('Cannot delete an approved product');
+      }
+
+
+      await this.productModel.findByIdAndDelete(productId);
+
+      return 'Product successfully deleted';
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to delete product');
+    }
+  }
+
+
 
   async remove(productId: string): Promise<string> {
     try {
@@ -357,30 +399,30 @@ export class ProductsService {
       const pageSize = Math.max(1, limit);
       const currentPage = Math.max(1, page);
       const skip = (currentPage - 1) * pageSize;
-  
+
       const cacheKey = `products:key`;
-  
+
       // Check cache first
       const cachedData = await this.redisService.get({ key: cacheKey });
       if (cachedData) {
         return cachedData;
       }
-  
+
       const data = await this.productModel.find({})
         .skip(skip)
         .limit(limit);
-  
+
       const totalCount = await this.productModel.countDocuments();
-  
+
       const result = {
         page: pageSize,
         currentPage,
         totalPages: Math.ceil(totalCount / pageSize),
         data,
       };
-  
+
       await this.redisService.set({ key: cacheKey, value: result, ttl: 60 * 60 });
-  
+
       return result;
     } catch (error) {
       throw error;

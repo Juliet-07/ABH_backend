@@ -58,7 +58,7 @@ export class ProductsController {
     @Request() req,
     @UploadedFiles() files: { product_images: Express.Multer.File[], featured_image: Express.Multer.File[] }
   ) {
-    
+
     const vendor = req.vendor;
     if (!files.product_images) {
       throw new BadRequestException('No product images uploaded');
@@ -161,7 +161,7 @@ export class ProductsController {
     });
   }
 
- 
+
 
   // For Users
   @Get('/all')
@@ -210,11 +210,17 @@ export class ProductsController {
     return await this.productsService.findOneProduct(id);
   }
 
-  @UseGuards(AdminAuthGuard)
+
+  @UseGuards(VendorGuard)
   @HttpCode(HttpStatus.OK)
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-    return this.productsService.update(id, updateProductDto);
+  @Patch('/update/:productId')
+  update(
+    @Param('productId') productId: string,
+    @Body() updateProductDto: UpdateProductDto,
+    @Request() req,
+  ) {
+    const vendorId = req.vendor
+    return this.productsService.updateVendorProduct(productId, vendorId, updateProductDto);
   }
 
   @UseGuards(AdminAuthGuard)
@@ -224,30 +230,43 @@ export class ProductsController {
     return this.productsService.remove(productId);
   }
 
+
+  @UseGuards(VendorGuard)
+  @HttpCode(HttpStatus.OK)
+  @Delete(':productId')
+  removeForVendor(
+    @Param('productId') productId: string,
+    @Request() req,
+  ) {
+    const vendorId = req.vendor;
+    return this.productsService.removeForVendor(productId, vendorId);
+  }
+
+
   @UseGuards(VendorGuard)
   @HttpCode(HttpStatus.OK)
   @Get('/list/retail')
   async listRetail(@Request() req): Promise<any> {
-    const vendorId = req.vendor; 
-    
+    const vendorId = req.vendor;
+
     return this.productsService.getAllRetailProduct(vendorId);
   }
 
 
-  @UseGuards(AdminAuthGuard)
+  @UseGuards(VendorGuard)
   @HttpCode(HttpStatus.OK)
   @Get('/list/wholesale')
   async listWholesale(@Request() req): Promise<any> {
-    const vendorId = req.vendor; 
+    const vendorId = req.vendor;
     return this.productsService.getAllWholeSaleProduct(vendorId);
   }
 
 
-  @UseGuards(AdminAuthGuard)
+  @UseGuards(VendorGuard)
   @HttpCode(HttpStatus.OK)
   @Get('/list/sample')
   async listSample(@Request() req): Promise<any> {
-    const vendorId = req.vendor; 
+    const vendorId = req.vendor;
     return this.productsService.getAllSampleProduct(vendorId);
   }
 }

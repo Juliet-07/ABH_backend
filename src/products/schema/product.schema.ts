@@ -87,7 +87,6 @@ export class Product {
   @Prop({ default: ProductTypeEnums.RETAIL, enum: ProductTypeEnums })
   productType: string;
 
-
   @Prop({ type: String, required: false })
   unit: string;
 
@@ -132,3 +131,5 @@ export class Product {
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
+
+
