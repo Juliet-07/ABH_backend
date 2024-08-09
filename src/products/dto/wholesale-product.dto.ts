@@ -19,7 +19,6 @@ export class CreateWholeSaleProductDto {
      @IsString()
      subcategoryId: string;
 
-     
      @IsNotEmpty()
      color: string;
 
@@ -29,11 +28,11 @@ export class CreateWholeSaleProductDto {
      @IsNumberString()
      quantity: number;
 
-     @IsOptional()
-     unit: string;
 
+     @IsString()
+     unit: string
 
-
+     @IsString()
      @ApiProperty({
           type: String,
           description: 'Size',

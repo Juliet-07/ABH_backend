@@ -37,7 +37,7 @@ export class CreateProductDto {
   quantity: number;
 
 
-
+  @IsString()
   @ApiProperty({
     type: String,
     description: 'Size',
@@ -126,12 +126,7 @@ export class CreateProductDto {
   })
   inFlashSale: boolean;
 
-  @IsOptional()
-  @ApiProperty({
-    type: String,
-    description: 'Product Unit',
-  })
-  unit: string;
+ 
 
   @IsNumber()
   @IsOptional()
