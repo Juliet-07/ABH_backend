@@ -412,7 +412,6 @@ export class ProductsService {
 
         .populate('categoryId')
         .populate('subcategoryId')
-        .populate('vendorId')
         .skip(skip)
         .limit(limit);
 
@@ -450,7 +449,6 @@ export class ProductsService {
       })
         .populate('categoryId')
         .populate('subcategoryId')
-        .populate('vendorId')
         .skip(skip)
         .limit(limit)
         .exec();
@@ -495,7 +493,6 @@ export class ProductsService {
 
         .populate('categoryId')
         .populate('subcategoryId')
-        .populate('vendorId')
         .skip(skip)
         .limit(limit)
         .exec();
@@ -533,7 +530,6 @@ export class ProductsService {
       })
         .populate('categoryId')
         .populate('subcategoryId')
-        .populate('vendorId')
         .skip(skip)
         .limit(limit)
         .exec();
