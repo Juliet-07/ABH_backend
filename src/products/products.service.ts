@@ -409,6 +409,10 @@ export class ProductsService {
       }
 
       const data = await this.productModel.find({})
+
+        .populate('categoryId')
+        .populate('subcategoryId')
+        .populate('vendorId')
         .skip(skip)
         .limit(limit);
 
@@ -444,6 +448,9 @@ export class ProductsService {
         vendorId: vendorId,
         productType: 'RETAIL'
       })
+        .populate('categoryId')
+        .populate('subcategoryId')
+        .populate('vendorId')
         .skip(skip)
         .limit(limit)
         .exec();
@@ -485,6 +492,10 @@ export class ProductsService {
         vendorId: vendorId,
         productType: 'WHOLESALE'
       })
+
+        .populate('categoryId')
+        .populate('subcategoryId')
+        .populate('vendorId')
         .skip(skip)
         .limit(limit)
         .exec();
@@ -520,6 +531,9 @@ export class ProductsService {
         vendorId: vendorId,
         productType: 'SAMPLE_PRODUCT'
       })
+        .populate('categoryId')
+        .populate('subcategoryId')
+        .populate('vendorId')
         .skip(skip)
         .limit(limit)
         .exec();
