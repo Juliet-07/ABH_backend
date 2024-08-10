@@ -431,38 +431,22 @@ export class ProductsService {
     }
   }
 
-  async listAllVendorProduct(vendor: string, page = 1, limit = 10) {
+  async listAllVendorProduct(vendor: string) {
     try {
 
-      page = Math.max(page, 1);
-      limit = Math.max(limit, 1);
 
-      // Calculate skip (offset) and limit
-      const skip = (page - 1) * limit;
-
-
-      const products = await this.productModel.find({
-        vendor: vendor,
-
-      })
+      const products = await this.productModel.find({ vendor: vendor })
+        .populate({
+          path: 'vendor',
+          select: '-password' // Exclude the password field
+        })
         .populate('categoryId')
         .populate('subcategoryId')
-        .skip(skip)
-        .limit(limit)
-        .exec();
 
-      const totalCount = await this.productModel.countDocuments({
-        vendor: vendor,
-
-      }).exec();
-
-
+      console.log(products.length)
 
       return {
-        totalCount,
-        page,
-        limit,
-        totalPages: Math.ceil(totalCount / limit),
+        totalCount: products.length,
         products,
       };
     } catch (error) {

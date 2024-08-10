@@ -90,7 +90,7 @@ export class ProductsController {
     @Request() req,
     @UploadedFiles() files: { product_images: Express.Multer.File[], featured_image: Express.Multer.File[] }
   ) {
-    console.log('Files:', files);
+
 
     const vendor = req.vendor;
     if (!files.product_images) {
@@ -124,7 +124,7 @@ export class ProductsController {
     @Request() req,
     @UploadedFiles() files: { product_images: Express.Multer.File[], featured_image: Express.Multer.File[] }
   ) {
-    console.log('Files:', files);
+
 
     const vendor = req.vendor;
     if (!files.product_images) {
@@ -166,12 +166,11 @@ export class ProductsController {
   @Get('/me')
   findVendorProduct(
     @Request() req,
-    @Query('limit') limit = 10,
-    @Query('page') page = 1,
-) {
-   const vendor = req.vendor._id
 
-   return this.productsService.listAllVendorProduct(vendor, limit, page)
+  ) {
+    const vendor = req.vendor
+
+    return this.productsService.listAllVendorProduct(vendor,)
   }
 
 
