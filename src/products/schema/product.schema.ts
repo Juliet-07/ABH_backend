@@ -40,10 +40,10 @@ export class Product {
   price: number;
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "Vendor", required: true })
-  vendorId: string;
+  vendor: string;
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "Category" })
-  categoryId?: string;
+  categoryId: string;
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "Category" })
   subcategoryId?: string;

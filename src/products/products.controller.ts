@@ -161,12 +161,24 @@ export class ProductsController {
     });
   }
 
+  @UseGuards(VendorGuard)
+  @HttpCode(HttpStatus.OK)
+  @Get('/me')
+  findVendorProduct(
+    @Request() req,
+    @Query('limit') limit = 10,
+    @Query('page') page = 1,
+) {
+   const vendor = req.vendor._id
+
+   return this.productsService.listAllVendorProduct(vendor, limit, page)
+  }
 
 
   // For Users
   @Get('/all')
   async findAll(
-    @Query('status') status: string,
+    @Query('status') status: string, //:TODO
     @Query('limit') limit = 10,
     @Query('page') page = 1,
   ) {

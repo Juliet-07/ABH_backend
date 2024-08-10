@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
-import { UpdateProductDto, UpdateProductsDto } from './dto/update-product.dto';
+import { UpdateProductsDto } from './dto/update-product.dto';
 import { HelpersService } from '../utils/helpers/helpers.service';
 import { ManageProductDto } from './dto/manage-product.dto';
 import { CategoryService } from '../category/category.service';
@@ -19,7 +19,6 @@ import { CreateWholeSaleProductDto } from './dto/wholesale-product.dto';
 import { SampleProductDto } from './dto/sample-product.dto';
 import { MailingService } from 'src/utils/mailing/mailing.service';
 import { VendorsService } from 'src/vendors/vendors.service';
-import { ProductStatusEnums } from 'src/constants';
 
 @Injectable()
 export class ProductsService {
@@ -40,7 +39,7 @@ export class ProductsService {
 
   async create(
     createProductDto: CreateProductDto,
-    vendorId: string,
+    vendor: string,
     productImages: Express.Multer.File[], // Accepting multiple image files
     featuredImage: Express.Multer.File,
   ): Promise<Product> {
@@ -53,9 +52,9 @@ export class ProductsService {
         throw new BadRequestException('Category not found');
       }
 
-      const vendor = await this.vendorModel.findOne({ _id: vendorId })
+      const vendorCheck = await this.vendorModel.findOne({ _id: vendor })
 
-      if (!vendor) throw new NotFoundException(`Vendor not found `)
+      if (!vendorCheck) throw new NotFoundException(`Vendor not found `)
 
       // Generate unique code and slug
       const code = this.helpers.genCode(10);
@@ -66,8 +65,8 @@ export class ProductsService {
         ...productData,
         code,
         slug,
-        vendorId: vendor._id,
-        createdBy: vendor._id,
+        vendor: vendorCheck._id,
+        createdBy: vendorCheck._id,
       });
 
       // Handle product images
@@ -105,7 +104,7 @@ export class ProductsService {
 
   async sampleProduct(
     payload: SampleProductDto,
-    vendorId: string,
+    vendor: string,
     productImages: Express.Multer.File[],
     featuredImage: Express.Multer.File,
   ): Promise<Product> {
@@ -123,9 +122,9 @@ export class ProductsService {
       }
 
 
-      const vendor = await this.vendorModel.findOne({ vendorId })
+      const vendorCheck = await this.vendorModel.findOne({ vendor })
 
-      if (!vendor) throw new NotFoundException(`Vendor not found `)
+      if (!vendorCheck) throw new NotFoundException(`Vendor not found `)
 
 
       // Generate Admin Unique Code
@@ -138,8 +137,8 @@ export class ProductsService {
         ...productData,
         code,
         slug,
-        vendorId: vendor.id,
-        createdBy: vendor.id,
+        vendorId: vendorCheck.id,
+        createdBy: vendorCheck.id,
       });
 
 
@@ -176,7 +175,7 @@ export class ProductsService {
   }
 
 
-  async createWholesaleProduct(payload: CreateWholeSaleProductDto, vendorId: string,
+  async createWholesaleProduct(payload: CreateWholeSaleProductDto, vendor: string,
     productImages: Express.Multer.File[],
     featuredImage: Express.Multer.File,): Promise<Product> {
 
@@ -195,9 +194,9 @@ export class ProductsService {
         throw new BadRequestException('Category ID is missing');
       }
 
-      const vendor = await this.vendorModel.findOne({ vendorId })
+      const vendorCheck = await this.vendorModel.findOne({ vendor })
 
-      if (!vendor) throw new NotFoundException(`Vendor not found `)
+      if (!vendorCheck) throw new NotFoundException(`Vendor not found `)
 
 
       const code = this.helpers.genCode(10);
@@ -208,8 +207,8 @@ export class ProductsService {
         ...productData,
         code,
         slug,
-        vendorId: vendor.id,
-        createdBy: vendor.id,
+        vendor: vendorCheck.id,
+        createdBy: vendorCheck.id,
       });
 
 
@@ -269,7 +268,7 @@ export class ProductsService {
       }
 
 
-      const vendor = await this.vendorService.listOneVendor(product.vendorId)
+      const vendor = await this.vendorService.listOneVendor(product.vendor)
 
       // Prepare email content based on status
       let emailSubject = '';
@@ -321,9 +320,9 @@ export class ProductsService {
     }
   }
 
-  async updateVendorProduct(productId: string, vendorId: string, payload: UpdateProductsDto) {
+  async updateVendorProduct(productId: string, vendor: string, payload: UpdateProductsDto) {
     try {
-      const product = await this.productModel.findOne({ _id: productId, vendorId: vendorId })
+      const product = await this.productModel.findOne({ _id: productId, vendor: vendor })
 
       if (!product) throw new NotFoundException(`Product not found `)
 
@@ -340,9 +339,9 @@ export class ProductsService {
   }
 
 
-  async removeForVendor(productId: string, vendorId: string): Promise<string> {
+  async removeForVendor(productId: string, vendor: string): Promise<string> {
     try {
-      const product = await this.productModel.findOne({ _id: productId, vendorId });
+      const product = await this.productModel.findOne({ _id: productId, vendor });
 
       if (!product) {
         throw new NotFoundException('Product not found or does not belong to this vendor');
@@ -391,7 +390,7 @@ export class ProductsService {
     limit = 10,
     page = 1,
   }: {
-    filter?: Record<string, any>;
+    filter?: Record<string, any>; //:TODO
     limit?: number;
     page?: number;
   }) {
@@ -432,8 +431,7 @@ export class ProductsService {
     }
   }
 
-
-  async getAllRetailProduct(vendorId: string, page = 1, limit = 10) {
+  async listAllVendorProduct(vendor: string, page = 1, limit = 10) {
     try {
 
       page = Math.max(page, 1);
@@ -444,7 +442,46 @@ export class ProductsService {
 
 
       const products = await this.productModel.find({
-        vendorId: vendorId,
+        vendor: vendor,
+
+      })
+        .populate('categoryId')
+        .populate('subcategoryId')
+        .skip(skip)
+        .limit(limit)
+        .exec();
+
+      const totalCount = await this.productModel.countDocuments({
+        vendor: vendor,
+
+      }).exec();
+
+
+
+      return {
+        totalCount,
+        page,
+        limit,
+        totalPages: Math.ceil(totalCount / limit),
+        products,
+      };
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async getAllRetailProduct(vendor: string, page = 1, limit = 10) {
+    try {
+
+      page = Math.max(page, 1);
+      limit = Math.max(limit, 1);
+
+      // Calculate skip (offset) and limit
+      const skip = (page - 1) * limit;
+
+
+      const products = await this.productModel.find({
+        vendor: vendor,
         productType: 'RETAIL'
       })
         .populate('categoryId')
@@ -454,7 +491,7 @@ export class ProductsService {
         .exec();
 
       const totalCount = await this.productModel.countDocuments({
-        vendorId: vendorId,
+        vendor: vendor,
         productType: 'RETAIL'
       }).exec();
 
@@ -515,7 +552,7 @@ export class ProductsService {
     }
   }
 
-  async getAllSampleProduct(vendorId: string, page = 1, limit = 10) {
+  async getAllSampleProduct(vendor: string, page = 1, limit = 10) {
     try {
 
       page = Math.max(page, 1);
@@ -525,7 +562,7 @@ export class ProductsService {
       const skip = (page - 1) * limit;
 
       const products = await this.productModel.find({
-        vendorId: vendorId,
+        vendor: vendor,
         productType: 'SAMPLE_PRODUCT'
       })
         .populate('categoryId')
@@ -535,7 +572,7 @@ export class ProductsService {
         .exec();
 
       const totalCount = await this.productModel.countDocuments({
-        vendorId: vendorId,
+        vendorId: vendor,
         productType: 'SAMPLE_PRODUCT'
       }).exec();
 
