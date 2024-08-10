@@ -171,7 +171,7 @@ export class OrdersService {
             userId,
             quantity: item.quantity,
             shippingMethod,
-            vendorId: item.product.vendorId,
+            vendorId: item.product.vendor,
             reference: this.helper.genString(15, '1234567890'),
             transactionId: transaction._id, // Use _id for Mongoose
             totalAmount: item.product.price * item.quantity,
