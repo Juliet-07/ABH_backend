@@ -28,17 +28,17 @@ import { DeliveryEstimateDto } from './dto/delivery-estimate.dto';
 export class CartController {
   constructor(private readonly cartService: CartService) { }
 
-  @Put('/add')
+  @Post('/add')
   @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.OK)
   @UsePipes(new ValidationPipe())
   @ApiBearerAuth('JWT-auth')
   addToCart(
-    @Body() addToCartDto: AddToCartDto,
+    @Body() syncCartDto: SynchronizeCartDto,
     @Request() req,
   ) {
     const userId = req.user
-    return this.cartService.addToCart(addToCartDto, userId);
+    return this.cartService.addToCart(syncCartDto, userId);
   }
 
   @Put('/:productId')
@@ -49,9 +49,10 @@ export class CartController {
   updateCartItem(
     @Body() updateCartDto: UpdateCartDto,
     @Param('productId') productId: string,
-    @Req() req,
+    @Request() req,
   ) {
-    return this.cartService.updateCart(updateCartDto, productId, req.user.id);
+    const userId = req.user
+    return this.cartService.updateCart(updateCartDto, productId, userId);
   }
 
   @Post('/synchronize')
@@ -59,8 +60,14 @@ export class CartController {
   @HttpCode(HttpStatus.OK)
   @UsePipes(new ValidationPipe())
   @ApiBearerAuth('JWT-auth')
-  synchronizeCart(@Body() syncCartDto: SynchronizeCartDto, @Req() req) {
-    return this.cartService.synchronizeCart(syncCartDto, req.user.id);
+  synchronizeCart(
+    @Body() syncCartDto: SynchronizeCartDto
+    ,@Request() req,
+) 
+  {
+
+    const userId = req.user
+    return this.cartService.synchronizeCart(syncCartDto, userId);
   }
 
   @Get('/validate')
@@ -84,15 +91,17 @@ export class CartController {
   @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth('JWT-auth')
-  removeProductFromCart(@Req() req, @Param('productId') productId: string) {
-    return this.cartService.removeProductFromCart(req.user.id, productId);
+  removeProductFromCart(@Request() req, @Param('productId') productId: string) {
+    const userId = req.user
+    return this.cartService.removeProductFromCart(userId, productId);
   }
 
   @Get()
   @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.OK)
-  findOne(@Req() req) {
-    return this.cartService.findOne(req.user.id);
+  findOne(@Request() req) {
+    const userId = req.user
+    return this.cartService.findOne(userId);
   }
 
   @Patch(':id')

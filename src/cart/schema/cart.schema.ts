@@ -1,16 +1,17 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import mongoose, { Document } from 'mongoose';
 
 export type ItemDocument = Item & Document;
 
-@Schema()
+@Schema({ _id: false })
 export class Item {
-     @Prop()
+     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Product' })
      productId: string;
 
      @Prop()
      quantity: number;
 }
+
 
 export const ItemSchema = SchemaFactory.createForClass(Item);
 
@@ -22,7 +23,11 @@ export class Cart {
      @Prop({ type: [ItemSchema], default: [] })
      products: Item[];
 
-     @Prop({ unique: true, required: true })
+     @Prop({ type: mongoose.Schema.Types.ObjectId, 
+          ref: 'User', 
+          unique: true, 
+          required: true 
+     })
      userId: string;
 }
 

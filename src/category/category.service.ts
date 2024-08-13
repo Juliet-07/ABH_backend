@@ -22,16 +22,16 @@ export class CategoryService {
       const { name, subcategories, description } = createCategoryDto;
 
       // Upload the image to Azure and get the URL
-      const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(imageFile);
-      // Convert the image buffer to a base64 string
-      const base64Image = imageFile.buffer.toString('base64');
+      const fileBuffer = Buffer.from(imageFile.buffer); // This line corrected
+      const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(fileBuffer, imageFile.originalname, imageFile.mimetype);
+  
 
       const category = {
         name,
         subcategories,
         description,
         // Combine the URL and base64 string in the image field
-        image: `data:${imageFile.mimetype};base64,${base64Image}`,
+        image:uploadedImageUrl ,
       };
 
       const result = await this.categoryModel.create(category);

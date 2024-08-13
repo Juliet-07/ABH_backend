@@ -70,23 +70,26 @@ export class ProductsService {
       });
 
       // Handle product images
+     
       if (productImages && productImages.length > 0) {
-        const imageUrls = await Promise.all(productImages.map(async (file, index) => {
-          const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(file);
-          const base64Image = file.buffer.toString('base64');
-          return {
-            id: index + 1, // Ensure this is a number if required by your model
-            url: `data:${file.mimetype};base64,${base64Image}`, // Store base64 image
-          };
-        }));
+        const imageUrls = await Promise.all(
+          productImages.map(async (file, index) => {
+            const fileBuffer = Buffer.from(file.buffer); // This line corrected
+            const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(fileBuffer, file.originalname, file.mimetype);
+            return {
+              id: index + 1, 
+              url: uploadedImageUrl,
+            };
+          })
+        );
         product.images = imageUrls;
       }
 
       // Handle featured image
       if (featuredImage) {
-        const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(featuredImage);
-        const base64Image = featuredImage.buffer.toString('base64');
-        product.featured_image = `data:${featuredImage.mimetype};base64,${base64Image}`;
+        const fileBuffer = Buffer.from(featuredImage.buffer); // This line corrected
+        const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(fileBuffer, featuredImage.originalname, featuredImage.mimetype);
+        product.featured_image = uploadedImageUrl;
       }
 
       // Save the product
@@ -144,21 +147,24 @@ export class ProductsService {
 
 
       if (productImages && productImages.length > 0) {
-        const imageUrls = await Promise.all(productImages.map(async (file, index) => {
-          const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(file);
-          const base64Image = file.buffer.toString('base64');
-          return {
-            id: index + 1, // Ensure this is a number if required by your model
-            url: `data:${file.mimetype};base64,${base64Image}`,  // Store base64 image
-          };
-        }));
+        const imageUrls = await Promise.all(
+          productImages.map(async (file, index) => {
+            const fileBuffer = Buffer.from(file.buffer); // This line corrected
+            const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(fileBuffer, file.originalname, file.mimetype);
+            return {
+              id: index + 1, 
+              url: uploadedImageUrl,
+            };
+          })
+        );
         product.images = imageUrls;
       }
 
+      // Handle featured image
       if (featuredImage) {
-        const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(featuredImage);
-        const base64Image = featuredImage.buffer.toString('base64');
-        product.featured_image = `data:${featuredImage.mimetype};base64,${base64Image}`;
+        const fileBuffer = Buffer.from(featuredImage.buffer); // This line corrected
+        const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(fileBuffer, featuredImage.originalname, featuredImage.mimetype);
+        product.featured_image = uploadedImageUrl;
       }
 
 
@@ -214,21 +220,28 @@ export class ProductsService {
 
 
       if (productImages && productImages.length > 0) {
-        const imageUrls = await Promise.all(productImages.map(async (file, index) => {
-          const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(file);
-          const base64Image = file.buffer.toString('base64');
-          return {
-            id: index + 1, // Ensure this is a number if required by your model
-            url: `data:${file.mimetype};base64,${base64Image}`,  // Store base64 image
-          };
+        // Prepare arrays for buffers, names, and MIME types
+        const fileBuffers: Buffer[] = productImages.map(file => Buffer.from(file.buffer));
+        const fileNames: string[] = productImages.map(file => file.originalname);
+        const mimeTypes: string[] = productImages.map(file => file.mimetype);
+      
+        // Upload files to Azure Blob Storage
+        const imageUrls = await this.azureService.uploadMultipleToBlobStorage(fileBuffers, fileNames, mimeTypes);
+      
+        // Map returned URLs to include an ID
+        product.images = imageUrls.map((url, index) => ({
+          id: index + 1,
+          url,
         }));
-        product.images = imageUrls;
+
+        
       }
 
+      // Handle featured image
       if (featuredImage) {
-        const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(featuredImage);
-        const base64Image = featuredImage.buffer.toString('base64');
-        product.featured_image = `data:${featuredImage.mimetype};base64,${base64Image}`;
+        const fileBuffer = Buffer.from(featuredImage.buffer); // This line corrected
+        const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(fileBuffer, featuredImage.originalname, featuredImage.mimetype);
+        product.featured_image = uploadedImageUrl;
       }
 
       const result = await product.save();
@@ -390,7 +403,7 @@ export class ProductsService {
     limit = 10,
     page = 1,
   }: {
-    filter?: Record<string, any>; //:TODO
+    filter?: Record<string, any>;
     limit?: number;
     page?: number;
   }) {
@@ -399,23 +412,21 @@ export class ProductsService {
       const currentPage = Math.max(1, page);
       const skip = (currentPage - 1) * pageSize;
 
-      const cacheKey = `products:key`;
 
-      // Check cache first
-      const cachedData = await this.redisService.get({ key: cacheKey });
-      if (cachedData) {
-        return cachedData;
-      }
 
-      const data = await this.productModel.find({})
+      const data = await this.productModel.find(filter)
 
+        .populate({
+          path: 'vendor',
+          select: ['-password']
+        })
         .populate('categoryId')
         .populate('subcategoryId')
         .skip(skip)
         .limit(limit);
 
-      const totalCount = await this.productModel.countDocuments();
-
+      const totalCount = await this.productModel.countDocuments(filter);
+      console.log(data.length)
       const result = {
         page: pageSize,
         currentPage,
@@ -423,7 +434,7 @@ export class ProductsService {
         data,
       };
 
-      await this.redisService.set({ key: cacheKey, value: result, ttl: 60 * 60 });
+
 
       return result;
     } catch (error) {
@@ -436,14 +447,10 @@ export class ProductsService {
 
 
       const products = await this.productModel.find({ vendor: vendor })
-        .populate({
-          path: 'vendor',
-          select: '-password' // Exclude the password field
-        })
+
         .populate('categoryId')
         .populate('subcategoryId')
 
-      console.log(products.length)
 
       return {
         totalCount: products.length,
@@ -454,7 +461,11 @@ export class ProductsService {
     }
   }
 
-  async getAllRetailProduct(vendor: string, page = 1, limit = 10) {
+
+
+  //For USERS
+
+  async getAllRetailProduct(page = 1, limit = 10) {
     try {
 
       page = Math.max(page, 1);
@@ -465,7 +476,7 @@ export class ProductsService {
 
 
       const products = await this.productModel.find({
-        vendor: vendor,
+        status: 'APPROVED',
         productType: 'RETAIL'
       })
         .populate('categoryId')
@@ -475,7 +486,7 @@ export class ProductsService {
         .exec();
 
       const totalCount = await this.productModel.countDocuments({
-        vendor: vendor,
+        status: 'APPROVED',
         productType: 'RETAIL'
       }).exec();
 
@@ -495,7 +506,7 @@ export class ProductsService {
 
 
 
-  async getAllWholeSaleProduct(vendorId: string, page = 1, limit = 10) {
+  async getAllWholeSaleProduct(page = 1, limit = 10) {
     try {
 
 
@@ -508,7 +519,7 @@ export class ProductsService {
 
 
       const products = await this.productModel.find({
-        vendorId: vendorId,
+        status: 'APPROVED',
         productType: 'WHOLESALE'
       })
 
@@ -519,7 +530,7 @@ export class ProductsService {
         .exec();
 
       const totalCount = await this.productModel.countDocuments({
-        vendorId: vendorId,
+        status: 'APPROVED',
         productType: 'WHOLESALE'
       }).exec();
 
@@ -536,7 +547,7 @@ export class ProductsService {
     }
   }
 
-  async getAllSampleProduct(vendor: string, page = 1, limit = 10) {
+  async getAllSampleProduct(page = 1, limit = 10) {
     try {
 
       page = Math.max(page, 1);
@@ -546,7 +557,7 @@ export class ProductsService {
       const skip = (page - 1) * limit;
 
       const products = await this.productModel.find({
-        vendor: vendor,
+        status: 'APPROVED',
         productType: 'SAMPLE_PRODUCT'
       })
         .populate('categoryId')
@@ -556,22 +567,90 @@ export class ProductsService {
         .exec();
 
       const totalCount = await this.productModel.countDocuments({
-        vendorId: vendor,
+        status: 'APPROVED',
         productType: 'SAMPLE_PRODUCT'
       }).exec();
 
 
       return {
-        products,
+
         totalCount,
         page,
         limit,
         totalPages: Math.ceil(totalCount / limit),
+        products
       };
     } catch (error) {
       throw error
     }
   }
+
+
+  async findAllForUser({
+    filter = {},
+    limit = 10,
+    page = 1,
+    search = {},
+  }: {
+    filter?: Record<string, any>;
+    limit?: number;
+    page?: number;
+    search?: {
+      categoryId?: string;
+      subcategoryId?: string;
+      sellingPrice?: number;
+      name?: string;
+    };
+  }) {
+    try {
+      const pageSize = Math.max(1, limit);
+      const currentPage = Math.max(1, page);
+      const skip = (currentPage - 1) * pageSize;
+
+      // Build search criteria
+      const searchCriteria: Record<string, any> = { ...filter };
+
+      if (search.categoryId) {
+        searchCriteria.categoryId = search.categoryId;
+      }
+
+      if (search.subcategoryId) {
+        searchCriteria.subcategoryId = search.subcategoryId;
+      }
+
+      if (search.sellingPrice !== undefined) {
+        searchCriteria.sellingPrice = search.sellingPrice;
+      }
+
+      if (search.name) {
+        searchCriteria.name = { $regex: search.name, $options: 'i' };
+      }
+
+      const data = await this.productModel.find(searchCriteria)
+        // .populate({
+        //   path: 'vendor',
+        //   select: ['-password'],
+        // })
+        .populate('categoryId')
+        .populate('subcategoryId')
+        .skip(skip)
+        .limit(limit);
+
+      const totalCount = await this.productModel.countDocuments(searchCriteria);
+
+      const result = {
+        page: pageSize,
+        currentPage,
+        totalPages: Math.ceil(totalCount / pageSize),
+        data,
+      };
+
+      return result;
+    } catch (error) {
+      throw new Error(`Error fetching products: ${error.message}`);
+    }
+  }
+
 
 
 }

@@ -40,6 +40,12 @@ export class VendorsService {
     private readonly notificationService: NotificationService
   ) { }
 
+
+  private decodeBase64ToBuffer(base64: string): Buffer {
+    const base64Data = base64.replace(/^data:application\/pdf;base64,/, ''); // Remove base64 prefix if present
+    return Buffer.from(base64Data, 'base64');
+  }
+
   async create(
     createVendorDto: CreateVendorDto, pdfFile?: Express.Multer.File
   ): Promise<Vendor> {
@@ -51,15 +57,11 @@ export class VendorsService {
       let cacCertificateUrl: string | undefined;
 
       if (pdfFile) {
-        // Upload the PDF to Azure and get the URL
-        const uploadedPdfUrl = await this.azureService.uploadDocumentToBlobStorage(pdfFile);
-
-        // Convert the PDF buffer to a base64 string
-        const base64Pdf = pdfFile.buffer.toString('base64');
-
-        // Store the base64 string in cacCertificateUrl
-        cacCertificateUrl = `data:${pdfFile.mimetype};base64,${base64Pdf}`;
-      }
+        // Use pdfFile to get the buffer and other details
+        const fileBuffer = Buffer.from(pdfFile.buffer); // Corrected
+        cacCertificateUrl = await this.azureService.uploadDocumentToBlobStorage(fileBuffer, pdfFile.originalname, pdfFile.mimetype);
+      } 
+       
 
       // Create the vendor with or without the PDF URL
       const result = await this.vendorModel.create({
@@ -79,6 +81,8 @@ export class VendorsService {
       throw new BadRequestException(error.message);
     }
   }
+
+  
 
   async validateReferredBy(code: string): Promise<string> {
     // Get Valid Referrer.
