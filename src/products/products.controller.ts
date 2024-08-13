@@ -25,7 +25,6 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { VendorGuard } from '../auth/vendor-guard/vendor.guard';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { AdminAuthGuard } from '../auth/admin-auth/admin-auth.guard';
-import { ProductStatusEnums } from '../constants';
 import { ManageProductDto } from './dto/manage-product.dto';
 import { CreateWholeSaleProductDto } from './dto/wholesale-product.dto';
 import { SampleProductDto } from './dto/sample-product.dto';
@@ -39,7 +38,6 @@ export class ProductsController {
     private readonly productsService: ProductsService,
 
   ) { }
-
 
 
   @UseGuards(VendorGuard)
@@ -148,11 +146,11 @@ export class ProductsController {
   @ApiBearerAuth('JWT-auth')
   async findAllForAdmin(
     @Query('status') status: string,
-    @Query('limit') limit = 10,
-    @Query('page') page = 1,
+    @Query('limit') limit?: number,
+    @Query('page') page?: number,
   ) {
 
-    const filter = status ? { status } : { status: ProductStatusEnums.APPROVED };
+    const filter = status ? { status } : { status: 'APPROVED' };
 
     return await this.productsService.findAll({
       filter,
@@ -173,28 +171,16 @@ export class ProductsController {
     return this.productsService.listAllVendorProduct(vendor,)
   }
 
-
-  // For Users
-  @Get('/all')
-  async findAll(
-    @Query('status') status: string, //:TODO
-    @Query('limit') limit = 10,
-    @Query('page') page = 1,
+  @HttpCode(HttpStatus.OK)
+  @Get('/vendor/:vendor')
+  async findVendorProduct1(
+    @Param('vendor') vendor: string
   ) {
-    try {
-      // Apply default filter if status is not provided
-      const filter = status ? { status } : { status: ProductStatusEnums.APPROVED };
-
-      // Call the service method with pagination and filter
-      return await this.productsService.findAll({
-        filter,
-        limit,
-        page
-      });
-    } catch (error) {
-      throw new BadRequestException('Failed to fetch products');
-    }
+    return this.productsService.listAllVendorProduct(vendor);
   }
+
+
+
 
   @Get('top-products')
   fetchTopProducts() {
@@ -254,30 +240,56 @@ export class ProductsController {
   }
 
 
-  @UseGuards(VendorGuard)
+  //for users
+
+
   @HttpCode(HttpStatus.OK)
   @Get('/list/retail')
-  async listRetail(@Request() req): Promise<any> {
-    const vendorId = req.vendor;
+  async listRetail(): Promise<any> {
 
-    return this.productsService.getAllRetailProduct(vendorId);
+
+    return this.productsService.getAllRetailProduct();
   }
 
 
-  @UseGuards(VendorGuard)
+
   @HttpCode(HttpStatus.OK)
   @Get('/list/wholesale')
-  async listWholesale(@Request() req): Promise<any> {
-    const vendorId = req.vendor;
-    return this.productsService.getAllWholeSaleProduct(vendorId);
+  async listWholesale(): Promise<any> {
+
+    return await this.productsService.getAllWholeSaleProduct();
   }
 
 
-  @UseGuards(VendorGuard)
+
   @HttpCode(HttpStatus.OK)
   @Get('/list/sample')
-  async listSample(@Request() req): Promise<any> {
-    const vendorId = req.vendor;
-    return this.productsService.getAllSampleProduct(vendorId);
+  async listSample(): Promise<any> {
+
+    return this.productsService.getAllSampleProduct();
+  }
+
+
+
+  // For Users
+  @HttpCode(HttpStatus.OK)
+  @Get('/list/all')
+  async findAll(
+    @Query('limit') limit: number,
+    @Query('page') page: number,
+    @Query('categoryId') categoryId: string,
+    @Query('subcategoryId') subcategoryId: string,
+    @Query('sellingPrice') sellingPrice: number,
+    @Query('name') name: string,
+  ) {
+    // Build the search object from query parameters
+    const search: any = {};
+    if (categoryId) search.categoryId = categoryId;
+    if (subcategoryId) search.subcategoryId = subcategoryId;
+    if (sellingPrice !== undefined) search.sellingPrice = sellingPrice;
+    if (name) search.name = name;
+
+    // Call the service method
+    return this.productsService.findAllForUser({ limit, page, search });
   }
 }

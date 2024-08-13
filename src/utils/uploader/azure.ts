@@ -30,36 +30,28 @@ export class AzureService {
     this.containerClient = this.blobServiceClient.getContainerClient(containerName);
   }
 
-  async uploadFileToBlobStorage(file: Express.Multer.File): Promise<string> {
+  async uploadFileToBlobStorage(fileBuffer: Buffer, fileName: string, mimetype: string): Promise<string> {
     try {
-      console.log(file);
-
-      const maxFileSize = 70 * 1024 * 1024; // 70MB in bytes
-      if (file.size > maxFileSize) {
-        throw new BadRequestException('File size exceeds the maximum allowed limit (70MB).');
-      }
-
-      const validateFileType = (file: Express.Multer.File): boolean => {
-        const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf'];
-        const extension = file.originalname.split('.').pop()?.toLowerCase();
-
+      const validateFileType = (fileName: string): boolean => {
+        const allowedExtensions = ['jpg', 'jpeg', 'png'];
+        const extension = fileName.split('.').pop()?.toLowerCase();
         return extension ? allowedExtensions.includes(extension) : false;
       };
 
-      if (!validateFileType(file)) {
-        throw new BadRequestException('Unsupported file type. Only JPEG, PNG, and PDF files are allowed.');
+      if (!validateFileType(fileName)) {
+        throw new BadRequestException('Unsupported file type. Only JPEG and PNG files are allowed.');
       }
 
-      const blobName = `${uuidv4()}_${Date.now()}_${file.originalname}`;
+      const blobName = `${uuidv4()}_${Date.now()}_${fileName}`;
       const blockBlobClient: BlockBlobClient = this.containerClient.getBlockBlobClient(blobName);
 
       // Set Content-Type header based on file type
       const options = {
-        blobHTTPHeaders: { blobContentType: file.mimetype },
+        blobHTTPHeaders: { blobContentType: mimetype },
       };
 
       // Upload the file
-      await blockBlobClient.upload(file.buffer, file.buffer.length, options);
+      await blockBlobClient.uploadData(fileBuffer, options);
 
       // Return the Blob URL
       return blockBlobClient.url;
@@ -69,36 +61,28 @@ export class AzureService {
     }
   }
 
-  async uploadDocumentToBlobStorage(file: Express.Multer.File): Promise<string> {
+  async uploadDocumentToBlobStorage(fileBuffer: Buffer, fileName: string, mimetype: string): Promise<string> {
     try {
-      console.log(file);
-
-      const maxFileSize = 70 * 1024 * 1024; // 70MB in bytes
-      if (file.size > maxFileSize) {
-        throw new BadRequestException('File size exceeds the maximum allowed limit (70MB).');
-      }
-
-      const validateFileType = (file: Express.Multer.File): boolean => {
+      const validateFileType = (fileName: string): boolean => {
         const allowedExtensions = ['pdf'];
-        const extension = file.originalname.split('.').pop()?.toLowerCase();
-
+        const extension = fileName.split('.').pop()?.toLowerCase();
         return extension ? allowedExtensions.includes(extension) : false;
       };
 
-      if (!validateFileType(file)) {
-        throw new BadRequestException('Unsupported file type. Only JPEG, PNG, and PDF files are allowed.');
+      if (!validateFileType(fileName)) {
+        throw new BadRequestException('Unsupported file type. Only JPEG and PNG files are allowed.');
       }
 
-      const blobName = `${uuidv4()}_${Date.now()}_${file.originalname}`;
+      const blobName = `${uuidv4()}_${Date.now()}_${fileName}`;
       const blockBlobClient: BlockBlobClient = this.containerClient.getBlockBlobClient(blobName);
 
       // Set Content-Type header based on file type
       const options = {
-        blobHTTPHeaders: { blobContentType: file.mimetype },
+        blobHTTPHeaders: { blobContentType: mimetype },
       };
 
       // Upload the file
-      await blockBlobClient.upload(file.buffer, file.buffer.length, options);
+      await blockBlobClient.uploadData(fileBuffer, options);
 
       // Return the Blob URL
       return blockBlobClient.url;
@@ -108,41 +92,51 @@ export class AzureService {
     }
   }
 
-  async uploadMultipleToBlobStorage(files: Express.Multer.File[]): Promise<string[]> {
+  async uploadMultipleToBlobStorage(fileBuffers: Buffer[], fileNames: string[], mimetypes: string[]): Promise<string[]> {
     try {
+      if (fileBuffers.length !== fileNames.length || fileBuffers.length !== mimetypes.length) {
+        throw new BadRequestException('Mismatch between number of files, names, and MIME types.');
+      }
+  
+      const maxFileSize = 70 * 1024 * 1024; // 70MB in bytes
+  
       // Prepare an array of promises for uploading files
-      const uploadPromises = files.map(async (file) => {
-        const maxFileSize = 70 * 1024 * 1024; // 70MB in bytes
-        if (file.size > maxFileSize) {
+      const uploadPromises = fileBuffers.map(async (buffer, index) => {
+        const fileName = fileNames[index];
+        const mimetype = mimetypes[index];
+  
+        // Check file size
+        if (buffer.length > maxFileSize) {
           throw new BadRequestException('File size exceeds the maximum allowed limit (70MB).');
         }
-
-        const validateFileType = (file: Express.Multer.File): boolean => {
+  
+        // Validate file type
+        const validateFileType = (fileName: string): boolean => {
           const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf'];
-          const extension = file.originalname.split('.').pop()?.toLowerCase();
-
+          const extension = fileName.split('.').pop()?.toLowerCase();
           return extension ? allowedExtensions.includes(extension) : false;
         };
-
-        if (!validateFileType(file)) {
+  
+        if (!validateFileType(fileName)) {
           throw new BadRequestException('Unsupported file type. Only JPEG, PNG, and PDF files are allowed.');
         }
-
-        const blobName = `${uuidv4()}_${Date.now()}_${file.originalname}`;
+  
+        // Generate a unique name for the blob
+        const blobName = `${uuidv4()}_${Date.now()}_${fileName}`;
         const blockBlobClient: BlockBlobClient = this.containerClient.getBlockBlobClient(blobName);
-
+  
         // Set Content-Type header based on file type
         const options = {
-          blobHTTPHeaders: { blobContentType: file.mimetype },
+          blobHTTPHeaders: { blobContentType: mimetype },
         };
-
+  
         // Upload the file
-        await blockBlobClient.upload(file.buffer, file.buffer.length, options);
-
+        await blockBlobClient.uploadData(buffer, options);
+  
         // Return the Blob URL
         return blockBlobClient.url;
       });
-
+  
       // Wait for all uploads to complete and return URLs
       const uploadedUrls = await Promise.all(uploadPromises);
       return uploadedUrls;
@@ -151,5 +145,6 @@ export class AzureService {
       throw error;
     }
   }
+  
 
 }
