@@ -15,7 +15,7 @@ import { Admin } from 'src/admin/schema/admin.schema';
 import { Vendor } from 'src/vendors/schema/vendor.schema';
 import { RedisService } from 'src/redis/redis.service';
 import { Product } from './schema/product.schema';
-import { CreateWholeSaleProductDto } from './dto/wholesale-product.dto';
+import { CreateMultipleWholeSaleProductsDto, CreateWholeSaleProductDto } from './dto/wholesale-product.dto';
 import { SampleProductDto } from './dto/sample-product.dto';
 import { MailingService } from 'src/utils/mailing/mailing.service';
 import { VendorsService } from 'src/vendors/vendors.service';
@@ -70,14 +70,14 @@ export class ProductsService {
       });
 
       // Handle product images
-     
+
       if (productImages && productImages.length > 0) {
         const imageUrls = await Promise.all(
           productImages.map(async (file, index) => {
             const fileBuffer = Buffer.from(file.buffer); // This line corrected
             const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(fileBuffer, file.originalname, file.mimetype);
             return {
-              id: index + 1, 
+              id: index + 1,
               url: uploadedImageUrl,
             };
           })
@@ -152,7 +152,7 @@ export class ProductsService {
             const fileBuffer = Buffer.from(file.buffer); // This line corrected
             const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(fileBuffer, file.originalname, file.mimetype);
             return {
-              id: index + 1, 
+              id: index + 1,
               url: uploadedImageUrl,
             };
           })
@@ -224,17 +224,17 @@ export class ProductsService {
         const fileBuffers: Buffer[] = productImages.map(file => Buffer.from(file.buffer));
         const fileNames: string[] = productImages.map(file => file.originalname);
         const mimeTypes: string[] = productImages.map(file => file.mimetype);
-      
+
         // Upload files to Azure Blob Storage
         const imageUrls = await this.azureService.uploadMultipleToBlobStorage(fileBuffers, fileNames, mimeTypes);
-      
+
         // Map returned URLs to include an ID
         product.images = imageUrls.map((url, index) => ({
           id: index + 1,
           url,
         }));
 
-        
+
       }
 
       // Handle featured image
@@ -254,6 +254,47 @@ export class ProductsService {
 
   }
 
+
+  async addMultipleWholesaleProducts(createMultipleWholeSaleProductsDto: CreateMultipleWholeSaleProductsDto, vendor: string) {
+    try {
+      // Validation phase
+      const { products } = createMultipleWholeSaleProductsDto;
+
+      // Validate categories and vendors
+
+      const vendorCheck = await this.vendorModel.findOne({ vendor });
+      if (!vendorCheck) throw new NotFoundException(`Vendor not found`);
+
+
+
+
+
+      // Create products
+      const productDocs = products.map(productData => {
+        const code = this.helpers.genCode(10);
+        const slug = `${this.helpers.convertProductNameToSlug(productData.name)}-${code}`;
+
+        const product = new this.productModel({
+          ...productData,
+          code,
+          slug,
+          createdBy: vendorCheck.id,
+        });
+
+        return product;
+      });
+
+      // **Image Uploads** (Replace with your image upload logic)
+      // - Loop through productDocs
+      // - For each product, upload its images (if any) to Azure Blob Storage
+      // - Update the product document with image URLs
+
+      const createdProducts = await this.productModel.insertMany(productDocs);
+      return createdProducts;
+    } catch (error) {
+      throw new error; // Consider more specific error handling
+    }
+  }
 
   fetchTopProducts() {
     return [];
@@ -396,6 +437,61 @@ export class ProductsService {
     }
   }
 
+  async findAllForAdmin({
+    status,
+    limit = 10,
+    page = 1,
+  }: {
+    status?: string;
+    limit?: number;
+    page?: number;
+  }) {
+    try {
+      const pageSize = Math.max(1, limit);
+      const currentPage = Math.max(1, page);
+      const skip = (currentPage - 1) * pageSize;
+
+
+      const defaultStatus = "PENDING";
+
+      // Build search criteria
+      const searchCriteria: Record<string, any> = {};
+
+      if (status) {
+        searchCriteria.status = status.toUpperCase();
+      }   else {
+        searchCriteria.status = defaultStatus;
+      }
+
+      console.log('Search criteria:', searchCriteria);
+
+      const data = await this.productModel.find(searchCriteria)
+        .select('-images -featured_image')
+        .populate({
+          path: 'vendor',
+          select: ['-password', '-cacCertificateUrl']
+        })
+        .populate('categoryId')
+        .populate('subcategoryId')
+        .skip(skip)
+        .limit(pageSize)
+        .exec();
+
+      const totalCount = await this.productModel.countDocuments(searchCriteria);
+
+      const result = {
+        page: pageSize,
+        currentPage,
+        totalPages: Math.ceil(totalCount / pageSize),
+        data,
+      };
+
+      return result;
+    } catch (error) {
+      throw new Error(`Error fetching products: ${error.message}`);
+    }
+  }
+
 
 
   async findAll({
@@ -414,11 +510,11 @@ export class ProductsService {
 
 
 
-      const data = await this.productModel.find(filter)
-
+      const data = await this.productModel.find( filter )
+        .select('-images -featured_image')
         .populate({
           path: 'vendor',
-          select: ['-password']
+          select: ['-password', '-cacCertificateUrl']
         })
         .populate('categoryId')
         .populate('subcategoryId')

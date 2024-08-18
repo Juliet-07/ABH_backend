@@ -63,8 +63,8 @@ export class Product {
   @Prop({ type: Number, required: true })
   quantity: number;
 
-  @Prop({ type: String, required: false })
-  size?: string;
+  @Prop({ type: String, required: true })
+  size: string;
 
   @Prop({ type: Number, default: 0 })
   soldQuantity: number;

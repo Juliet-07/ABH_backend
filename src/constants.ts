@@ -1,4 +1,5 @@
 export const jwtConstants = {
+
     secret: process.env.JWT_SECRET
 }
 
@@ -27,8 +28,21 @@ export enum ProductStatusEnums {
     DECLINED = 'DECLINED',
 }
 
+export enum SubscriptionTypeEnum {
+    DAILY = 'DAILY',
+    WEEKLY = 'WEEKLY',
+    MONTHLY = 'MONTHLY'
+}
+
+
+export enum SubscriptionStatus {
+    ACTIVE = 'ACTIVE',
+    INACTIVE = 'INACTIVE',
+}
+
 export enum OrderStatusEnum {
     PENDING = 'PENDING',
+    PAID = 'PAID',
     CONFIRMED = 'CONFIRMED',
     DECLINED = 'DECLINED',
     PROCESSING = 'PROCESSING',

@@ -25,7 +25,7 @@ export class Vendor {
   address?: string;
 
   @Prop({ type: String })
-  code?: string;
+  code?: string;featured_image
 
   @Prop({ type: String })
   store?: string;

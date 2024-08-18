@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { Document } from 'mongoose';
 import { OrderStatusEnum, ShippingMethodEnums } from 'src/constants';
 
+
 export type OrderDocument = Order & Document;
 
 @Schema({ timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } })
@@ -16,20 +17,29 @@ export class Order {
      @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
      userId: string
 
-     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Vendor', required: true })
+     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Vendor', required: false })
      vendorId: string
 
-     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true })
-     productId: string
+     @Prop({
+          type: [{
+               productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+               quantity: { type: Number, required: true }
+          }],
+          required: true
+     })
+     products: {
+          productId: string;
+          quantity: number;
+     }[];
 
      @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Transaction', required: true })
      transactionId: string
 
-     @Prop({ type: Number, required: true })
+     @Prop({ type: Number, required: false })
      quantity: number;
 
 
-     @Prop({required: true})
+     @Prop({ required: true })
      totalAmount: number;
 
      @Prop({
@@ -46,6 +56,21 @@ export class Order {
           city: string;
           state: string;
           country: string;
+     };
+
+     @Prop({
+          type: {
+               firstName: { type: String, required: true },
+               lastName: { type: String, required: true },
+               email: { type: String, required: true },
+               phoneNumber: { type: String, required: true },
+          }
+     })
+     personalInfo: {
+          firstName: string,
+          lastName: string;
+          email: string;
+          phoneNumber: string;
      };
 
      @Prop({

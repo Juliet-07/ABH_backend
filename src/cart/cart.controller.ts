@@ -62,9 +62,8 @@ export class CartController {
   @ApiBearerAuth('JWT-auth')
   synchronizeCart(
     @Body() syncCartDto: SynchronizeCartDto
-    ,@Request() req,
-) 
-  {
+    , @Request() req,
+  ) {
 
     const userId = req.user
     return this.cartService.synchronizeCart(syncCartDto, userId);
@@ -83,8 +82,9 @@ export class CartController {
   @HttpCode(HttpStatus.OK)
   @UsePipes(new ValidationPipe())
   @ApiBearerAuth('JWT-auth')
-  getDeliveryEstimate(@Req() req, deliveryEstimateDto: DeliveryEstimateDto) {
-    return this.cartService.getDeliveryEstimate(req.user.id, deliveryEstimateDto);
+  getDeliveryEstimate(@Request() req, deliveryEstimateDto: DeliveryEstimateDto) {
+    const userId = req.user
+    return this.cartService.getDeliveryEstimate(userId, deliveryEstimateDto);
   }
 
   @Delete('/delete/:productId')

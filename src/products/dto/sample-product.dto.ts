@@ -49,6 +49,7 @@ export class SampleProductDto {
 
 
      @IsString()
+     @IsNotEmpty()
      @ApiProperty({
           type: String,
           description: 'Size',

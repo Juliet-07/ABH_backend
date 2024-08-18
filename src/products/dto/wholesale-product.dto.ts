@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsString, IsNumber, IsOptional, IsNumberString, IsJSON, IsBoolean, IsDefined, IsUrl, IsNotEmpty } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsEnum, IsString, IsNumber, IsOptional, IsNumberString, IsJSON, IsBoolean, IsDefined, IsUrl, IsNotEmpty, ValidateNested } from 'class-validator';
 import { ProductTypeEnums } from 'src/constants';
 import { Currencies } from 'src/utils/constants';
 
@@ -33,6 +34,7 @@ export class CreateWholeSaleProductDto {
      unit: string
 
      @IsString()
+     @IsNotEmpty()
      @ApiProperty({
           type: String,
           description: 'Size',
@@ -81,8 +83,6 @@ export class CreateWholeSaleProductDto {
      @IsNumber()
      @IsOptional()
      length?: number;
-
-
 
 
      @IsString()
@@ -134,3 +134,11 @@ export class CreateWholeSaleProductDto {
      })
      videoUrl: string;
 }
+
+
+export class CreateMultipleWholeSaleProductsDto {
+     @ApiProperty({ type: [CreateWholeSaleProductDto] })
+     @ValidateNested({ each: true })
+     @Type(() => CreateWholeSaleProductDto)
+     products: CreateWholeSaleProductDto[];
+   }

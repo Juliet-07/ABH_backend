@@ -8,10 +8,32 @@ import { VendorGuard } from '../auth/vendor-guard/vendor.guard';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { AdminAuthGuard } from '../auth/admin-auth/admin-auth.guard';
 import { ConfirmTransactionStatusDto } from './dto/confirm-transaction-status.dto';
+import { CreatePaymentDto, CreatePayStackPaymentDto } from 'src/payment/dto/initiat.dto';
+import { PaymentService } from 'src/payment/service/payments.service';
+import { DeliveryEstimateDto } from 'src/cart/dto/delivery-estimate.dto';
 
 @Controller('orders')
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) { }
+  constructor(
+    private readonly ordersService: OrdersService,
+  
+
+  ) { }
+
+
+
+
+
+  @Post('/delivery-cost-estimate')
+  //@UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ValidationPipe())
+  @ApiBearerAuth('JWT-auth')
+  getDeliveryEstimate( deliveryEstimateDto: DeliveryEstimateDto) {
+    
+    return this.ordersService.getDeliveryEstimate(deliveryEstimateDto);
+  }
+
 
   @Post()
   @UseGuards(AuthGuard)
@@ -21,7 +43,7 @@ export class OrdersController {
   create(
     @Body() createOrderDto: CreateOrderDto,
     @Request() req,
-) {
+  ) {
 
     const userId = req.user;
     return this.ordersService.create(createOrderDto, userId);
@@ -108,14 +130,14 @@ export class OrdersController {
     return this.ordersService.updateOrderStatus(id, req.vendor.id, updateOrderStatusDto);
   }
 
-  @Post('confirm/:transactionId')
-  @UseGuards(AuthGuard)
-  @HttpCode(HttpStatus.OK)
-  @UsePipes(new ValidationPipe())
-  @ApiBearerAuth('JWT-auth')
-  confirmTransactionStatus(@Param('transactionId') transactionId: string, @Req() req, @Body() confirmTransactionStatusDto: ConfirmTransactionStatusDto) {
-    return this.ordersService.confirmTransactionStatus(transactionId, req.user.id, confirmTransactionStatusDto);
-  }
+  // @Post('confirm/:transactionId')
+  // @UseGuards(AuthGuard)
+  // @HttpCode(HttpStatus.OK)
+  // @UsePipes(new ValidationPipe())
+  // @ApiBearerAuth('JWT-auth')
+  // confirmTransactionStatus(@Param('transactionId') transactionId: string, @Req() req, @Body() confirmTransactionStatusDto: ConfirmTransactionStatusDto) {
+  //   return this.ordersService.confirmTransactionStatus(transactionId, req.user.id, confirmTransactionStatusDto);
+  // }
 
   @Get(':orderId')
   @UseGuards(AuthGuard)
