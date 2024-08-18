@@ -4,6 +4,7 @@ import {
   IsDefined,
   IsEnum,
   IsJSON,
+  IsNotEmpty,
   IsNumber,
   IsNumberString,
   IsOptional,
@@ -38,6 +39,7 @@ export class CreateProductDto {
 
 
   @IsString()
+  @IsNotEmpty()
   @ApiProperty({
     type: String,
     description: 'Size',
@@ -100,7 +102,7 @@ export class CreateProductDto {
     type: Number,
     description: 'Sale Price (Optional)',
   })
-  salePrice?: number;
+  sellingPrice?: number;
 
   @IsBoolean()
   @IsOptional()

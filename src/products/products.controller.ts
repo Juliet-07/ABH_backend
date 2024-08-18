@@ -141,19 +141,37 @@ export class ProductsController {
 
 
   // For Admins
+  // @UseGuards(AdminAuthGuard)
+  // @Get()
+  // @ApiBearerAuth('JWT-auth')
+  // async findAllForAdmin(
+  //   @Query('status') status: string,
+  //   @Query('limit') limit?: number,
+  //   @Query('page') page?: number,
+  // ) {
+
+  //   const filter = status ? { status } : { status: 'APPROVED' };
+
+
+
+  //   return await this.productsService.findAll({
+  //     filter,
+  //     limit,
+  //     page
+  //   });
+  // }
+
+
   @UseGuards(AdminAuthGuard)
   @Get()
   @ApiBearerAuth('JWT-auth')
-  async findAllForAdmin(
-    @Query('status') status: string,
+  async getProductsForAdmin(
+    @Query('status') status?: string,
     @Query('limit') limit?: number,
     @Query('page') page?: number,
   ) {
-
-    const filter = status ? { status } : { status: 'APPROVED' };
-
-    return await this.productsService.findAll({
-      filter,
+    return await this.productsService.findAllForAdmin({
+      status,
       limit,
       page
     });

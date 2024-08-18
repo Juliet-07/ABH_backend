@@ -20,6 +20,9 @@ import { RedisModule } from './redis/redis.module';
 import { NotificationModule } from './notification/notification.module';
 import { TransactionModule } from './transaction/transaction.module';
 import { MongooseModule } from '@nestjs/mongoose';
+import { SubscriptionModule } from './subscription/subscription.module';
+//import { PaymentModule } from './payment/payment.module';
+
 
 
 @Module({
@@ -46,7 +49,7 @@ import { MongooseModule } from '@nestjs/mongoose';
     CartModule,
     RedisModule,
     NotificationModule,
-
+    SubscriptionModule
   ],
   controllers: [AppController],
   providers: [
@@ -55,7 +58,7 @@ import { MongooseModule } from '@nestjs/mongoose';
       provide: APP_INTERCEPTOR,
       useClass: ResponseInterceptor,
     },
-    HydrogenpayService,
+    
     HelpersService,
     // { provide: APP_GUARD, useClass: AdminAuthGuard },
     // { provide: APP_GUARD, useClass: AuthGuard },

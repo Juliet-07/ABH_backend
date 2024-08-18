@@ -24,14 +24,14 @@ export class CategoryService {
       // Upload the image to Azure and get the URL
       const fileBuffer = Buffer.from(imageFile.buffer); // This line corrected
       const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(fileBuffer, imageFile.originalname, imageFile.mimetype);
-  
+
 
       const category = {
         name,
         subcategories,
         description,
         // Combine the URL and base64 string in the image field
-        image:uploadedImageUrl ,
+        image: uploadedImageUrl,
       };
 
       const result = await this.categoryModel.create(category);
@@ -89,7 +89,7 @@ export class CategoryService {
   async update(id: string, updateCategoryDto: UpdateCategoryDto) {
     try {
       await this.categoryModel.findOneAndUpdate(
-         {_id:id }, updateCategoryDto 
+        { _id: id }, updateCategoryDto
       );
     } catch (error) {
       throw new BadRequestException(error.message);

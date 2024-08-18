@@ -7,13 +7,13 @@ import { VendorsModule } from '../vendors/vendors.module';
 import { TransactionModule } from '../transaction/transaction.module';
 import { CartModule } from '../cart/cart.module';
 import { AdminModule } from '../admin/admin.module';
-import { HydrogenpayService } from '../services/hydrogenpay/hydrogenpay.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { OrderSchema } from './schema/order.schema';
 import { CartSchema } from 'src/cart/schema/cart.schema';
 import { ProductSchema } from 'src/products/schema/product.schema';
 import { TransactionSchema } from 'src/transaction/schema/transaction.schema';
 import { AdminSchema } from 'src/admin/schema/admin.schema';
+import { PaymentModule } from 'src/payment/payment.module';
 
 @Module({
   imports: [MongooseModule.forFeature([
@@ -29,9 +29,10 @@ import { AdminSchema } from 'src/admin/schema/admin.schema';
     TransactionModule,
     CartModule,
     AdminModule,
-
+    PaymentModule
   ],
+  exports:[],
   controllers: [OrdersController],
-  providers: [OrdersService, HelpersService, HydrogenpayService]
+  providers: [OrdersService, HelpersService]
 })
 export class OrdersModule { }
