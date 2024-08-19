@@ -56,7 +56,7 @@ export class SubscriptionService {
      }
 
      async updateSubscriptionStatus(subscriptionId: string, status: string): Promise<Subscription> {
-          const subscription = await this.subscriptionModel.findById(subscriptionId);
+          const subscription = await this.subscriptionModel.findOne({ subscriptionId });
           if (!subscription) {
                throw new NotFoundException('Subscription not found');
           }
@@ -68,6 +68,30 @@ export class SubscriptionService {
           );
 
           return update;
+     }
+
+
+     async updateSubscriptionPay(reference: string) {
+          try {
+               const result = await this.subscriptionModel.findOneAndUpdate(
+                    { reference: reference },
+                    { $set: { status: 'ACTIVE' } },
+                    { new: true }
+               )
+
+               console.log(result)
+
+               if (!result) {
+
+                    throw new NotFoundException('Subscription not found');
+               }
+
+
+               return result
+          } catch (error) {
+               console.log(error)
+               throw new BadRequestException('Failed to verify transaction')
+          }
      }
 
 
@@ -84,7 +108,7 @@ export class SubscriptionService {
      }
 
 
-     @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT) 
+     @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
      async handleCron() {
           await this.checkAndDeactivateExpiredSubscriptions();
      }

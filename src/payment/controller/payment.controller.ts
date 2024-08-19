@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, HttpCode, HttpStatus, Post, Query } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
 import { PaymentService } from '../service/payments.service';
 import { CreatePaymentDto, CreatePayStackPaymentDto } from '../dto/initiat.dto';
 
@@ -14,11 +14,23 @@ export class PaymentController {
           return this.paymentService.createPayment(createPaymentDto)
      }
 
-     @Get('callback')
+
+
+     @Post('order-verify')
      @HttpCode(HttpStatus.OK)
-     async handleCallback(@Query('TransactionRef') transactionRef: string) {
+     async handleCallbackOrder(@Body('TransactionRef') transactionRef: string) {
           try {
-               return await this.paymentService.verifyTransaction(transactionRef);
+               return await this.paymentService.verifyOrderTransaction(transactionRef);
+          } catch (error) {
+               throw new BadRequestException('Transaction verification failed');
+          }
+     }
+
+     @Post('subscription-verify')
+     @HttpCode(HttpStatus.OK)
+     async handleCallbackSub(@Body('TransactionRef') transactionRef: string) {
+          try {
+               return await this.paymentService.verifySubscriptionTransaction(transactionRef);
           } catch (error) {
                throw new BadRequestException('Transaction verification failed');
           }

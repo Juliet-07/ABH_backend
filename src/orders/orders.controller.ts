@@ -7,9 +7,6 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { VendorGuard } from '../auth/vendor-guard/vendor.guard';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { AdminAuthGuard } from '../auth/admin-auth/admin-auth.guard';
-import { ConfirmTransactionStatusDto } from './dto/confirm-transaction-status.dto';
-import { CreatePaymentDto, CreatePayStackPaymentDto } from 'src/payment/dto/initiat.dto';
-import { PaymentService } from 'src/payment/service/payments.service';
 import { DeliveryEstimateDto } from 'src/cart/dto/delivery-estimate.dto';
 
 @Controller('orders')

@@ -64,7 +64,7 @@ export class CreateOrderDto {
   @IsEnum(ShippingMethodEnums)
   shippingMethod: string;
 
-  @IsDefined()
+  @IsOptional()
   @IsEnum(PaymentGatewayEnums)
   paymentGateway: string;
 

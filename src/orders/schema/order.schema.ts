@@ -89,11 +89,15 @@ export class Order {
           country?: string;
      };
 
-     @Prop({ enum: ShippingMethodEnums, required: true })
+     @Prop({ enum: ShippingMethodEnums, required: false })
      shippingMethod: ShippingMethodEnums;
 
      @Prop({ required: true })
      reference: string;
+
+
+     @Prop({ type: Number, required: true })
+     shippingFee: number
 
 }
 
