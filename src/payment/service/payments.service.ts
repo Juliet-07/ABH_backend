@@ -1,8 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import axios from 'axios';
 import { CreatePaymentDto, CreatePayStackPaymentDto } from '../dto/initiat.dto';
 import { ConfigService } from '@nestjs/config';
 import { OrdersService } from 'src/orders/orders.service';
+import { SubscriptionService } from 'src/subscription/service/subscription.service';
 
 @Injectable()
 export class PaymentService {
@@ -14,7 +15,8 @@ export class PaymentService {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly ordersService: OrdersService
+    private readonly ordersService: OrdersService,
+    private readonly subscriptionService: SubscriptionService
   ) {
     this.apiKey = this.configService.get<string>('HYDROGRENPAY_PUB_KEY');
     this.apiUrl = this.configService.get<string>('HYDROGRENPAY_URL');
@@ -47,30 +49,62 @@ export class PaymentService {
   }
 
 
-  async verifyTransaction(transactionRef: string) {
+  async verifyOrderTransaction(transactionRef: string) {
     try {
-      const response = await axios.get(`${this.hydroVerify}/transactionRef`, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        params: { TransactionRef: transactionRef }
-      });
-
-      console.log(response.data.status);
-
-      if (response.data.status === 'success') {
-        await this.ordersService.UpdateOrderStatus(transactionRef);
-        return { message: 'Payment verified and order updated' };
+      const response = await axios.post(this.hydroVerify,
+        { TransactionRef: transactionRef },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+        });
+  
+      if (response.data.data.status === 'Paid' || response.data.data.transactionStatus === 'Paid') {
+        const order = await this.ordersService.updateOrderStatusPay(transactionRef);
+        if (order) {
+          return { message: 'Payment verified and order updated' };
+        } else {
+          throw new NotFoundException('Order not found');
+        }
       } else {
         return { message: 'Payment verification failed' };
       }
-
     } catch (error) {
-      console.error('Error verifying transaction:', error.response ? error.response.data : error.message);
-      throw new BadRequestException('Failed to verify transaction');
+      console.error('Error verifying order transaction:', error.response ? error.response.data : error.message);
+      throw new BadRequestException('Failed to verify order transaction');
     }
   }
+
+  
+  async verifySubscriptionTransaction(transactionRef: string) {
+    try {
+      const response = await axios.post(this.hydroVerify,
+        { TransactionRef: transactionRef },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+        });
+  
+      if (response.data.data.status === 'Paid' || response.data.data.transactionStatus === 'Paid') {
+        const subscription = await this.subscriptionService.updateSubscriptionPay(transactionRef);
+        if (subscription) {
+          return { message: 'Payment verified and subscription updated' };
+        } else {
+          throw new NotFoundException('Subscription not found');
+        }
+      } else {
+        return { message: 'Payment verification failed' };
+      }
+    } catch (error) {
+      console.error('Error verifying subscription transaction:', error.response ? error.response.data : error.message);
+      throw new BadRequestException('Failed to verify subscription transaction');
+    }
+  }
+  
+  
 
 
 

@@ -156,7 +156,7 @@ export class OrdersService {
         .map((item) => item.product.sellingPrice * item.quantity)
         .reduce((a, b) => a + b, 0);
 
-      createOrderDto.shippingFee = await this.gigLogisticsService.getShippingPrice(shippingAddress) || 450
+      // createOrderDto.shippingFee = await this.gigLogisticsService.getShippingPrice(shippingAddress) || 450
 
       const amount = totalProductAmount + Number(shippingFee);
 
@@ -175,6 +175,7 @@ export class OrdersService {
         billingAddress,
         personalInfo,
         shippingMethod,
+        shippingFee,
         reference: this.helper.genString(15, '1234567890'),
         transactionId: transaction._id,
         totalAmount: amount,
@@ -432,24 +433,24 @@ export class OrdersService {
 
 
 
-  async UpdateOrderStatus(reference: string) {
-
-
+  async updateOrderStatusPay(reference: string) {
     try {
       const updatedOrder = await this.orderModel.findOneAndUpdate(
         { reference: reference },
         { $set: { status: 'PAID' } },
         { new: true }
-      )
+      );
 
-      if (!updatedOrder) throw new NotFoundException('Order Not found')
+      if (!updatedOrder) {
 
+        throw new NotFoundException('Order not found');
+      }
 
-      return { updatedOrder, reference }
+      return updatedOrder;
     } catch (error) {
-      throw new BadRequestException('Failed to update this order');
+      console.error(error)
+      throw new BadRequestException('Failed to update the order');
     }
-
   }
 
 
