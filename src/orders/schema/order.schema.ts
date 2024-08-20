@@ -99,6 +99,9 @@ export class Order {
      @Prop({ type: Number, required: true })
      shippingFee: number
 
+     @Prop({ type: Number, required: true })
+     vat: number
+
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

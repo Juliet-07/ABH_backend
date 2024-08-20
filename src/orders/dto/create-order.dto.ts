@@ -1,4 +1,4 @@
-import { IsDefined, IsEnum, IsOptional, IsArray, ValidateNested, IsNumber, IsString } from 'class-validator';
+import { IsDefined, IsEnum, IsOptional, IsArray, ValidateNested, IsNumber, IsString, IsDecimal } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PaymentGatewayEnums, ShippingMethodEnums } from '../../constants';
 
@@ -38,6 +38,10 @@ class ProductDto {
   @IsDefined()
   @IsNumber()
   quantity: number;
+
+
+  @IsOptional()
+  discount?: number
 }
 
 export class CreateOrderDto {
@@ -73,4 +77,7 @@ export class CreateOrderDto {
   @ValidateNested({ each: true })
   @Type(() => ProductDto)
   products: ProductDto[];
+
+ // @IsDecimal()
+  vat: number
 }

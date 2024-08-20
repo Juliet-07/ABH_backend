@@ -11,8 +11,8 @@ export class Transaction {
   @Prop({ required: true })
   reference: string;
 
-//   @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Order' }] })
-//   orders: Order[];
+  //   @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Order' }] })
+  //   orders: Order[];
 
   @Prop({ type: Number, required: true })
   amount: number;
@@ -34,6 +34,9 @@ export class Transaction {
 
   @Prop({ nullable: true })
   paymentReference: string;
+
+  @Prop({ type: Number, required: true })
+  vat: number
 }
 
 export const TransactionSchema = SchemaFactory.createForClass(Transaction);

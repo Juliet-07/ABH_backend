@@ -180,4 +180,7 @@ export class CreateProductDto {
     description: 'Product is in wishlist',
   })
   inWishlist: boolean;
+
+
+  
 }
