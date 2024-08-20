@@ -24,6 +24,7 @@ import { Transaction } from 'src/transaction/schema/transaction.schema';
 import { PaymentService } from 'src/payment/service/payments.service';
 import { DeliveryEstimateDto } from 'src/cart/dto/delivery-estimate.dto';
 import { GIGLogisticsService } from 'src/services/logistic/gig-logistics.service';
+import { User } from 'src/user/schema/user.schem';
 
 @Injectable()
 export class OrdersService {
@@ -32,10 +33,12 @@ export class OrdersService {
     @InjectModel(Cart.name) private cartModel: Model<Cart>,
     @InjectModel(Product.name) private productModel: Model<Product>,
     @InjectModel(Transaction.name) private transactionModel: Model<Transaction>,
+    @InjectModel(User.name) private userModel: Model<User>,
 
     private helper: HelpersService,
     private cartService: CartService,
     private readonly gigLogisticsService: GIGLogisticsService,
+    private readonly paymentService: PaymentService
 
   ) { }
 
@@ -153,6 +156,11 @@ export class OrdersService {
         })
       );
 
+      const userInfo = await this.userModel.findById(userId)
+
+
+      if (!userInfo) throw new NotFoundException('Please login or create an Account with us')
+
       // Calculate total product amount considering discounts
       const totalProductAmount = productDetails
         .map((item) => {
@@ -192,6 +200,7 @@ export class OrdersService {
         personalInfo,
         shippingMethod,
         shippingFee,
+        paymentGateway,
         vat,
         reference: this.helper.genString(15, '1234567890'),
         transactionId: transaction._id,
@@ -203,6 +212,40 @@ export class OrdersService {
         })),
       });
 
+      const HydrogenPaymentData = {
+        amount: order.totalAmount,
+        email: userInfo.email,
+        customerName: userInfo.firstName,
+        currency: "NGN",
+        transactionRef: order.reference,
+        callback: "http://localhost:3000/about-us"
+
+      }
+
+      const PaystackPaymentData = {
+        amount: order.totalAmount,
+        email: userInfo.email,
+        reference: order.reference,
+        callback: "http://localhost:3000/about-us"
+      }
+
+      //SET MULTIPLE PAYMENT 
+
+      let paymentResponse;
+
+      switch (order.paymentGateway) {
+        case PaymentGatewayEnums.HYDROGENPAY:
+          paymentResponse = await this.paymentService.createPayment(HydrogenPaymentData);
+          break;
+
+        case PaymentGatewayEnums.PAYSTACK:
+          paymentResponse = await this.paymentService.initializePayment(PaystackPaymentData);
+          break;
+
+        default:
+          throw new BadRequestException('Unsupported payment gateway');
+      }
+
 
       await Promise.all(
         productDetails.map((item) =>
@@ -213,7 +256,10 @@ export class OrdersService {
         )
       );
 
-      return order;
+      return {
+        order,
+        paymentResponse
+      };
     } catch (error) {
       console.log("THE ERROR", error);
       throw new BadRequestException(error.message);
@@ -295,8 +341,11 @@ export class OrdersService {
         .find(filter)
         .limit(limit)
         .skip(skip)
-        .populate('product')  // Optionally populate relations if needed
-        .populate('transaction');  // Optionally populate relations if needed
+        .populate('transactionId')
+        .populate('products.productId')
+        .exec();
+
+
 
       // Count total number of documents with the filter
       const totalCount = await this.orderModel.countDocuments(filter);

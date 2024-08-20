@@ -13,7 +13,7 @@ import { DeliveryEstimateDto } from 'src/cart/dto/delivery-estimate.dto';
 export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
-  
+
 
   ) { }
 
@@ -26,8 +26,8 @@ export class OrdersController {
   @HttpCode(HttpStatus.OK)
   @UsePipes(new ValidationPipe())
   @ApiBearerAuth('JWT-auth')
-  getDeliveryEstimate( deliveryEstimateDto: DeliveryEstimateDto) {
-    
+  getDeliveryEstimate(deliveryEstimateDto: DeliveryEstimateDto) {
+
     return this.ordersService.getDeliveryEstimate(deliveryEstimateDto);
   }
 
@@ -96,7 +96,7 @@ export class OrdersController {
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth('JWT-auth')
   async fetchUserOrders(
-    @Request() req: any,
+    @Request() req,
     @Query('page') page = 1,
     @Query('limit') limit = 10
   ) {
@@ -104,6 +104,7 @@ export class OrdersController {
       // Ensure limit and page are numbers
       const pageNumber = Number(page);
       const limitNumber = Number(limit);
+      const userId = req.user;
 
       // Ensure page and limit are positive integers
       if (pageNumber < 1 || limitNumber < 1) {
@@ -111,7 +112,7 @@ export class OrdersController {
       }
 
       // Call the service method
-      return await this.ordersService.fetchMyOrders(req.user?.id, limitNumber, pageNumber, 'user');
+      return await this.ordersService.fetchMyOrders(userId, limitNumber, pageNumber, 'user');
     } catch (error) {
       console.error('Error fetching user orders:', error);
       throw new BadRequestException('Failed to fetch user orders.');

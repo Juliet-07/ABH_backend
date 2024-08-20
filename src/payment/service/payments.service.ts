@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import axios from 'axios';
 import { CreatePaymentDto, CreatePayStackPaymentDto } from '../dto/initiat.dto';
 import { ConfigService } from '@nestjs/config';
@@ -15,7 +15,7 @@ export class PaymentService {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly ordersService: OrdersService,
+    @Inject(forwardRef(() => OrdersService)) private ordersService: OrdersService,
     private readonly subscriptionService: SubscriptionService
   ) {
     this.apiKey = this.configService.get<string>('HYDROGRENPAY_PUB_KEY');
@@ -38,7 +38,7 @@ export class PaymentService {
           },
         },
       );
-      console.log("THE RESPONSE", response.data)
+    
       return response.data;
 
     } catch (error) {
@@ -105,9 +105,6 @@ export class PaymentService {
   }
   
   
-
-
-
 
   async initializePayment(paymentData: CreatePayStackPaymentDto): Promise<any> {
     try {

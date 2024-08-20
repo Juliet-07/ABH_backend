@@ -17,5 +17,6 @@ import { HelpersService } from "src/utils/helpers/helpers.service";
      ],
      providers: [SubscriptionService, HelpersService],
      controllers: [SubscriptionController],
+     exports: [SubscriptionService],
 })
 export class SubscriptionModule { }
