@@ -148,17 +148,32 @@ export class OrdersService {
           return {
             product,
             quantity: item.quantity,
+            discount: item.discount || 0,
           };
         })
       );
 
+      // Calculate total product amount considering discounts
       const totalProductAmount = productDetails
-        .map((item) => item.product.sellingPrice * item.quantity)
+        .map((item) => {
+          const discountAmount = (item.discount / 100) * item.product.sellingPrice * item.quantity; // Calculate discount
+          const discountedPrice = (item.product.sellingPrice * item.quantity) - discountAmount; // Apply discount
+          return discountedPrice;
+        })
         .reduce((a, b) => a + b, 0);
 
       // createOrderDto.shippingFee = await this.gigLogisticsService.getShippingPrice(shippingAddress) || 450
 
-      const amount = totalProductAmount + Number(shippingFee);
+
+      // Calculate VAT (7% of total product amount)
+      const vat = parseFloat((totalProductAmount * 0.07).toFixed(2)); // Ensure VAT is a valid decimal
+
+      // Calculate total amount including VAT and shipping fee
+      const amount = parseFloat((totalProductAmount + vat + Number(shippingFee)).toFixed(2));
+
+      console.log("TOTAL-AMOUNT", totalProductAmount)
+      console.log("VAT", vat)
+
 
 
       const transaction = await this.transactionModel.create({
@@ -167,6 +182,7 @@ export class OrdersService {
         totalProductAmount: amount,
         shippingFee: Number(shippingFee),
         amount,
+        vat
       });
 
       const order = await this.orderModel.create({
@@ -176,12 +192,14 @@ export class OrdersService {
         personalInfo,
         shippingMethod,
         shippingFee,
+        vat,
         reference: this.helper.genString(15, '1234567890'),
         transactionId: transaction._id,
         totalAmount: amount,
         products: productDetails.map((item) => ({
           productId: item.product._id, // Use _id for Mongoose
           quantity: item.quantity,
+          discount: item.discount,
         })),
       });
 
