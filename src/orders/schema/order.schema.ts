@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { Document } from 'mongoose';
-import { OrderStatusEnum, ShippingMethodEnums } from 'src/constants';
+import { OrderStatusEnum, PaymentGatewayEnums, ShippingMethodEnums } from 'src/constants';
 
 
 export type OrderDocument = Order & Document;
@@ -101,6 +101,11 @@ export class Order {
 
      @Prop({ type: Number, required: true })
      vat: number
+
+
+
+     @Prop({ enum: PaymentGatewayEnums, required: true })
+     paymentGateway: PaymentGatewayEnums;
 
 }
 

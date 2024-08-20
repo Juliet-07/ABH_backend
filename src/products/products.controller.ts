@@ -287,6 +287,29 @@ export class ProductsController {
     return this.productsService.getAllSampleProduct();
   }
 
+  @HttpCode(HttpStatus.OK)
+  @Get('/list/wholesale/:productId')
+  async listOneWholesaleProduct(@Param('productId') productId: string) {
+    return await this.productsService.getOneWholesaleProduct(productId)
+  }
+
+
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/list/retail/:productId')
+  async listOneRetailProduct(@Param('productId') productId: string) {
+    return await this.productsService.getOneRetailProduct(productId)
+  }
+
+
+
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/list/sample/:productId')
+  async listOneSampleProduct(@Param('productId') productId: string) {
+    return await this.productsService.getOneSampleProduct(productId)
+  }
+
 
 
   // For Users

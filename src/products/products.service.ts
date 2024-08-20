@@ -459,7 +459,7 @@ export class ProductsService {
 
       if (status) {
         searchCriteria.status = status.toUpperCase();
-      }   else {
+      } else {
         searchCriteria.status = defaultStatus;
       }
 
@@ -510,7 +510,7 @@ export class ProductsService {
 
 
 
-      const data = await this.productModel.find( filter )
+      const data = await this.productModel.find(filter)
         .select('-images -featured_image')
         .populate({
           path: 'vendor',
@@ -600,6 +600,18 @@ export class ProductsService {
     }
   }
 
+  async getOneRetailProduct(productId: string) {
+    try {
+      const product = await this.productModel.findOne({ _id: productId, productType: 'RETAIL' })
+
+      if (!product) throw new NotFoundException(`Product not found`)
+
+      return product
+    } catch (error) {
+      throw error
+    }
+  }
+
 
 
   async getAllWholeSaleProduct(page = 1, limit = 10) {
@@ -643,6 +655,18 @@ export class ProductsService {
     }
   }
 
+  async getOneWholesaleProduct(productId: string) {
+    try {
+      const product = await this.productModel.findOne({ _id: productId, productType: 'WHOLESALE' })
+
+      if (!product) throw new NotFoundException(`Product not found`)
+
+      return product
+    } catch (error) {
+      throw error
+    }
+  }
+
   async getAllSampleProduct(page = 1, limit = 10) {
     try {
 
@@ -676,6 +700,19 @@ export class ProductsService {
         totalPages: Math.ceil(totalCount / limit),
         products
       };
+    } catch (error) {
+      throw error
+    }
+  }
+
+
+  async getOneSampleProduct(productId: string) {
+    try {
+      const product = await this.productModel.findOne({ _id: productId, productType: 'SAMPLE_PRODUCT' })
+
+      if (!product) throw new NotFoundException(`Product not found`)
+
+      return product
     } catch (error) {
       throw error
     }

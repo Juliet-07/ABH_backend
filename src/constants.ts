@@ -54,6 +54,7 @@ export enum OrderStatusEnum {
 
 export enum PaymentGatewayEnums {
     HYDROGENPAY = "HYDROGENPAY",
+    PAYSTACK = "PAYSTACK"
 }
 
 export enum PaymentStatusEnum {

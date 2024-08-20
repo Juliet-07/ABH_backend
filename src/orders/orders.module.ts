@@ -14,6 +14,9 @@ import { ProductSchema } from 'src/products/schema/product.schema';
 import { TransactionSchema } from 'src/transaction/schema/transaction.schema';
 import { AdminSchema } from 'src/admin/schema/admin.schema';
 import { PaymentModule } from 'src/payment/payment.module';
+import { PaymentService } from 'src/payment/service/payments.service';
+import { SubscriptionModule } from 'src/subscription/subscription.module';
+import { UserSchema } from 'src/user/schema/user.schem';
 
 @Module({
   imports: [MongooseModule.forFeature([
@@ -21,6 +24,7 @@ import { PaymentModule } from 'src/payment/payment.module';
     { name: 'Cart', schema: CartSchema },
     { name: 'Product', schema: ProductSchema },
     { name: 'Transaction', schema: TransactionSchema },
+    { name: 'User', schema: UserSchema },
     { name: 'Admin', schema: AdminSchema },
 
     ,]),
@@ -29,10 +33,12 @@ import { PaymentModule } from 'src/payment/payment.module';
     TransactionModule,
     CartModule,
     AdminModule,
-    PaymentModule
+    PaymentModule,
+    SubscriptionModule,
+
   ],
-  exports:[],
+  exports: [],
   controllers: [OrdersController],
-  providers: [OrdersService, HelpersService]
+  providers: [OrdersService, HelpersService, PaymentService]
 })
 export class OrdersModule { }
