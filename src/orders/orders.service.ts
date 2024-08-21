@@ -266,6 +266,7 @@ export class OrdersService {
         .find(filter)
         .limit(limit)
         .skip(skip)
+        .populate('userId')
         .populate('transactionId')
         .populate('products.productId')
         .exec();
@@ -298,7 +299,12 @@ export class OrdersService {
 
   async listOneOrder(orderId: string, userId: string) {
     try {
-      const order = await this.orderModel.findOne({ _id: orderId, userId: userId }).populate('products.productId').exec()
+      const order = await this.orderModel.findOne({ _id: orderId, userId: userId })
+
+        .populate('userId')
+        .populate('transactionId')
+        .populate('products.productId')
+        .exec();
 
       if (!order) throw new NotFoundException(`Order not found`)
 
