@@ -119,6 +119,20 @@ export class OrdersController {
     }
   }
 
+
+  @Get('/:orderId')
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth('JWT-auth')
+  async ListOneOrder(
+    @Param('orderId') orderId: string,
+    @Request() req,
+  ) {
+
+    const userId = req.user;
+    return await this.ordersService.listOneOrder(orderId, userId)
+  }
+
   @Put('status/:id')
   @UseGuards(VendorGuard)
   @HttpCode(HttpStatus.OK)
