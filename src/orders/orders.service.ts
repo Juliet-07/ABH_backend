@@ -61,77 +61,6 @@ export class OrdersService {
     }
   }
 
-  // async create(createOrderDto: CreateOrderDto, userId: string) {
-  //   try {
-  //     const cart = await this.cartModel.findOne({ userId });
-
-  //     if (!cart) throw new NotFoundException('No Cart found for the user.');
-
-  //     const { valid } = await this.cartService.validateCart(userId);
-  //     if (!valid) throw new BadRequestException('Cart contains invalid items.');
-
-  //     // Calculate totalProductAmount
-  //     const products = await Promise.all(
-  //       cart.products.map(async (item) => {
-  //         const product = await this.productModel.findById(item.productId); // Use findById for Mongoose
-  //         if (!product) return null;
-  //         return {
-  //           product,
-  //           quantity: item.quantity,
-  //         };
-  //       })
-  //     );
-
-  //     const items = products.filter((product) => product !== null);
-  //     const totalProductAmount = items
-  //       .map((item) => item.product.price * item.quantity)
-  //       .reduce((a, b) => a + b, 0);
-
-  //     const shippingFee = createOrderDto.shippingFee;
-  //     const amount = totalProductAmount + Number(shippingFee);
-
-  //     const transaction = await this.transactionModel.create({
-  //       reference: this.helper.genString(20),
-  //       paymentGateway: createOrderDto.paymentGateway,
-  //       totalProductAmount,
-  //       shippingFee: Number(shippingFee),
-  //       amount,
-  //     });
-
-  //     const { shippingAddress, billingAddress, shippingMethod } = createOrderDto;
-
-  //     const orders = await Promise.all(
-  //       items.map(async (item) => {
-  //         const order = await this.orderModel.create({
-  //           shippingAddress,
-  //           productId: item.product._id, // Use _id for Mongoose
-  //           userId,
-  //           quantity: item.quantity,
-  //           shippingMethod,
-  //           vendorId: item.product.vendorId,
-  //           reference: this.helper.genString(15, '1234567890'),
-  //           transactionId: transaction._id, // Use _id for Mongoose
-  //           totalAmount: item.product.price * item.quantity,
-  //           ...(billingAddress && { billingAddress }), // Ensure billingAddress is added correctly
-  //         });
-
-  //         await this.productModel.findByIdAndUpdate({_id: item.product._id}, {
-  //           soldQuantity: item.product.soldQuantity + item.quantity,
-  //         });
-
-  //         return order;
-  //       })
-  //     );
-
-  //     // Clear the cart
-  //     await this.cartModel.findByIdAndUpdate({_id: cart._id}, { products: [] });
-
-  //     return orders;
-  //   } catch (error) {
-  //     console.error('Error creating order:', error);
-  //     throw new BadRequestException('Failed to create order.');
-  //   }
-  // }
 
 
   async create(createOrderDto: CreateOrderDto, userId: string) {
@@ -178,10 +107,6 @@ export class OrdersService {
 
       // Calculate total amount including VAT and shipping fee
       const amount = parseFloat((totalProductAmount + vat + Number(shippingFee)).toFixed(2));
-
-      console.log("TOTAL-AMOUNT", totalProductAmount)
-      console.log("VAT", vat)
-
 
 
       const transaction = await this.transactionModel.create({
@@ -371,6 +296,20 @@ export class OrdersService {
   }
 
 
+  async listOneOrder(orderId: string, userId: string) {
+    try {
+      const order = await this.orderModel.findOne({ _id: orderId, userId: userId }).populate('products.productId').exec()
+
+      if (!order) throw new NotFoundException(`Order not found`)
+
+      return order;
+    } catch (error) {
+      console.error(error)
+      throw new BadRequestException('Failed to fetch order.');
+    }
+  }
+
+
   async updateOrderStatus(
     id: string,
     vendorId: string,
@@ -486,7 +425,7 @@ export class OrdersService {
     try {
       const order = await this.orderModel.findOne({
 
-        id: orderId
+        _id: orderId
 
       })
 
@@ -520,82 +459,6 @@ export class OrdersService {
     }
   }
 
-
-  // async confirmTransactionStatus(
-  //   transactionId: string,
-  //   userId: string,
-  //   confirmTransactionStatusDto: ConfirmTransactionStatusDto
-  // ) {
-  //   try {
-  //     if (!transactionId || !userId) throw new BadRequestException('Invalid parameters.');
-
-  //     const orderTransaction = await this.transactionModel.findOne({ _id: transactionId });
-
-  //     if (!orderTransaction) throw new NotFoundException('Order not found');
-
-  //     if (orderTransaction.status !== PaymentStatusEnum.PENDING)
-  //       throw new BadRequestException(`This Payment has already been confirmed: ${orderTransaction.status}`);
-
-  //     const { paymentGateway, paymentReference } = confirmTransactionStatusDto;
-
-  //     let response;
-
-  //     switch (paymentGateway) {
-  //       case PaymentGatewayEnums.HYDROGENPAY:
-  //         // Check for transaction status
-  //         response = await this.hydrogenPayService.confirmTransaction({
-  //           transactionRef: paymentReference,
-  //           amount: orderTransaction.amount, // Passing this for testing purposes
-  //         });
-
-  //         break;
-
-  //       default:
-  //         await this.transactionModel.findOneAndUpdate({ _id: transactionId }, {
-  //           $set: {
-  //             paymentGateway,
-  //             paymentReference,
-  //           },
-  //         });
-  //         throw new BadRequestException('Gateway not supported');
-  //     }
-
-  //     if (!response.success) {
-  //       await this.transactionModel.findOneAndUpdate({ _id: transactionId }, {
-  //         $set: {
-  //           paymentGateway,
-  //           paymentReference,
-  //         },
-  //       });
-  //       throw new BadRequestException(response.error || 'An Error Occurred');
-  //     }
-
-  //     if (response?.data?.amount !== orderTransaction.amount) {
-  //       await this.transactionModel.findOneAndUpdate({ _id: transactionId }, {
-  //         $set: {
-  //           paymentGateway,
-  //           paymentReference,
-  //         },
-  //       });
-
-  //       throw new UnprocessableEntityException('Transaction Mismatch, Kindly contact support');
-  //     }
-
-  //     const update = {
-  //       status: response.data.status,
-  //       paymentGateway,
-  //       paymentReference,
-  //     };
-
-  //     await this.transactionModel.findOneAndUpdate({ _id: transactionId }, update);
-
-  //     return {
-  //       message: `Payment ${response.data.status}`,
-  //     };
-  //   } catch (error) {
-  //     throw new BadRequestException(error.message);
-  //   }
-  // }
 
 
 }
