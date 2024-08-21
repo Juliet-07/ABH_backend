@@ -44,7 +44,7 @@ export class PaymentService {
     } catch (error) {
       console.error("THE ERROR", error)
       console.error('Error creating payment with HydrogenPay:', error.response ? error.response.data : error.message);
-      throw new BadRequestException('Failed to create payment');
+      throw new BadRequestException('Failed to create payment', error);
     }
   }
 
