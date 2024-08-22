@@ -19,6 +19,7 @@ import { CreateMultipleWholeSaleProductsDto, CreateWholeSaleProductDto } from '.
 import { SampleProductDto } from './dto/sample-product.dto';
 import { MailingService } from 'src/utils/mailing/mailing.service';
 import { VendorsService } from 'src/vendors/vendors.service';
+import { Category } from 'src/category/schema/category.schema';
 
 @Injectable()
 export class ProductsService {
@@ -42,12 +43,12 @@ export class ProductsService {
     vendor: string,
     productImages: Express.Multer.File[], // Accepting multiple image files
     featuredImage: Express.Multer.File,
-  ): Promise<Product> {
+  ) {
     try {
-      const { categoryId, ...productData } = createProductDto;
+
 
       // Validate category
-      const category = await this.categoryService.findOne(categoryId);
+      const category = await this.categoryService.findOne(createProductDto.categoryId);
       if (!category) {
         throw new BadRequestException('Category not found');
       }
@@ -58,11 +59,11 @@ export class ProductsService {
 
       // Generate unique code and slug
       const code = this.helpers.genCode(10);
-      const slug = `${this.helpers.convertProductNameToSlug(productData.name)}-${code}`;
+      const slug = `${this.helpers.convertProductNameToSlug(createProductDto.name)}-${code}`;
 
       // Create a new product instance
       const product = new this.productModel({
-        ...productData,
+        ...createProductDto,
         code,
         slug,
         vendor: vendorCheck._id,
@@ -92,10 +93,16 @@ export class ProductsService {
         product.featured_image = uploadedImageUrl;
       }
 
+
+
       // Save the product
       const result = await product.save();
 
-      return result;
+      return {
+        result,
+        category,
+
+      };
     } catch (error) {
       console.error("Error creating product:", error);
       throw new BadRequestException(error.message);
@@ -110,14 +117,14 @@ export class ProductsService {
     vendor: string,
     productImages: Express.Multer.File[],
     featuredImage: Express.Multer.File,
-  ): Promise<Product> {
+  ) {
     try {
-      const { categoryId, ...productData } = payload
+
 
 
       // Validate category
       const category = await this.categoryService.findOne(
-        categoryId,
+        payload.categoryId,
       );
 
       if (!category) {
@@ -132,12 +139,12 @@ export class ProductsService {
 
       // Generate Admin Unique Code
       const code = this.helpers.genCode(10);
-      const slug = `${this.helpers.convertProductNameToSlug(productData.name)}-${code}`;
+      const slug = `${this.helpers.convertProductNameToSlug(payload.name)}-${code}`;
 
 
 
       const product = new this.productModel({
-        ...productData,
+        ...payload,
         code,
         slug,
         vendorId: vendorCheck.id,
@@ -173,9 +180,12 @@ export class ProductsService {
       // Save the product
       const result = await product.save();
 
-      return result;
+      return {
+        result,
+        category
+      };
     } catch (error) {
-      console.error("THE ERROR", error)
+
       throw new BadRequestException(error.message);
     }
   }
@@ -183,17 +193,14 @@ export class ProductsService {
 
   async createWholesaleProduct(payload: CreateWholeSaleProductDto, vendor: string,
     productImages: Express.Multer.File[],
-    featuredImage: Express.Multer.File,): Promise<Product> {
+    featuredImage: Express.Multer.File,) {
 
 
     try {
-      const { categoryId, ...productData } = payload
-
-
 
       // Validate category
       const category = await this.categoryService.findOne(
-        categoryId,
+        payload.categoryId,
       );
 
       if (!category) {
@@ -206,11 +213,11 @@ export class ProductsService {
 
 
       const code = this.helpers.genCode(10);
-      const slug = `${this.helpers.convertProductNameToSlug(productData.name)}-${code}`;
+      const slug = `${this.helpers.convertProductNameToSlug(payload.name)}-${code}`;
 
 
       const product = new this.productModel({
-        ...productData,
+        ...payload,
         code,
         slug,
         vendor: vendorCheck.id,
@@ -245,8 +252,11 @@ export class ProductsService {
       }
 
       const result = await product.save();
+      return {
+        result,
+        category,
 
-      return result;
+      };
     } catch (error) {
       console.error("THE ERROR", error)
       throw new BadRequestException(error.message);
@@ -307,7 +317,9 @@ export class ProductsService {
     id: string,
   ): Promise<string> {
     try {
-      const product = await this.productModel.findOne({ _id: id }).populate('vendor');
+      const product = await this.productModel.findOne({ _id: id })
+        .populate('vendor')
+        .populate('categoryId');
 
       if (!product) throw new NotFoundException(`Product not found`);
 
@@ -365,6 +377,8 @@ export class ProductsService {
         id: id
 
       })
+        .populate('vendor')
+        .populate('categoryId')
 
       if (!product) throw new NotFoundException(`Product not found`)
 
@@ -466,10 +480,10 @@ export class ProductsService {
       console.log('Search criteria:', searchCriteria);
 
       const data = await this.productModel.find(searchCriteria)
-        .select('-images -featured_image')
+
         .populate({
           path: 'vendor',
-          select: ['-password', '-cacCertificateUrl']
+          select: ['-password',]
         })
         .populate('categoryId')
         .populate('subcategoryId')
@@ -511,10 +525,10 @@ export class ProductsService {
 
 
       const data = await this.productModel.find(filter)
-        .select('-images -featured_image')
+
         .populate({
           path: 'vendor',
-          select: ['-password', '-cacCertificateUrl']
+          select: ['-password']
         })
         .populate('categoryId')
         .populate('subcategoryId')
@@ -575,6 +589,11 @@ export class ProductsService {
         status: 'APPROVED',
         productType: 'RETAIL'
       })
+       
+      // .populate({
+      //   path: 'vendor',
+      //   select: ['-password',]
+      // })
         .populate('categoryId')
         .populate('subcategoryId')
         .skip(skip)
@@ -603,6 +622,12 @@ export class ProductsService {
   async getOneRetailProduct(productId: string) {
     try {
       const product = await this.productModel.findOne({ _id: productId, productType: 'RETAIL' })
+     
+      // .populate({
+      //   path: 'vendor',
+      //   select: ['-password',]
+      // })
+      .populate('categoryId')
 
       if (!product) throw new NotFoundException(`Product not found`)
 
@@ -631,6 +656,11 @@ export class ProductsService {
         productType: 'WHOLESALE'
       })
 
+
+      // .populate({
+      //   path: 'vendor',
+      //   select: ['-password',]
+      // })
         .populate('categoryId')
         .populate('subcategoryId')
         .skip(skip)
@@ -658,6 +688,8 @@ export class ProductsService {
   async getOneWholesaleProduct(productId: string) {
     try {
       const product = await this.productModel.findOne({ _id: productId, productType: 'WHOLESALE' })
+    
+      .populate('categoryId')
 
       if (!product) throw new NotFoundException(`Product not found`)
 
@@ -680,6 +712,7 @@ export class ProductsService {
         status: 'APPROVED',
         productType: 'SAMPLE_PRODUCT'
       })
+     
         .populate('categoryId')
         .populate('subcategoryId')
         .skip(skip)
@@ -709,6 +742,9 @@ export class ProductsService {
   async getOneSampleProduct(productId: string) {
     try {
       const product = await this.productModel.findOne({ _id: productId, productType: 'SAMPLE_PRODUCT' })
+
+      
+      .populate('categoryId')
 
       if (!product) throw new NotFoundException(`Product not found`)
 

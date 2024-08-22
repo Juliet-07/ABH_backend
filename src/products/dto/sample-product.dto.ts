@@ -70,6 +70,11 @@ export class SampleProductDto {
      @IsString()
      categoryId: string;
 
+
+     @IsString()
+     @IsOptional()
+     subcategoryId: string;
+
      @ApiProperty({
           type: String,
           description: 'SubCategory ID',

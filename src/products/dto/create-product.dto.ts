@@ -58,7 +58,13 @@ export class CreateProductDto {
     description: 'Category ID',
   })
   @IsString()
+  @IsNotEmpty()
   categoryId: string;
+
+
+  @IsString()
+  @IsOptional()
+  subcategoryId: string;
 
   @ApiProperty({
     type: String,
@@ -128,7 +134,7 @@ export class CreateProductDto {
   })
   inFlashSale: boolean;
 
- 
+
 
   @IsNumber()
   @IsOptional()
@@ -182,5 +188,5 @@ export class CreateProductDto {
   inWishlist: boolean;
 
 
-  
+
 }
