@@ -1,6 +1,7 @@
-import { Controller, Get, HttpCode, HttpStatus, Param, Query } from "@nestjs/common";
+import { Controller, Get, HttpCode, HttpStatus, Param, Query, UseGuards } from "@nestjs/common";
 import { DashboardService } from "../service/dashboard.service";
 import { ApiBearerAuth } from "@nestjs/swagger";
+import { AdminAuthGuard } from "src/auth/admin-auth/admin-auth.guard";
 
 
 
@@ -14,7 +15,7 @@ export class DashboardController {
 
      ) { }
 
-
+     @UseGuards(AdminAuthGuard)
      @HttpCode(HttpStatus.OK)
      @Get('statistic')
      async statistic() {
@@ -23,7 +24,7 @@ export class DashboardController {
 
 
 
-
+     @UseGuards(AdminAuthGuard)
      @HttpCode(HttpStatus.OK)
      @Get('orders')
      async findAllOrder(
@@ -37,7 +38,7 @@ export class DashboardController {
           return await this.dashboardService.findAll(pageNumber, limitNumber)
      }
 
-
+     @UseGuards(AdminAuthGuard)
      @Get('orders-track/:orderId')
      // @UseGuards(AuthGuard)
      @HttpCode(HttpStatus.OK)
@@ -47,7 +48,7 @@ export class DashboardController {
      }
 
 
-
+     @UseGuards(AdminAuthGuard)
      @Get('orders/:orderId')
      // @UseGuards(AuthGuard)
      @HttpCode(HttpStatus.OK)

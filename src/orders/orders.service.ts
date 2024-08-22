@@ -174,14 +174,17 @@ export class OrdersService {
           throw new BadRequestException('Unsupported payment gateway');
       }
 
-
+      // Update soldQuantity and check inStock status
       await Promise.all(
-        productDetails.map((item) =>
-          this.productModel.findByIdAndUpdate(
+        productDetails.map(async (item) => {
+          await this.productModel.findByIdAndUpdate(
             { _id: item.product._id },
-            { $inc: { soldQuantity: item.quantity } }
-          )
-        )
+            {
+              $inc: { soldQuantity: item.quantity },
+              $set: { inStock: (item.product.quantity - (item.product.soldQuantity + item.quantity)) > 0 }
+            }
+          );
+        })
       );
 
       return {
