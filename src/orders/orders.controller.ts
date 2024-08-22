@@ -14,15 +14,10 @@ export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
 
-
   ) { }
 
-
-
-
-
   @Post('/delivery-cost-estimate')
-  //@UseGuards(AuthGuard)
+  @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.OK)
   @UsePipes(new ValidationPipe())
   @ApiBearerAuth('JWT-auth')
@@ -30,7 +25,6 @@ export class OrdersController {
 
     return this.ordersService.getDeliveryEstimate(deliveryEstimateDto);
   }
-
 
   @Post()
   @UseGuards(AuthGuard)
@@ -75,8 +69,6 @@ export class OrdersController {
       // Ensure limit and page are numbers
       const pageNumber = Number(page);
       const limitNumber = Number(limit);
-
-
 
       // Ensure page and limit are positive integers
       if (pageNumber < 1 || limitNumber < 1) {
