@@ -21,6 +21,7 @@ import { NotificationModule } from './notification/notification.module';
 import { TransactionModule } from './transaction/transaction.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { SubscriptionModule } from './subscription/subscription.module';
+import { DashBoardModule } from './admin/dashboard/dashboard.module';
 //import { PaymentModule } from './payment/payment.module';
 
 
@@ -49,7 +50,8 @@ import { SubscriptionModule } from './subscription/subscription.module';
     CartModule,
     RedisModule,
     NotificationModule,
-    SubscriptionModule
+    SubscriptionModule,
+    DashBoardModule
   ],
   controllers: [AppController],
   providers: [

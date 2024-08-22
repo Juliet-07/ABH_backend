@@ -109,8 +109,9 @@ export class OrdersService {
       const amount = parseFloat((totalProductAmount + vat + Number(shippingFee)).toFixed(2));
 
 
+
       const transaction = await this.transactionModel.create({
-        reference: this.helper.genString(20),
+        reference: this.helper.genString(15, '1234567890'),
         paymentGateway,
         totalProductAmount: amount,
         shippingFee: Number(shippingFee),
@@ -127,7 +128,7 @@ export class OrdersService {
         shippingFee,
         paymentGateway,
         vat,
-        reference: this.helper.genString(15, '1234567890'),
+        reference: transaction.reference,
         transactionId: transaction._id,
         totalAmount: amount,
         products: productDetails.map((item) => ({
@@ -136,6 +137,8 @@ export class OrdersService {
           discount: item.discount,
         })),
       });
+
+
 
       const HydrogenPaymentData = {
         amount: order.totalAmount,

@@ -4,6 +4,9 @@ import { CreatePaymentDto, CreatePayStackPaymentDto } from '../dto/initiat.dto';
 import { ConfigService } from '@nestjs/config';
 import { OrdersService } from 'src/orders/orders.service';
 import { SubscriptionService } from 'src/subscription/service/subscription.service';
+import { Transaction } from 'src/transaction/schema/transaction.schema';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 
 @Injectable()
 export class PaymentService {
@@ -16,6 +19,7 @@ export class PaymentService {
   constructor(
     private readonly configService: ConfigService,
     @Inject(forwardRef(() => OrdersService)) private ordersService: OrdersService,
+    @InjectModel(Transaction.name) private transactionModel: Model<Transaction>,
     private readonly subscriptionService: SubscriptionService
   ) {
     this.apiKey = this.configService.get<string>('HYDROGRENPAY_PUB_KEY');
@@ -38,7 +42,7 @@ export class PaymentService {
           },
         },
       );
-    
+
       return response.data;
 
     } catch (error) {
@@ -59,9 +63,14 @@ export class PaymentService {
             'Content-Type': 'application/json',
           },
         });
-  
+
       if (response.data.data.status === 'Paid' || response.data.data.transactionStatus === 'Paid') {
         const order = await this.ordersService.updateOrderStatusPay(transactionRef);
+
+        await this.transactionModel.findOneAndUpdate(
+          { reference: transactionRef },
+          { $set: { status: "SUCCESSFUL" } },
+        );
         if (order) {
           return { message: 'Payment verified and order updated' };
         } else {
@@ -76,7 +85,7 @@ export class PaymentService {
     }
   }
 
-  
+
   async verifySubscriptionTransaction(transactionRef: string) {
     try {
       const response = await axios.post(this.hydroVerify,
@@ -87,7 +96,7 @@ export class PaymentService {
             'Content-Type': 'application/json',
           },
         });
-  
+
       if (response.data.data.status === 'Paid' || response.data.data.transactionStatus === 'Paid') {
         const subscription = await this.subscriptionService.updateSubscriptionPay(transactionRef);
         if (subscription) {
@@ -103,8 +112,8 @@ export class PaymentService {
       throw new BadRequestException('Failed to verify subscription transaction');
     }
   }
-  
-  
+
+
 
   async initializePayment(paymentData: CreatePayStackPaymentDto): Promise<any> {
     try {
