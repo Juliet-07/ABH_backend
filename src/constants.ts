@@ -17,7 +17,7 @@ export enum AdminRolesEnums {
 export enum VendorStatusEnums {
   ACTIVE = 'ACTIVE',
   PENDING = 'PENDING',
-  BLOCKED = 'BLOCKED',
+  INACTIVE = 'INACTIVE',
   DECLINED = 'DECLINED',
 }
 
@@ -72,7 +72,7 @@ export enum ShippingMethodEnums {
 }
 
 export enum BlockStatusEnums {
-  BLOCKED = 'BLOCKED',
+  INACTIVE = 'INACTIVE',
   ACTIVE = 'ACTIVE',
 }
 

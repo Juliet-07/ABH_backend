@@ -25,7 +25,6 @@ import { Vendor } from './schema/vendor.schema';
 import { NotificationService } from 'src/notification/notification.service';
 import { CreateNotificationDataType } from 'src/notification/dto/notification.dto';
 
-
 @Injectable()
 export class VendorsService {
   cacheKey = 'all_vendor';
@@ -37,9 +36,8 @@ export class VendorsService {
     private mailingService: MailingService,
     private redisService: RedisService,
     private readonly azureService: AzureService,
-    private readonly notificationService: NotificationService
-  ) { }
-
+    private readonly notificationService: NotificationService,
+  ) {}
 
   private decodeBase64ToBuffer(base64: string): Buffer {
     const base64Data = base64.replace(/^data:application\/pdf;base64,/, ''); // Remove base64 prefix if present
@@ -47,10 +45,10 @@ export class VendorsService {
   }
 
   async create(
-    createVendorDto: CreateVendorDto, pdfFile?: Express.Multer.File
+    createVendorDto: CreateVendorDto,
+    pdfFile?: Express.Multer.File,
   ): Promise<Vendor> {
     try {
-
       // Generate Vendor Unique Code
       const code = this.helpers.genCode(10);
 
@@ -59,15 +57,18 @@ export class VendorsService {
       if (pdfFile) {
         // Use pdfFile to get the buffer and other details
         const fileBuffer = Buffer.from(pdfFile.buffer); // Corrected
-        cacCertificateUrl = await this.azureService.uploadDocumentToBlobStorage(fileBuffer, pdfFile.originalname, pdfFile.mimetype);
-      } 
-       
+        cacCertificateUrl = await this.azureService.uploadDocumentToBlobStorage(
+          fileBuffer,
+          pdfFile.originalname,
+          pdfFile.mimetype,
+        );
+      }
 
       // Create the vendor with or without the PDF URL
       const result = await this.vendorModel.create({
         ...createVendorDto,
         code,
-        cacCertificateUrl
+        cacCertificateUrl,
       });
 
       // Invalidate cache after a new vendor is created
@@ -77,12 +78,10 @@ export class VendorsService {
 
       return result;
     } catch (error) {
-      console.error("the ERROR", error)
+      console.error('the ERROR', error);
       throw new BadRequestException(error.message);
     }
   }
-
-  
 
   async validateReferredBy(code: string): Promise<string> {
     // Get Valid Referrer.
@@ -97,30 +96,35 @@ export class VendorsService {
   async login(loginVendorDto: LoginVendorDto): Promise<LoginResponse> {
     try {
       const { email, password } = loginVendorDto;
-  
+
       if (!email || !password) {
         throw new BadRequestException('Email and password are required');
       }
-  
-      const vendor = await this.vendorModel.findOne({ email }).select('password status');
-  
+
+      const vendor = await this.vendorModel
+        .findOne({ email })
+        .select('password status');
+
       if (!vendor) throw new NotFoundException('Vendor Not Found');
-      if (!vendor.password) throw new BadRequestException('Vendor password is not set or is missing.');
-  
-        
+      if (!vendor.password)
+        throw new BadRequestException(
+          'Vendor password is not set or is missing.',
+        );
+
       const isPasswordCorrect = await bcrypt.compare(password, vendor.password);
-  
-      if (!isPasswordCorrect) throw new UnauthorizedException('Incorrect Password');
-  
+
+      if (!isPasswordCorrect)
+        throw new UnauthorizedException('Incorrect Password');
+
       if (vendor.status !== VendorStatusEnums.ACTIVE)
         throw new ForbiddenException(`ACCOUNT ${vendor.status}`);
-  
+
       const lastLoginAt = new Date().toISOString();
       await this.vendorModel.findOneAndUpdate(
         { _id: vendor.id },
-        { $set: { lastLoginAt } }
+        { $set: { lastLoginAt } },
       );
-  
+
       const payload = { _id: vendor._id, email, lastLoginAt };
       return {
         accessToken: await this.jwtService.signAsync(payload),
@@ -130,7 +134,6 @@ export class VendorsService {
       throw new BadRequestException(error.message);
     }
   }
-  
 
   async requstVerification(email: string): Promise<void> {
     try {
@@ -146,23 +149,28 @@ export class VendorsService {
       const { token: verificationCode, expiresIn: verificationCodeExpiresIn } =
         this.helpers.generateVerificationCode();
 
-      await this.vendorModel.findOneAndUpdate({ _id: vendor.id }, {
-        $set: {
-          verificationCode,
-          verificationCodeExpiresIn,
-        }
-      });
+      await this.vendorModel.findOneAndUpdate(
+        { _id: vendor.id },
+        {
+          $set: {
+            verificationCode,
+            verificationCodeExpiresIn,
+          },
+        },
+      );
 
       // Send Email For Token
       try {
         await this.mailingService.send({
           subject: 'Email Verification',
           email: vendor.email,
-          html: `name: ${vendor.firstName} ${vendor.lastName},Pls use the OTP code <b style="font-size: 20px;">${verificationCode}</b> for verification, code expires by ${new Date(
+          html: `name: ${vendor.firstName} ${
+            vendor.lastName
+          },Pls use the OTP code <b style="font-size: 20px;">${verificationCode}</b> for verification, code expires by ${new Date(
             verificationCodeExpiresIn,
           ).toLocaleDateString()}`,
         });
-      } catch (error) { }
+      } catch (error) {}
     } catch (error) {
       throw error;
     }
@@ -173,9 +181,7 @@ export class VendorsService {
       const { code, email } = verifyVendorDto;
 
       const vendor = await this.vendorModel.findOne({
-
         email,
-
       });
 
       if (!vendor)
@@ -217,14 +223,12 @@ export class VendorsService {
       const { status } = manageVendorDto;
 
       const vendor = await this.vendorModel.findOne({
-
         _id: id,
-
       });
 
       if (!vendor) throw new NotFoundException(`Vendor not found`);
 
-      const rawPassword = this.helpers.generateDefaultPassword(20)
+      const rawPassword = this.helpers.generateDefaultPassword(20);
 
       const saltRounds = await bcrypt.genSalt(9);
       const password = await bcrypt.hash(rawPassword, saltRounds);
@@ -232,35 +236,30 @@ export class VendorsService {
       // Update DB and set verification status
       const updateData = {
         status,
-        ...(status === VendorStatusEnums.ACTIVE && { password })
+        ...(status === VendorStatusEnums.ACTIVE && { password }),
       };
 
       await this.vendorModel.findOneAndUpdate({ _id: vendor.id }, updateData);
 
       //  Send Email to user
 
-      const text = `Hello ${vendor.firstName}, your account has been verified and active now. Login with your registered email and password ${rawPassword}    .\n \n \n Kindly ensure you change your password on login`
+      const text = `Hello ${vendor.firstName}, your account has been verified and active now. Login with your registered email and password ${rawPassword}    .\n \n \n Kindly ensure you change your password on login`;
 
       await this.mailingService.send({
         subject: 'Vendor Account Approved',
         html: text,
         email: vendor.email,
-
-      })
+      });
 
       const data: CreateNotificationDataType = {
-        message: "Your account has been approved",
-        receiverId: vendor.id, 
+        message: 'Your account has been approved',
+        receiverId: vendor.id,
       };
-      
-      await this.notificationService.createNotification(data);
-       
-     
 
+      await this.notificationService.createNotification(data);
 
       // TODO: Remove this before Production
       return text;
-
     } catch (error) {
       throw error;
     }
@@ -272,40 +271,44 @@ export class VendorsService {
         throw new BadRequestException("Email can't be empty");
       }
 
-      const vendor = await this.vendorModel.findOne({ email  });
+      const vendor = await this.vendorModel.findOne({ email });
       if (!vendor) throw new NotFoundException('Vendor not found');
 
       const { token: verificationCode, expiresIn: verificationCodeExpiresIn } =
         this.helpers.generateVerificationCode();
 
-      await this.vendorModel.findOneAndUpdate({ _id: vendor.id }, {
-        $set: {
-          verificationCode,
-          verificationCodeExpiresIn,
-        }
-      });
+      await this.vendorModel.findOneAndUpdate(
+        { _id: vendor.id },
+        {
+          $set: {
+            verificationCode,
+            verificationCodeExpiresIn,
+          },
+        },
+      );
 
       // Send Email For Token
       try {
         await this.mailingService.send({
           subject: 'Email Verification',
           email: vendor.email,
-          html: `  ${vendor.firstName} ${vendor.lastName}, Pls use the OTP code <b style="font-size: 20px;">${verificationCode}</b> for verification, code expires by ${new Date(
+          html: `  ${vendor.firstName} ${
+            vendor.lastName
+          }, Pls use the OTP code <b style="font-size: 20px;">${verificationCode}</b> for verification, code expires by ${new Date(
             verificationCodeExpiresIn,
           ).toLocaleDateString()}`,
         });
-      } catch (error) { }
+      } catch (error) {}
     } catch (error) {
       throw error;
     }
   }
 
-
   async findAll(
-    page = 1, 
-    limit = 10, 
-    filter?: { status?: VendorStatusEnums }
-  ): Promise<{ items: Vendor[], total: number }> {
+    page = 1,
+    limit = 10,
+    filter?: { status?: VendorStatusEnums },
+  ): Promise<{ items: Vendor[]; total: number }> {
     try {
       // Ensure page and limit are numbers
       const currentPage = Number(page);
@@ -317,21 +320,22 @@ export class VendorsService {
       }
   
       // Prepare the filter
-      let statusFilter: { status: VendorStatusEnums | { $in: VendorStatusEnums[] } } = { status: VendorStatusEnums.ACTIVE };
+      const statusFilter: { status?: VendorStatusEnums | { $in: VendorStatusEnums[] } } = {};
   
+      // If a status is provided, set the filter accordingly
       if (filter?.status) {
-        if (filter.status === VendorStatusEnums.PENDING || 
-            filter.status === VendorStatusEnums.BLOCKED || 
-            filter.status === VendorStatusEnums.DECLINED) {
-          statusFilter = { status: filter.status };
-        } else if (filter.status === 'ACTIVE') {
-          statusFilter = { status: { $in: [VendorStatusEnums.PENDING, VendorStatusEnums.BLOCKED, VendorStatusEnums.DECLINED] } };
+        if (filter.status === VendorStatusEnums.ACTIVE || filter.status === VendorStatusEnums.INACTIVE) {
+          statusFilter.status = filter.status; // Filter by single status
+        } else {
+          // If you want to filter by both ACTIVE and INACTIVE
+          statusFilter.status = { $in: [VendorStatusEnums.ACTIVE, VendorStatusEnums.INACTIVE] };
         }
       }
   
       // Fetch paginated items based on the query
       const [items, total] = await Promise.all([
-        this.vendorModel.find(statusFilter)
+        this.vendorModel
+          .find(statusFilter)
           .skip((currentPage - 1) * pageSize)
           .limit(pageSize)
           .exec(),
@@ -346,7 +350,7 @@ export class VendorsService {
       throw new BadRequestException(error.message);
     }
   }
-   
+  
 
   async findVendorWithToken(id: string | any): Promise<Vendor> {
     const data = await this.vendorModel.findOne({ id });
@@ -364,14 +368,17 @@ export class VendorsService {
       }
 
       // Toggle the vendor's status
-      const newStatus = vendor.block === BlockStatusEnums.BLOCKED
-        ? BlockStatusEnums.ACTIVE
-        : BlockStatusEnums.BLOCKED;
+      const newStatus =
+        vendor.status === BlockStatusEnums.INACTIVE
+          ? BlockStatusEnums.ACTIVE
+          : BlockStatusEnums.INACTIVE;
 
       // Update the vendor's status
-      await this.vendorModel.findByIdAndUpdate(vendorId, { block: newStatus });
+      await this.vendorModel.findByIdAndUpdate(vendorId, { status: newStatus });
 
-      return `Vendor ${newStatus === BlockStatusEnums.BLOCKED ? 'blocked' : 'unblocked'} successfully`;
+      return `Vendor ${
+        newStatus === BlockStatusEnums.INACTIVE ? 'inactive' : 'active'
+      } `;
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -379,11 +386,11 @@ export class VendorsService {
 
   async listOneVendor(id: string) {
     try {
-      const vendor = await this.vendorModel.findById(id)
+      const vendor = await this.vendorModel.findById(id);
 
-      if (!vendor) throw new NotFoundException(`Vendor with ${id} not found`)
+      if (!vendor) throw new NotFoundException(`Vendor with ${id} not found`);
 
-        return vendor;
+      return vendor;
     } catch (error) {
       throw new BadRequestException(error.message);
     }
