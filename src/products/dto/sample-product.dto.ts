@@ -14,6 +14,7 @@ import {
 } from 'class-validator';
 import { Currencies } from '../../utils/constants';
 import { ProductTypeEnums } from 'src/constants';
+import mongoose from 'mongoose';
 
 const currency_enums = Object.keys(Currencies);
 
@@ -68,12 +69,11 @@ export class SampleProductDto {
           description: 'Category ID',
      })
      @IsString()
-     categoryId: string;
+     categoryId: mongoose.Types.ObjectId;
 
 
-     @IsString()
-     @IsOptional()
-     subcategoryId: string;
+   
+     subcategoryId?: mongoose.Types.ObjectId;
 
      @ApiProperty({
           type: String,

@@ -9,7 +9,7 @@ import { HelpersService } from '../utils/helpers/helpers.service';
 import { ManageProductDto } from './dto/manage-product.dto';
 import { CategoryService } from '../category/category.service';
 import { AzureService } from 'src/utils/uploader/azure';
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { Admin } from 'src/admin/schema/admin.schema';
 import { Vendor } from 'src/vendors/schema/vendor.schema';
@@ -46,12 +46,14 @@ export class ProductsService {
   ) {
     try {
 
+      
 
       // Validate category
-      const category = await this.categoryService.findOne(createProductDto.categoryId);
+      const category = await this.categoryService.findOne(new mongoose.Types.ObjectId(createProductDto.categoryId));
       if (!category) {
         throw new BadRequestException('Category not found');
       }
+      console.log(category)
 
       const vendorCheck = await this.vendorModel.findOne({ _id: vendor })
 
@@ -124,7 +126,7 @@ export class ProductsService {
 
       // Validate category
       const category = await this.categoryService.findOne(
-        payload.categoryId,
+        new mongoose.Types.ObjectId(payload.categoryId)
       );
 
       if (!category) {
@@ -200,7 +202,7 @@ export class ProductsService {
 
       // Validate category
       const category = await this.categoryService.findOne(
-        payload.categoryId,
+        new mongoose.Types.ObjectId(payload.categoryId)
       );
 
       if (!category) {

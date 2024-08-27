@@ -8,13 +8,13 @@ const currencyEnums = Object.keys(Currencies);
 export type ProductDocument = Product & Document;
 
 @Schema({ timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } })
-
 export class Product {
   @Prop({ required: true })
   name: string;
 
   @Prop({
-    type: String, required: true
+    type: String,
+    required: true,
   })
   color: string;
 
@@ -39,14 +39,18 @@ export class Product {
   @Prop({ type: Number, required: true })
   price: number;
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "Vendor", required: true })
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Vendor', required: true })
   vendor: string;
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "Category" })
-  categoryId: string;
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Category',
+    required: true,
+  })
+  categoryId: mongoose.Types.ObjectId;
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "Category" })
-  subcategoryId?: string;
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Category' })
+  subcategoryId?: mongoose.Types.ObjectId;
 
   @Prop({ type: Number, required: false })
   sellingPrice?: number;
@@ -131,5 +135,3 @@ export class Product {
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
-
-

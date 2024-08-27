@@ -19,6 +19,9 @@ export class Subscription {
      @Prop({ required: true, enum: SubscriptionTypeEnum })
      type: SubscriptionTypeEnum;
 
+     @Prop({ required: true})
+     amount: number;
+
 
      @Prop({ required: true })
      startDate: Date;
@@ -29,7 +32,7 @@ export class Subscription {
      @Prop({ default: SubscriptionStatus.INACTIVE })
      status: SubscriptionStatus;
 
-     @Prop({ required: true })
+     @Prop({ type: String, required: true })
      reference: string
 }
 

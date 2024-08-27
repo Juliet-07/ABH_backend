@@ -314,7 +314,7 @@ export class ProductsController {
 
   // For Users
   @HttpCode(HttpStatus.OK)
-  @Get('/list/all')
+  @Get('/all')
   async findAll(
     @Query('limit') limit: number,
     @Query('page') page: number,

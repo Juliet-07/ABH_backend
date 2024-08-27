@@ -23,6 +23,7 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 import { AdminAuthGuard } from '../auth/admin-auth/admin-auth.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
+import mongoose from 'mongoose';
 
 @ApiTags('Category')
 @Controller('category')
@@ -64,7 +65,7 @@ export class CategoryController {
 
   @HttpCode(HttpStatus.OK)
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: mongoose.Types.ObjectId) {
     return await this.categoryService.findOne(id);
   }
 

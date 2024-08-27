@@ -1,6 +1,19 @@
-import { IsDefined, IsEnum, IsOptional, IsArray, ValidateNested, IsNumber, IsString, IsDecimal } from 'class-validator';
+import {
+  IsDefined,
+  IsEnum,
+  IsOptional,
+  IsArray,
+  ValidateNested,
+  IsNumber,
+  IsString,
+  IsDecimal,
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { PaymentGatewayEnums, ShippingMethodEnums } from '../../constants';
+import {
+  PaymentGatewayEnums,
+  ShippingMethodEnums,
+  SubscriptionTypeEnum,
+} from '../../constants';
 
 class AddressDto {
   @IsDefined()
@@ -39,15 +52,22 @@ class ProductDto {
   @IsNumber()
   quantity: number;
 
-
   @IsOptional()
-  discount?: number
+  discount?: number;
 
-
-   vendorId: string;
+  vendorId: string;
 }
 
-export class CreateOrderDto {
+class DropShippingDto {
+  @IsEnum(SubscriptionTypeEnum)
+  type: string;
+
+  amount: number;
+
+  reference: string;
+}
+
+export class CreateDropShippingDto {
   @IsDefined()
   @ValidateNested()
   @Type(() => AddressDto)
@@ -57,6 +77,11 @@ export class CreateOrderDto {
   @ValidateNested()
   @Type(() => AddressDto)
   billingAddress: AddressDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => DropShippingDto)
+  subscriptionDetails: DropShippingDto;
 
   //@IsDefined()
   @ValidateNested()
@@ -82,5 +107,5 @@ export class CreateOrderDto {
   products: ProductDto[];
 
   // @IsDecimal()
-  vat: number
+  vat: number;
 }

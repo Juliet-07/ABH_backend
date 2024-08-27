@@ -63,13 +63,16 @@ export class OrdersService {
 
 
 
+
+
   async create(createOrderDto: CreateOrderDto, userId: string) {
     try {
       const { shippingAddress, billingAddress, shippingMethod, personalInfo, products, shippingFee, paymentGateway } = createOrderDto;
 
-      // Calculate totalAmount and totalProductAmount // Validate products and check availability
+      // Validate products and check availability
       const productDetails = await Promise.all(
         products.map(async (item) => {
+       
           const product = await this.productModel.findById(item.productId);
           if (!product) {
             throw new NotFoundException(`Product with ID ${item.productId} not found`);
@@ -81,14 +84,14 @@ export class OrdersService {
             product,
             quantity: item.quantity,
             discount: item.discount || 0,
+            vendorId: product.vendor
           };
         })
       );
 
-      const userInfo = await this.userModel.findById(userId)
 
-
-      if (!userInfo) throw new NotFoundException('Please login or create an Account with us')
+      const userInfo = await this.userModel.findById(userId);
+      if (!userInfo) throw new NotFoundException('Please login or create an Account with us');
 
       // Calculate total product amount considering discounts
       const totalProductAmount = productDetails
@@ -99,16 +102,11 @@ export class OrdersService {
         })
         .reduce((a, b) => a + b, 0);
 
-      // createOrderDto.shippingFee = await this.gigLogisticsService.getShippingPrice(shippingAddress) || 450
-
-
       // Calculate VAT (7% of total product amount)
       const vat = parseFloat((totalProductAmount * 0.07).toFixed(2)); // Ensure VAT is a valid decimal
 
       // Calculate total amount including VAT and shipping fee
       const amount = parseFloat((totalProductAmount + vat + Number(shippingFee)).toFixed(2));
-
-
 
       const transaction = await this.transactionModel.create({
         reference: this.helper.genString(15, '1234567890'),
@@ -119,6 +117,7 @@ export class OrdersService {
         vat
       });
 
+      // Create the order with vendorId from the products
       const order = await this.orderModel.create({
         userId,
         shippingAddress,
@@ -127,52 +126,21 @@ export class OrdersService {
         shippingMethod,
         shippingFee,
         paymentGateway,
+        //vendorId: item.vendorId,
         vat,
         reference: transaction.reference,
         transactionId: transaction._id,
         totalAmount: amount,
         products: productDetails.map((item) => ({
-          productId: item.product._id, // Use _id for Mongoose
+          productId: item.product._id,
           quantity: item.quantity,
           discount: item.discount,
+          vendorId: item.vendorId // Include vendorId in the order
         })),
       });
 
-
-
-      const HydrogenPaymentData = {
-        amount: order.totalAmount,
-        email: userInfo.email,
-        customerName: userInfo.firstName,
-        currency: "NGN",
-        transactionRef: order.reference,
-        callback: "http://localhost:3000/about-us"
-
-      }
-
-      const PaystackPaymentData = {
-        amount: order.totalAmount,
-        email: userInfo.email,
-        reference: order.reference,
-        callback: "http://localhost:3000/about-us"
-      }
-
-      //SET MULTIPLE PAYMENT 
-
-      let paymentResponse;
-
-      switch (order.paymentGateway) {
-        case PaymentGatewayEnums.HYDROGENPAY:
-          paymentResponse = await this.paymentService.createPayment(HydrogenPaymentData);
-          break;
-
-        case PaymentGatewayEnums.PAYSTACK:
-          paymentResponse = await this.paymentService.initializePayment(PaystackPaymentData);
-          break;
-
-        default:
-          throw new BadRequestException('Unsupported payment gateway');
-      }
+      // Payment processing logic...
+      const paymentResponse = await this.processPayment(order, userInfo);
 
       // Update soldQuantity and check inStock status
       await Promise.all(
@@ -196,6 +164,43 @@ export class OrdersService {
       throw new BadRequestException(error.message);
     }
   }
+
+  // Separate method for payment processing
+  private async processPayment(order: Order, userInfo: User) {
+    const HydrogenPaymentData = {
+      amount: order.totalAmount,
+      email: userInfo.email,
+      customerName: userInfo.firstName,
+      currency: "NGN",
+      transactionRef: order.reference,
+      callback: "http://localhost:3000/about-us"
+    };
+
+    const PaystackPaymentData = {
+      amount: order.totalAmount,
+      email: userInfo.email,
+      reference: order.reference,
+      callback: "http://localhost:3000/about-us"
+    };
+
+    let paymentResponse;
+
+    switch (order.paymentGateway) {
+      case PaymentGatewayEnums.HYDROGENPAY:
+        paymentResponse = await this.paymentService.createPayment(HydrogenPaymentData);
+        break;
+
+      case PaymentGatewayEnums.PAYSTACK:
+        paymentResponse = await this.paymentService.initializePayment(PaystackPaymentData);
+        break;
+
+      default:
+        throw new BadRequestException('Unsupported payment gateway');
+    }
+
+    return paymentResponse;
+  }
+
 
 
   async findAll(limit = 50, page = 1) {
@@ -328,7 +333,7 @@ export class OrdersService {
     updateOrderStatusDto: UpdateOrderStatusDto
   ): Promise<Order> {
     try {
-      const { status } = updateOrderStatusDto;
+      const { deliveryStatus } = updateOrderStatusDto;
 
       // Fetch the order with its transaction ID
       const order = await this.orderModel.findOne({
@@ -357,57 +362,57 @@ export class OrdersService {
       }
 
       // Prepare the update object based on the new status
-      const update: Partial<Order> = { status };
+      const update: Partial<Order> = { deliveryStatus };
 
       // Switch case to validate and set the correct status
-      switch (status) {
+      switch (deliveryStatus) {
         case OrderStatusEnum.CONFIRMED:
-          if (order.status !== OrderStatusEnum.PENDING) {
+          if (order.deliveryStatus !== OrderStatusEnum.PENDING) {
             throw new BadRequestException(`Order status should be ${OrderStatusEnum.PENDING}`);
           }
-          update.status = OrderStatusEnum.CONFIRMED;
+          update.deliveryStatus = OrderStatusEnum.CONFIRMED;
           break;
 
         case OrderStatusEnum.DECLINED:
-          if (order.status !== OrderStatusEnum.PENDING) {
+          if (order.deliveryStatus !== OrderStatusEnum.PENDING) {
             throw new BadRequestException(`Order status should be ${OrderStatusEnum.PENDING}`);
           }
-          update.status = OrderStatusEnum.DECLINED;
+          update.deliveryStatus = OrderStatusEnum.DECLINED;
           break;
 
         case OrderStatusEnum.PROCESSING:
-          if (order.status !== OrderStatusEnum.CONFIRMED) {
+          if (order.deliveryStatus !== OrderStatusEnum.CONFIRMED) {
             throw new BadRequestException(`Order status should be ${OrderStatusEnum.CONFIRMED}`);
           }
-          update.status = OrderStatusEnum.PROCESSING;
+          update.deliveryStatus = OrderStatusEnum.PROCESSING;
           break;
 
         case OrderStatusEnum.READY_TO_SHIP:
-          if (order.status !== OrderStatusEnum.PROCESSING) {
+          if (order.deliveryStatus !== OrderStatusEnum.PROCESSING) {
             throw new BadRequestException(`Order status should be ${OrderStatusEnum.PROCESSING}`);
           }
-          update.status = OrderStatusEnum.READY_TO_SHIP;
+          update.deliveryStatus = OrderStatusEnum.READY_TO_SHIP;
           break;
 
         case OrderStatusEnum.SHIPPED:
-          if (order.status !== OrderStatusEnum.READY_TO_SHIP) {
+          if (order.deliveryStatus !== OrderStatusEnum.READY_TO_SHIP) {
             throw new BadRequestException(`Order status should be ${OrderStatusEnum.READY_TO_SHIP}`);
           }
-          update.status = OrderStatusEnum.SHIPPED;
+          update.deliveryStatus = OrderStatusEnum.SHIPPED;
           break;
 
         case OrderStatusEnum.DELIVERED:
-          if (order.status !== OrderStatusEnum.SHIPPED) {
+          if (order.deliveryStatus !== OrderStatusEnum.SHIPPED) {
             throw new BadRequestException(`Order status should be ${OrderStatusEnum.SHIPPED}`);
           }
-          update.status = OrderStatusEnum.DELIVERED;
+          update.deliveryStatus = OrderStatusEnum.DELIVERED;
           break;
 
         case OrderStatusEnum.RETURNED:
-          if (order.status !== OrderStatusEnum.DELIVERED) {
+          if (order.deliveryStatus !== OrderStatusEnum.DELIVERED) {
             throw new BadRequestException(`Order status should be ${OrderStatusEnum.DELIVERED}`);
           }
-          update.status = OrderStatusEnum.RETURNED;
+          update.deliveryStatus = OrderStatusEnum.RETURNED;
           break;
 
         default:

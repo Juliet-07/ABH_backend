@@ -22,6 +22,7 @@ import { TransactionModule } from './transaction/transaction.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { DashBoardModule } from './admin/dashboard/dashboard.module';
+import { StatisticModule } from './vendors/statistics/statistic.module';
 //import { PaymentModule } from './payment/payment.module';
 
 
@@ -51,7 +52,8 @@ import { DashBoardModule } from './admin/dashboard/dashboard.module';
     RedisModule,
     NotificationModule,
     SubscriptionModule,
-    DashBoardModule
+    DashBoardModule,
+    StatisticModule
   ],
   controllers: [AppController],
   providers: [

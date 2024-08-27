@@ -3,7 +3,7 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { AzureService } from 'src/utils/uploader/azure';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { Category } from './schema/category.schema';
 
 
@@ -77,7 +77,7 @@ export class CategoryService {
 
 
 
-  async findOne(id: string): Promise<Category> {
+  async findOne(id: mongoose.Types.ObjectId) {
     const category = await this.categoryModel.findOne({ _id: id });
     if (!category) {
       throw new NotFoundException(`Category with id ${id} not found`);

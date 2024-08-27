@@ -7,10 +7,10 @@ import {
   ShippingMethodEnums,
 } from 'src/constants';
 
-export type OrderDocument = Order & Document;
+export type DropshippingDocument = Dropshipping & Document;
 
 @Schema({ timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } })
-export class Order {
+export class Dropshipping {
   @Prop({ enum: PaymentStatus, default: PaymentStatus.PENDING })
   status: PaymentStatus;
 
@@ -127,4 +127,4 @@ export class Order {
   paymentGateway: PaymentGatewayEnums;
 }
 
-export const OrderSchema = SchemaFactory.createForClass(Order);
+export const DropshippingSchema = SchemaFactory.createForClass(Dropshipping);
