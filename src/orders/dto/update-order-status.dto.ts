@@ -4,7 +4,8 @@ import { OrderStatusEnum } from '../../constants';
 export class UpdateOrderStatusDto {
   @IsDefined()
   @IsEnum(OrderStatusEnum)
-  status: OrderStatusEnum;
+  deliveryStatus: OrderStatusEnum;
+  
 }
 
 

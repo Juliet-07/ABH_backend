@@ -33,12 +33,14 @@ import { AzureService } from 'src/utils/uploader/azure';
 import { VendorStatusEnums } from 'src/constants';
 
 
+
 @ApiTags('Vendors')
 @Controller('vendors')
 export class VendorsController {
   constructor(
     private readonly vendorsService: VendorsService,
     private readonly azureService: AzureService,
+    
 
   ) { }
 
@@ -83,7 +85,7 @@ export class VendorsController {
   }
 
   // Manage Vendor Account Status
-   @UseGuards(AdminAuthGuard)
+  @UseGuards(AdminAuthGuard)
   @HttpCode(HttpStatus.OK)
   @Put('manage-account-status/:id')
   @UsePipes(new ValidationPipe())
@@ -142,5 +144,8 @@ export class VendorsController {
   ): Promise<string> {
     return this.vendorsService.blockAndUnblockVendor(vendorId);
   }
+
+
+  
 }
 

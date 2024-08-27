@@ -12,7 +12,7 @@ import {
   IsUrl,
 } from 'class-validator';
 import { Currencies } from '../../utils/constants';
-
+import mongoose from 'mongoose';
 
 const currency_enums = Object.keys(Currencies);
 
@@ -28,7 +28,7 @@ export class CreateProductDto {
   color: string;
 
   @IsOptional()
-  discount?: number
+  discount?: number;
 
   @IsNumberString()
   @ApiProperty({
@@ -36,7 +36,6 @@ export class CreateProductDto {
     description: 'Quantity',
   })
   quantity: number;
-
 
   @IsString()
   @IsNotEmpty()
@@ -57,20 +56,16 @@ export class CreateProductDto {
     type: String,
     description: 'Category ID',
   })
-  @IsString()
   @IsNotEmpty()
-  categoryId: string;
+  categoryId: mongoose.Types.ObjectId;
 
-
-  @IsString()
-  @IsOptional()
-  subcategoryId: string;
+  
+  subcategoryId?: mongoose.Types.ObjectId;
 
   @ApiProperty({
     type: String,
     description: 'SubCategory ID',
   })
-
   @IsNumberString()
   @ApiProperty({
     type: Number,
@@ -134,8 +129,6 @@ export class CreateProductDto {
   })
   inFlashSale: boolean;
 
-
-
   @IsNumber()
   @IsOptional()
   @ApiProperty({
@@ -186,7 +179,4 @@ export class CreateProductDto {
     description: 'Product is in wishlist',
   })
   inWishlist: boolean;
-
-
-
 }

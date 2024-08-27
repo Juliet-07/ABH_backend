@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsEnum, IsString, IsNumber, IsOptional, IsNumberString, IsJSON, IsBoolean, IsDefined, IsUrl, IsNotEmpty, ValidateNested } from 'class-validator';
+import mongoose from 'mongoose';
 import { ProductTypeEnums } from 'src/constants';
 import { Currencies } from 'src/utils/constants';
 
@@ -14,11 +15,10 @@ export class CreateWholeSaleProductDto {
      name: string;
 
      @IsString()
-     categoryId: string;
+     categoryId: mongoose.Types.ObjectId;
 
-     @IsOptional()
-     @IsString()
-     subcategoryId: string;
+    
+     subcategoryId?: mongoose.Types.ObjectId;
 
      @IsNotEmpty()
      color: string;
