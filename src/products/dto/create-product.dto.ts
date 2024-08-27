@@ -62,7 +62,7 @@ export class CreateProductDto {
   @IsNotEmpty()
   categoryId: mongoose.Types.ObjectId;
 
-  
+  //@IsOptional()
   subcategoryId?: mongoose.Types.ObjectId;
 
   @ApiProperty({
