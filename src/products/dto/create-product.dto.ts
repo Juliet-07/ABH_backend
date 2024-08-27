@@ -38,6 +38,9 @@ export class CreateProductDto {
   quantity: number;
 
   @IsString()
+  unit: string;
+
+  @IsString()
   @IsNotEmpty()
   @ApiProperty({
     type: String,

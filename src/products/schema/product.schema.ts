@@ -61,6 +61,7 @@ export class Product {
   @Prop({ type: String, required: false })
   sku?: string;
 
+  
   @Prop({ type: String, required: false })
   videoUrl?: string;
 
@@ -92,7 +93,7 @@ export class Product {
   productType: string;
 
   @Prop({ type: String, required: false })
-  unit: string;
+  unit?: string;
 
   @Prop({ type: Number, required: false })
   height?: number;
