@@ -29,16 +29,10 @@ import { ManageProductDto } from './dto/manage-product.dto';
 import { CreateWholeSaleProductDto } from './dto/wholesale-product.dto';
 import { SampleProductDto } from './dto/sample-product.dto';
 
-
-
 @ApiTags('Products')
 @Controller('products')
 export class ProductsController {
-  constructor(
-    private readonly productsService: ProductsService,
-
-  ) { }
-
+  constructor(private readonly productsService: ProductsService) {}
 
   @UseGuards(VendorGuard)
   @HttpCode(HttpStatus.CREATED)
@@ -49,14 +43,17 @@ export class ProductsController {
     FileFieldsInterceptor([
       { name: 'product_images', maxCount: 20 },
       { name: 'featured_image', maxCount: 1 },
-    ])
+    ]),
   )
   async create(
     @Body() createProductDto: CreateProductDto,
     @Request() req,
-    @UploadedFiles() files: { product_images: Express.Multer.File[], featured_image: Express.Multer.File[] }
+    @UploadedFiles()
+    files: {
+      product_images: Express.Multer.File[];
+      featured_image: Express.Multer.File[];
+    },
   ) {
-
     const vendor = req.vendor;
     if (!files.product_images) {
       throw new BadRequestException('No product images uploaded');
@@ -67,7 +64,6 @@ export class ProductsController {
       vendor,
       files.product_images || [],
       files.featured_image?.[0] || null,
-
     );
   }
 
@@ -81,15 +77,17 @@ export class ProductsController {
     FileFieldsInterceptor([
       { name: 'product_images', maxCount: 20 },
       { name: 'featured_image', maxCount: 1 },
-    ])
+    ]),
   )
   async AddWholesaleProduct(
     @Body() payload: CreateWholeSaleProductDto,
     @Request() req,
-    @UploadedFiles() files: { product_images: Express.Multer.File[], featured_image: Express.Multer.File[] }
+    @UploadedFiles()
+    files: {
+      product_images: Express.Multer.File[];
+      featured_image: Express.Multer.File[];
+    },
   ) {
-
-
     const vendor = req.vendor;
     if (!files.product_images) {
       throw new BadRequestException('No product images uploaded');
@@ -100,10 +98,8 @@ export class ProductsController {
       vendor,
       files.product_images || [],
       files.featured_image?.[0] || null,
-
     );
   }
-
 
   @UseGuards(VendorGuard)
   @UseGuards(AdminAuthGuard)
@@ -115,15 +111,17 @@ export class ProductsController {
     FileFieldsInterceptor([
       { name: 'product_images', maxCount: 20 },
       { name: 'featured_image', maxCount: 1 },
-    ])
+    ]),
   )
   async AddSampleProduct(
     @Body() payload: SampleProductDto,
     @Request() req,
-    @UploadedFiles() files: { product_images: Express.Multer.File[], featured_image: Express.Multer.File[] }
+    @UploadedFiles()
+    files: {
+      product_images: Express.Multer.File[];
+      featured_image: Express.Multer.File[];
+    },
   ) {
-
-
     const vendor = req.vendor;
     if (!files.product_images) {
       throw new BadRequestException('No product images uploaded');
@@ -134,33 +132,22 @@ export class ProductsController {
       vendor,
       files.product_images || [],
       files.featured_image?.[0] || null,
-
     );
   }
 
-
-
-  // For Admins
-  // @UseGuards(AdminAuthGuard)
-  // @Get()
-  // @ApiBearerAuth('JWT-auth')
-  // async findAllForAdmin(
-  //   @Query('status') status: string,
-  //   @Query('limit') limit?: number,
-  //   @Query('page') page?: number,
-  // ) {
-
-  //   const filter = status ? { status } : { status: 'APPROVED' };
-
-
-
-  //   return await this.productsService.findAll({
-  //     filter,
-  //     limit,
-  //     page
-  //   });
-  // }
-
+  //For Admins
+  @UseGuards(AdminAuthGuard)
+  @Get('admin-all')
+  @ApiBearerAuth('JWT-auth')
+  async findAllProductForAdmin(
+    @Query('limit') limit?: number,
+    @Query('page') page?: number,
+  ) {
+    return await this.productsService.findAllProductForAdmin({
+      limit,
+      page,
+    });
+  }
 
   @UseGuards(AdminAuthGuard)
   @Get()
@@ -173,32 +160,24 @@ export class ProductsController {
     return await this.productsService.findAllForAdmin({
       status,
       limit,
-      page
+      page,
     });
   }
 
   @UseGuards(VendorGuard)
   @HttpCode(HttpStatus.OK)
   @Get('/me')
-  findVendorProduct(
-    @Request() req,
+  findVendorProduct(@Request() req) {
+    const vendor = req.vendor;
 
-  ) {
-    const vendor = req.vendor
-
-    return this.productsService.listAllVendorProduct(vendor,)
+    return this.productsService.listAllVendorProduct(vendor);
   }
 
   @HttpCode(HttpStatus.OK)
   @Get('/vendor/:vendor')
-  async findVendorProduct1(
-    @Param('vendor') vendor: string
-  ) {
+  async findVendorProduct1(@Param('vendor') vendor: string) {
     return this.productsService.listAllVendorProduct(vendor);
   }
-
-
-
 
   @Get('top-products')
   fetchTopProducts() {
@@ -225,7 +204,6 @@ export class ProductsController {
     return await this.productsService.findOneProduct(id);
   }
 
-
   @UseGuards(VendorGuard)
   @HttpCode(HttpStatus.OK)
   @Patch('/update/:productId')
@@ -234,8 +212,12 @@ export class ProductsController {
     @Body() updateProductDto: UpdateProductDto,
     @Request() req,
   ) {
-    const vendorId = req.vendor
-    return this.productsService.updateVendorProduct(productId, vendorId, updateProductDto);
+    const vendorId = req.vendor;
+    return this.productsService.updateVendorProduct(
+      productId,
+      vendorId,
+      updateProductDto,
+    );
   }
 
   @UseGuards(AdminAuthGuard)
@@ -245,72 +227,51 @@ export class ProductsController {
     return this.productsService.remove(productId);
   }
 
-
   @UseGuards(VendorGuard)
   @HttpCode(HttpStatus.OK)
   @Delete('/delete/:productId')
-  removeForVendor(
-    @Param('productId') productId: string,
-    @Request() req,
-  ) {
+  removeForVendor(@Param('productId') productId: string, @Request() req) {
     const vendorId = req.vendor;
     return this.productsService.removeForVendor(productId, vendorId);
   }
 
-
   //for users
-
 
   @HttpCode(HttpStatus.OK)
   @Get('/list/retail')
   async listRetail(): Promise<any> {
-
-
     return this.productsService.getAllRetailProduct();
   }
-
-
 
   @HttpCode(HttpStatus.OK)
   @Get('/list/wholesale')
   async listWholesale(): Promise<any> {
-
     return await this.productsService.getAllWholeSaleProduct();
   }
-
-
 
   @HttpCode(HttpStatus.OK)
   @Get('/list/sample')
   async listSample(): Promise<any> {
-
     return this.productsService.getAllSampleProduct();
   }
 
   @HttpCode(HttpStatus.OK)
   @Get('/list/wholesale/:productId')
   async listOneWholesaleProduct(@Param('productId') productId: string) {
-    return await this.productsService.getOneWholesaleProduct(productId)
+    return await this.productsService.getOneWholesaleProduct(productId);
   }
-
-
 
   @HttpCode(HttpStatus.OK)
   @Get('/list/retail/:productId')
   async listOneRetailProduct(@Param('productId') productId: string) {
-    return await this.productsService.getOneRetailProduct(productId)
+    return await this.productsService.getOneRetailProduct(productId);
   }
-
-
-
 
   @HttpCode(HttpStatus.OK)
   @Get('/list/sample/:productId')
   async listOneSampleProduct(@Param('productId') productId: string) {
-    return await this.productsService.getOneSampleProduct(productId)
+    return await this.productsService.getOneSampleProduct(productId);
   }
-
-
 
   // For Users
   @HttpCode(HttpStatus.OK)
