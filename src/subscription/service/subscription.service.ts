@@ -173,6 +173,9 @@ export class SubscriptionService {
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async handleCron() {
+     console.log('Cron job triggered')
     await this.checkAndDeactivateExpiredSubscriptions();
   }
+
+
 }

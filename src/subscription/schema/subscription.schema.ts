@@ -19,7 +19,7 @@ export class Subscription {
      @Prop({ required: true, enum: SubscriptionTypeEnum })
      type: SubscriptionTypeEnum;
 
-     @Prop({ required: true})
+     @Prop({ required: false})
      amount: number;
 
 
