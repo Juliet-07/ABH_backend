@@ -55,13 +55,12 @@ export class ProductsService {
       }
       console.log(category);
 
-      const subcategory = await this.categoryService.findOne(
-        new mongoose.Types.ObjectId(createProductDto.subcategoryId),
-      );
-      if (!category) {
-        throw new BadRequestException('SubCategory not found');
-      }
-      console.log(subcategory);
+      // const subcategory = await this.categoryService.findOneSubcategory(
+      //   new mongoose.Types.ObjectId(createProductDto.subcategoryId),
+      // );
+
+      // if (!subcategory) throw new NotFoundException(`subcategory not found`);
+      // console.log(subcategory);
 
       const vendorCheck = await this.vendorModel.findOne({ _id: vendor });
 
@@ -80,6 +79,7 @@ export class ProductsService {
         slug,
         vendor: vendorCheck._id,
         createdBy: vendorCheck._id,
+        subcategoryId: createProductDto.subcategoryId || undefined,
       });
 
       // Handle product images
@@ -121,6 +121,7 @@ export class ProductsService {
       return {
         result,
         category,
+        //subcategory,
       };
     } catch (error) {
       console.error('Error creating product:', error);

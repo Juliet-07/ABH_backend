@@ -86,6 +86,17 @@ export class CategoryService {
   }
 
 
+
+
+  async findOneSubcategory(subcategoryId: mongoose.Types.ObjectId) {
+    const category = await this.categoryModel.findOne({ _id: subcategoryId });
+    if (!category) {
+      throw new NotFoundException(`Category with id ${subcategoryId} not found`);
+    }
+    return category;
+  }
+
+
   async update(id: string, updateCategoryDto: UpdateCategoryDto) {
     try {
       await this.categoryModel.findOneAndUpdate(
