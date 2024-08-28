@@ -23,6 +23,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { DashBoardModule } from './admin/dashboard/dashboard.module';
 import { StatisticModule } from './vendors/statistics/statistic.module';
+import { DropshippingModule } from './dropshipping/dropshipping.module';
 //import { PaymentModule } from './payment/payment.module';
 
 
@@ -43,7 +44,7 @@ import { StatisticModule } from './vendors/statistics/statistic.module';
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: '21600s' },
+      signOptions: { expiresIn: '100d' },
     }),
     UtilsModule,
     CategoryModule,
@@ -53,7 +54,8 @@ import { StatisticModule } from './vendors/statistics/statistic.module';
     NotificationModule,
     SubscriptionModule,
     DashBoardModule,
-    StatisticModule
+    StatisticModule,
+    DropshippingModule
   ],
   controllers: [AppController],
   providers: [

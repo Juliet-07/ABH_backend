@@ -18,6 +18,7 @@ import { UserModule } from 'src/user/user.module';
 import { UserSchema } from 'src/user/schema/user.schem';
 
 
+
 @Module({
      imports: [ConfigModule,
           MongooseModule.forFeature([
@@ -29,11 +30,12 @@ import { UserSchema } from 'src/user/schema/user.schem';
                { name: 'User', schema: UserSchema }
           ]),
                CartModule,
-               UserModule
+               UserModule,
+               
                
      ],
      controllers: [PaymentController],
-     providers: [PaymentService, OrdersService, HelpersService, GIGLogisticsService, GIGLogisticsAuthService, SubscriptionService],
+     providers: [PaymentService, OrdersService, HelpersService, GIGLogisticsService, GIGLogisticsAuthService, SubscriptionService, ],
      exports: [PaymentService],
 })
 export class PaymentModule { }
