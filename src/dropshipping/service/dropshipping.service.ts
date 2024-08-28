@@ -360,6 +360,9 @@ async create(payload: CreateDropShippingDto, userId: string) {
            };
          }),
        );
+
+       const vendorIds = productDetails.map(item => item.vendorId);
+      console.log('Vendor IDs:', vendorIds);
    
        const userInfo = await this.userModel.findById(userId);
        if (!userInfo) {
@@ -402,6 +405,7 @@ async create(payload: CreateDropShippingDto, userId: string) {
          shippingFee,
          paymentGateway,
          vat,
+         vendorId: vendorIds,
          reference: ref,
          transactionId: transaction._id,
          totalAmount: amount,

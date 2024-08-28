@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { StatisticService } from '../service/statics.service';
 import { VendorGuard } from 'src/auth/vendor-guard/vendor.guard';
+import { UpdateOrderStatusDto1 } from 'src/orders/dto/update-order-status.dto';
 import { OrderStatusEnum } from 'src/constants';
 
 @Controller('vendors-dashboard')
@@ -30,7 +31,7 @@ export class StatisticController {
 
   @UseGuards(VendorGuard)
   @HttpCode(HttpStatus.OK)
-  @Patch('accept-orders')
+  @Patch('accept-orders/:orderId')
   async acceptOrder(@Request() req, @Param('orderId') orderId: string) {
     const vendorId = req.vendor;
 
@@ -39,11 +40,11 @@ export class StatisticController {
 
   @UseGuards(VendorGuard)
   @HttpCode(HttpStatus.OK)
-  @Patch('orders-status')
+  @Post('update-orders-status/:orderId')
   async updateOrderStatus(
     @Request() req,
     @Param('orderId') orderId: string,
-    @Body() payload: OrderStatusEnum,
+    @Body() payload: UpdateOrderStatusDto1,
   ) {
     const vendorId = req.vendor;
 
@@ -86,15 +87,29 @@ export class StatisticController {
   @Get('orders')
   async orderStatus(
     @Request() req: any,
-    @Query('status') status?: string,
+    @Query('status') deliveryStatus?: string,
     @Query('limit') limit?: number,
     @Query('page') page?: number,
   ) {
     const vendorId = req.vendor;
+
+    // Validate and convert deliveryStatus to enum
+    let validatedStatus: OrderStatusEnum | undefined;
+    if (
+      deliveryStatus &&
+      Object.values(OrderStatusEnum).includes(deliveryStatus as OrderStatusEnum)
+    ) {
+      validatedStatus = deliveryStatus as OrderStatusEnum;
+    }
+
+    // Convert limit and page to numbers
+    const numericLimit = limit ? parseInt(limit.toString(), 10) : undefined;
+    const numericPage = page ? parseInt(page.toString(), 10) : undefined;
+
     return this.statisticService.orderStatus({
-      status,
-      limit,
-      page,
+      deliveryStatus: validatedStatus,
+      limit: numericLimit,
+      page: numericPage,
       vendorId,
     });
   }

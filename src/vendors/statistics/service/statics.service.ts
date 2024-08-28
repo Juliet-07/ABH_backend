@@ -7,10 +7,26 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { OrderStatusEnum } from 'src/constants';
-import { UpdateOrderStatusDto } from 'src/orders/dto/update-order-status.dto';
+import { OrderStatusEnum, PaymentStatus } from 'src/constants';
+import {
+  UpdateOrderStatusDto1,
+} from 'src/orders/dto/update-order-status.dto';
 import { Order } from 'src/orders/schema/order.schema';
 import { Product } from 'src/products/schema/product.schema';
+
+
+
+import { Document } from 'mongoose';
+
+export interface OrderDocument extends Document {
+  status: PaymentStatus;
+  deliveryStatus: OrderStatusEnum;
+  userId: string;
+  totalAmount: number;
+  created_at: Date; // Custom name for createdAt
+  updated_at: Date; // Custom name for updatedAt
+}
+
 
 @Injectable()
 export class StatisticService {
@@ -21,37 +37,33 @@ export class StatisticService {
 
   async getOrdersByVendorId(vendorId: string) {
     try {
-      const orders = await this.orderModel.find({
-        'products.vendorId': vendorId,
-      });
-      return orders;
+      // Step 2: Fetch orders that contain these products
+      const orders = await this.orderModel
+        .find({
+          vendorId: vendorId,
+        })
+        .exec();
+
+      return {
+        count: orders.length,
+        orders,
+      };
     } catch (error) {
-      console.log(error);
+      console.error('Error fetching orders:', error);
       throw error;
     }
   }
 
-  async acceptOrder(
-    orderId: string,
-    vendorId: string,
-    
-  ) {
+  async acceptOrder(orderId: string, vendorId: string) {
     try {
       const order = await this.orderModel.findOne({
         _id: orderId,
-        'products.vendorId': vendorId,
+        vendorId: vendorId,
       });
 
       if (!order) {
-        throw new NotFoundException('Order not found');
-      }
-
-      const vendorProduct = order.products.find(
-        (product) => product.vendorId === vendorId,
-      );
-      if (!vendorProduct) {
-        throw new UnauthorizedException(
-          'You are not authorized to update this order',
+        throw new NotFoundException(
+          'Order not found or does not belong to this vendor',
         );
       }
 
@@ -71,26 +83,18 @@ export class StatisticService {
     }
   }
 
-
   async updateOrderStatus(
     orderId: string,
     vendorId: string,
-    payload: OrderStatusEnum,
+    payload: UpdateOrderStatusDto1,
   ) {
     try {
       const order = await this.orderModel.findOne({
         _id: orderId,
-        'products.vendorId': vendorId,
+        vendorId: vendorId,
       });
 
       if (!order) {
-        throw new NotFoundException('Order not found');
-      }
-
-      const vendorProduct = order.products.find(
-        (product) => product.vendorId === vendorId,
-      );
-      if (!vendorProduct) {
         throw new UnauthorizedException(
           'You are not authorized to update this order',
         );
@@ -102,12 +106,13 @@ export class StatisticService {
 
       const updatedStatus = await this.orderModel.findOneAndUpdate(
         { _id: orderId },
-        { $set: { deliveryStatus: payload } },
+        { $set: { deliveryStatus: payload.deliveryStatus } },
         { new: true },
       );
 
       return updatedStatus;
     } catch (error) {
+      console.log(error);
       throw new BadGatewayException(error.message);
     }
   }
@@ -141,8 +146,8 @@ export class StatisticService {
     try {
       const totalSales = await this.orderModel
         .find({
-          'products.vendorId': vendorId, // Filter by vendorId
-          status: 'paid', // Assuming you have a status field to check if the order is paid
+          vendorId: vendorId, // Filter by vendorId
+          status: 'PAID', // Assuming you have a status field to check if the order is paid
         })
         .exec();
 
@@ -161,12 +166,12 @@ export class StatisticService {
   }
 
   async orderStatus({
-    status,
+    deliveryStatus,
     limit = 10,
     page = 1,
     vendorId,
   }: {
-    status?: string;
+    deliveryStatus?: OrderStatusEnum;
     limit?: number;
     page?: number;
     vendorId: string;
@@ -175,33 +180,26 @@ export class StatisticService {
       const pageSize = Math.max(1, limit);
       const currentPage = Math.max(1, page);
       const skip = (currentPage - 1) * pageSize;
-
+  
       // Build the match criteria
       const matchCriteria: Record<string, any> = {
-        'products.vendorId': vendorId, // Match by vendorId in products
+        vendorId: vendorId,
       };
-
-      if (status) {
-        matchCriteria.status = status.toUpperCase(); // Match by status if provided
+  
+      if (deliveryStatus && Object.values(OrderStatusEnum).includes(deliveryStatus)) {
+        matchCriteria.deliveryStatus = deliveryStatus;
       }
-
+  
       // Fetch orders with pagination
       const data = await this.orderModel
         .find(matchCriteria)
         .skip(skip)
         .limit(pageSize)
-        .select({
-          _id: 1,
-          status: 1,
-          totalAmount: 1,
-          createdAt: 1,
-          // Add other fields you want to include in the response
-        })
         .exec();
-
+  
       // Count total documents matching criteria
       const totalCount = await this.orderModel.countDocuments(matchCriteria);
-
+  
       // Prepare the result
       const result = {
         page: pageSize,
@@ -209,8 +207,8 @@ export class StatisticService {
         totalPages: Math.ceil(totalCount / pageSize),
         data,
       };
-
-      return result; // Return the result
+  
+      return result;
     } catch (error) {
       throw new Error(`Error fetching order status: ${error.message}`);
     }
@@ -218,45 +216,42 @@ export class StatisticService {
 
   async getMonthlyOrdersAndRevenueForVendor(vendorId: string) {
     try {
-      const result = await this.orderModel.aggregate([
-        {
-          $match: {
-            'products.vendorId': vendorId, // Match by vendorId in products
-            status: 'paid', // Only consider paid orders
-          },
-        },
-        {
-          $group: {
-            _id: {
-              year: { $year: '$createdAt' }, // Extract year from createdAt
-              month: { $month: '$createdAt' }, // Extract month from createdAt
-            },
-            totalOrders: { $sum: 1 }, // Count total orders
-            totalRevenue: { $sum: '$totalAmount' }, // Sum total revenue
-          },
-        },
-        {
-          $sort: {
-            '_id.year': 1,
-            '_id.month': 1, // Sort by year and month
-          },
-        },
-        {
-          $project: {
-            _id: 0, // Exclude the default _id field
-            year: '$_id.year',
-            month: '$_id.month',
-            totalOrders: 1,
-            totalRevenue: 1,
-          },
-        },
-      ]);
-
-      return result; // Return the aggregated result
+      const orders = await this.orderModel.find({
+        vendorId: vendorId,
+        status: 'PAID',
+      }) as OrderDocument[]; // Cast to OrderDocument[]
+  
+      const monthlyData: { [key: string]: { year: number; month: number; totalOrders: number; totalRevenue: number; } } = {};
+  
+      orders.forEach(order => {
+        const createdAt = new Date(order.created_at); // Use created_at instead of createdAt
+        const year = createdAt.getFullYear();
+        const month = createdAt.getMonth() + 1; // Months are zero-indexed
+  
+        const key = `${year}-${month}`;
+  
+        if (!monthlyData[key]) {
+          monthlyData[key] = {
+            year: year,
+            month: month,
+            totalOrders: 0,
+            totalRevenue: 0,
+          };
+        }
+  
+        monthlyData[key].totalOrders += 1;
+        monthlyData[key].totalRevenue += order.totalAmount;
+      });
+  
+      const result = Object.values(monthlyData);
+      console.log(result);
+      return result;
     } catch (error) {
       throw new Error(
-        `Error fetching monthly orders and revenue for vendor: ${error.message}`,
+        `Error fetching monthly orders and revenue for vendor: ${error.message}`
       );
     }
   }
+  
+  
 }
