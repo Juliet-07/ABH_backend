@@ -1,4 +1,10 @@
-import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import axios from 'axios';
 import { CreatePaymentDto, CreatePayStackPaymentDto } from '../dto/initiat.dto';
 import { ConfigService } from '@nestjs/config';
@@ -8,68 +14,78 @@ import { Transaction } from 'src/transaction/schema/transaction.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
+
 @Injectable()
 export class PaymentService {
   private readonly apiKey: string;
   private readonly apiUrl: string;
   private readonly hydroVerify: string;
-  private readonly paystackUrl: string = 'https://api.paystack.co/transaction/initialize';
+  private readonly paystackUrl: string =
+    'https://api.paystack.co/transaction/initialize';
   private readonly paystackSect: string;
 
   constructor(
     private readonly configService: ConfigService,
-    @Inject(forwardRef(() => OrdersService)) private ordersService: OrdersService,
+    @Inject(forwardRef(() => OrdersService))
+    private ordersService: OrdersService,
     @InjectModel(Transaction.name) private transactionModel: Model<Transaction>,
-    private readonly subscriptionService: SubscriptionService
+    @Inject(forwardRef(() => SubscriptionService))
+    private subscriptionService: SubscriptionService,
+
+      
   ) {
     this.apiKey = this.configService.get<string>('HYDROGRENPAY_PUB_KEY');
     this.apiUrl = this.configService.get<string>('HYDROGRENPAY_URL');
-    this.hydroVerify = this.configService.get<string>('HYDROGRENPAY_VERIFY_URL');
-    this.paystackSect = this.configService.get<string>('PAY_STACK_SCT_KEY')
-
-
+    this.hydroVerify = this.configService.get<string>(
+      'HYDROGRENPAY_VERIFY_URL',
+    );
+    this.paystackSect = this.configService.get<string>('PAY_STACK_SCT_KEY');
   }
 
   async createPayment(paymentData: CreatePaymentDto): Promise<any> {
     try {
+      const response = await axios.post(this.apiUrl, paymentData, {
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('THE ERROR', error);
+      console.error(
+        'Error creating payment with HydrogenPay:',
+        error.response ? error.response.data : error.message,
+      );
+      throw new BadRequestException('Failed to create payment', error);
+    }
+  }
+
+  async verifyOrderTransaction(transactionRef: string) {
+    try {
       const response = await axios.post(
-        this.apiUrl,
-        paymentData,
+        this.hydroVerify,
+        { TransactionRef: transactionRef },
         {
           headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
+            Authorization: `Bearer ${this.apiKey}`,
             'Content-Type': 'application/json',
           },
         },
       );
 
-      return response.data;
-
-    } catch (error) {
-      console.error("THE ERROR", error)
-      console.error('Error creating payment with HydrogenPay:', error.response ? error.response.data : error.message);
-      throw new BadRequestException('Failed to create payment', error);
-    }
-  }
-
-
-  async verifyOrderTransaction(transactionRef: string) {
-    try {
-      const response = await axios.post(this.hydroVerify,
-        { TransactionRef: transactionRef },
-        {
-          headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-      if (response.data.data.status === 'Paid' || response.data.data.transactionStatus === 'Paid') {
-        const order = await this.ordersService.updateOrderStatusPay(transactionRef);
+      if (
+        response.data.data.status === 'Paid' ||
+        response.data.data.transactionStatus === 'Paid'
+      ) {
+        const order = await this.ordersService.updateOrderStatusPay(
+          transactionRef,
+        );
 
         await this.transactionModel.findOneAndUpdate(
           { reference: transactionRef },
-          { $set: { status: "SUCCESSFUL" } },
+          { $set: { status: 'PAID' } },
         );
         if (order) {
           return { message: 'Payment verified and order updated' };
@@ -80,25 +96,33 @@ export class PaymentService {
         return { message: 'Payment verification failed' };
       }
     } catch (error) {
-      console.error('Error verifying order transaction:', error.response ? error.response.data : error.message);
+      console.error(
+        'Error verifying order transaction:',
+        error.response ? error.response.data : error.message,
+      );
       throw new BadRequestException('Failed to verify order transaction');
     }
   }
 
-
   async verifySubscriptionTransaction(transactionRef: string) {
     try {
-      const response = await axios.post(this.hydroVerify,
+      const response = await axios.post(
+        this.hydroVerify,
         { TransactionRef: transactionRef },
         {
           headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
+            Authorization: `Bearer ${this.apiKey}`,
             'Content-Type': 'application/json',
           },
-        });
+        },
+      );
 
-      if (response.data.data.status === 'Paid' || response.data.data.transactionStatus === 'Paid') {
-        const subscription = await this.subscriptionService.updateSubscriptionPay(transactionRef);
+      if (
+        response.data.data.status === 'Paid' ||
+        response.data.data.transactionStatus === 'Paid'
+      ) {
+        const subscription =
+          await this.subscriptionService.updateSubscriptionPay(transactionRef);
         if (subscription) {
           return { message: 'Payment verified and subscription updated' };
         } else {
@@ -108,8 +132,13 @@ export class PaymentService {
         return { message: 'Payment verification failed' };
       }
     } catch (error) {
-      console.error('Error verifying subscription transaction:', error.response ? error.response.data : error.message);
-      throw new BadRequestException('Failed to verify subscription transaction');
+      console.error(
+        'Error verifying subscription transaction:',
+        error.response ? error.response.data : error.message,
+      );
+      throw new BadRequestException(
+        'Failed to verify subscription transaction',
+      );
     }
   }
 
@@ -117,19 +146,18 @@ export class PaymentService {
 
   async initializePayment(paymentData: CreatePayStackPaymentDto): Promise<any> {
     try {
-      const response = await axios.post(
-        `${this.paystackUrl}`,
-        paymentData,
-        {
-          headers: {
-            'Authorization': `Bearer ${this.paystackSect}`,
-            'Content-Type': 'application/json',
-          },
+      const response = await axios.post(`${this.paystackUrl}`, paymentData, {
+        headers: {
+          Authorization: `Bearer ${this.paystackSect}`,
+          'Content-Type': 'application/json',
         },
-      );
+      });
       return response.data;
     } catch (error) {
-      console.error('Error initializing payment with Paystack:', error.response ? error.response.data : error.message);
+      console.error(
+        'Error initializing payment with Paystack:',
+        error.response ? error.response.data : error.message,
+      );
       throw new BadRequestException('Failed to initialize payment');
     }
   }
@@ -140,14 +168,17 @@ export class PaymentService {
         `${this.apiUrl}/transaction/verify/${reference}`,
         {
           headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
+            Authorization: `Bearer ${this.apiKey}`,
             'Content-Type': 'application/json',
           },
         },
       );
       return response.data;
     } catch (error) {
-      console.error('Error verifying payment with Paystack:', error.response ? error.response.data : error.message);
+      console.error(
+        'Error verifying payment with Paystack:',
+        error.response ? error.response.data : error.message,
+      );
       throw new BadRequestException('Failed to verify payment');
     }
   }
