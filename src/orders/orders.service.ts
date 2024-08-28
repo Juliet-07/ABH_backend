@@ -89,6 +89,10 @@ export class OrdersService {
         })
       );
 
+      const vendorIds = productDetails.map(item => item.vendorId);
+      console.log('Vendor IDs:', vendorIds);
+     
+
 
       const userInfo = await this.userModel.findById(userId);
       if (!userInfo) throw new NotFoundException('Please login or create an Account with us');
@@ -126,7 +130,7 @@ export class OrdersService {
         shippingMethod,
         shippingFee,
         paymentGateway,
-        //vendorId: item.vendorId,
+        vendorId: vendorIds,
         vat,
         reference: transaction.reference,
         transactionId: transaction._id,
