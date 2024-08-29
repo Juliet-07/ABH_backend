@@ -8,13 +8,9 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { OrderStatusEnum, PaymentStatus } from 'src/constants';
-import {
-  UpdateOrderStatusDto1,
-} from 'src/orders/dto/update-order-status.dto';
+import { UpdateOrderStatusDto1 } from 'src/orders/dto/update-order-status.dto';
 import { Order } from 'src/orders/schema/order.schema';
 import { Product } from 'src/products/schema/product.schema';
-
-
 
 import { Document } from 'mongoose';
 
@@ -27,7 +23,6 @@ export interface OrderDocument extends Document {
   updated_at: Date; // Custom name for updatedAt
 }
 
-
 @Injectable()
 export class StatisticService {
   constructor(
@@ -35,17 +30,31 @@ export class StatisticService {
     @InjectModel(Product.name) private productModel: Model<Product>,
   ) {}
 
-  async getOrdersByVendorId(vendorId: string) {
+  async getOrdersByVendorId(vendorId: string, page: number, limit: number) {
     try {
+      const skip = (page - 1) * limit;
       // Step 2: Fetch orders that contain these products
       const orders = await this.orderModel
         .find({
           vendorId: vendorId,
         })
+        .populate({
+          path: 'userId',
+          select: '-password',
+        })
+        .populate('products.productId')
+        .skip(skip)
+        .limit(limit)
         .exec();
+      const totalOrders = await this.orderModel.countDocuments({
+        vendorId: vendorId,
+      });
 
       return {
         count: orders.length,
+        totalOrders,
+        totalPages: Math.ceil(totalOrders / limit),
+        currentPage: page,
         orders,
       };
     } catch (error) {
@@ -53,7 +62,6 @@ export class StatisticService {
       throw error;
     }
   }
-
 
   async trackOrder(orderId: string, vendorId: string) {
     try {
@@ -65,15 +73,13 @@ export class StatisticService {
         })
         .exec();
 
-        if (!order) {
-          throw new NotFoundException(
-            'Order not found or does not belong to this vendor',
-          );
-        }
-  
+      if (!order) {
+        throw new NotFoundException(
+          'Order not found or does not belong to this vendor',
+        );
+      }
 
       return {
-        
         order,
       };
     } catch (error) {
@@ -82,7 +88,11 @@ export class StatisticService {
     }
   }
 
-  async acceptOrder(orderId: string, vendorId: string) {
+  async acceptOrder(
+    orderId: string,
+    vendorId: string,
+    payload: UpdateOrderStatusDto1,
+  ) {
     try {
       const order = await this.orderModel.findOne({
         _id: orderId,
@@ -101,7 +111,7 @@ export class StatisticService {
 
       const updatedStatus = await this.orderModel.findOneAndUpdate(
         { _id: orderId },
-        { $set: { deliveryStatus: 'CONFIRMED' } },
+        { $set: { deliveryStatus: payload.deliveryStatus } },
         { new: true },
       );
 
@@ -208,26 +218,29 @@ export class StatisticService {
       const pageSize = Math.max(1, limit);
       const currentPage = Math.max(1, page);
       const skip = (currentPage - 1) * pageSize;
-  
+
       // Build the match criteria
       const matchCriteria: Record<string, any> = {
         vendorId: vendorId,
       };
-  
-      if (deliveryStatus && Object.values(OrderStatusEnum).includes(deliveryStatus)) {
+
+      if (
+        deliveryStatus &&
+        Object.values(OrderStatusEnum).includes(deliveryStatus)
+      ) {
         matchCriteria.deliveryStatus = deliveryStatus;
       }
-  
+
       // Fetch orders with pagination
       const data = await this.orderModel
         .find(matchCriteria)
         .skip(skip)
         .limit(pageSize)
         .exec();
-  
+
       // Count total documents matching criteria
       const totalCount = await this.orderModel.countDocuments(matchCriteria);
-  
+
       // Prepare the result
       const result = {
         page: pageSize,
@@ -235,7 +248,7 @@ export class StatisticService {
         totalPages: Math.ceil(totalCount / pageSize),
         data,
       };
-  
+
       return result;
     } catch (error) {
       throw new Error(`Error fetching order status: ${error.message}`);
@@ -244,20 +257,27 @@ export class StatisticService {
 
   async getMonthlyOrdersAndRevenueForVendor(vendorId: string) {
     try {
-      const orders = await this.orderModel.find({
+      const orders = (await this.orderModel.find({
         vendorId: vendorId,
         status: 'PAID',
-      }) as OrderDocument[]; // Cast to OrderDocument[]
-  
-      const monthlyData: { [key: string]: { year: number; month: number; totalOrders: number; totalRevenue: number; } } = {};
-  
-      orders.forEach(order => {
+      })) as OrderDocument[]; // Cast to OrderDocument[]
+
+      const monthlyData: {
+        [key: string]: {
+          year: number;
+          month: number;
+          totalOrders: number;
+          totalRevenue: number;
+        };
+      } = {};
+
+      orders.forEach((order) => {
         const createdAt = new Date(order.created_at); // Use created_at instead of createdAt
         const year = createdAt.getFullYear();
         const month = createdAt.getMonth() + 1; // Months are zero-indexed
-  
+
         const key = `${year}-${month}`;
-  
+
         if (!monthlyData[key]) {
           monthlyData[key] = {
             year: year,
@@ -266,20 +286,18 @@ export class StatisticService {
             totalRevenue: 0,
           };
         }
-  
+
         monthlyData[key].totalOrders += 1;
         monthlyData[key].totalRevenue += order.totalAmount;
       });
-  
+
       const result = Object.values(monthlyData);
       console.log(result);
       return result;
     } catch (error) {
       throw new Error(
-        `Error fetching monthly orders and revenue for vendor: ${error.message}`
+        `Error fetching monthly orders and revenue for vendor: ${error.message}`,
       );
     }
   }
-  
-  
 }

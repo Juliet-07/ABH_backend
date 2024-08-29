@@ -11,7 +11,7 @@ import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { Cart } from './schema/cart.schema';
 import { Product } from 'src/products/schema/product.schema';
-import { GIGLogisticsService } from 'src/services/logistic/gig-logistics.service';
+
 
 @Injectable()
 export class CartService {
@@ -20,7 +20,7 @@ export class CartService {
     @InjectModel(Product.name) private productModel: Model<Product>,
 
     private helperService: HelpersService,
-    private readonly gigLogisticsService: GIGLogisticsService
+    
   ) { }
 
   async addToCart(syncCartDto: SynchronizeCartDto, userId: string) {
@@ -279,27 +279,27 @@ export class CartService {
     }
   }
 
-  async getDeliveryEstimate(
-    id: string,
-    shippingData: DeliveryEstimateDto,
-  ) {
-    try {
-      const cart = await this.cartModel.findOne({ userId: id });
+  // async getDeliveryEstimate(
+  //   id: string,
+  //   shippingData: DeliveryEstimateDto,
+  // ) {
+  //   try {
+  //     const cart = await this.cartModel.findOne({ userId: id });
 
-      if (!cart) throw new Error('Invalid Cart');
-      if (!cart.products.length) throw new Error('No products in cart');
+  //     if (!cart) throw new Error('Invalid Cart');
+  //     if (!cart.products.length) throw new Error('No products in cart');
 
-      const price = await this.gigLogisticsService.getShippingPrice(shippingData);
-      console.log('Shipping Price:', price);
-      return price;
+  //     const price = await this.gigLogisticsService.getShippingPrice(shippingData);
+  //     console.log('Shipping Price:', price);
+  //     return price;
 
 
 
-    } catch (error) {
-      console.log(error)
-      throw new BadRequestException(error.message);
-    }
-  }
+  //   } catch (error) {
+  //     console.log(error)
+  //     throw new BadRequestException(error.message);
+  //   }
+  // }
 
   findAll() {
     return `This action returns all cart`;

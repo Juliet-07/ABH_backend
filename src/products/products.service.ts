@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateProductDto } from './dto/create-product.dto';
+import { CreateProductDto, CreateProductsDto } from './dto/create-product.dto';
 import { UpdateProductsDto } from './dto/update-product.dto';
 import { HelpersService } from '../utils/helpers/helpers.service';
 import { ManageProductDto } from './dto/manage-product.dto';
@@ -15,14 +15,10 @@ import { Admin } from 'src/admin/schema/admin.schema';
 import { Vendor } from 'src/vendors/schema/vendor.schema';
 import { RedisService } from 'src/redis/redis.service';
 import { Product } from './schema/product.schema';
-import {
-  CreateMultipleWholeSaleProductsDto,
-  CreateWholeSaleProductDto,
-} from './dto/wholesale-product.dto';
+import { CreateWholeSaleProductDto } from './dto/wholesale-product.dto';
 import { SampleProductDto } from './dto/sample-product.dto';
 import { MailingService } from 'src/utils/mailing/mailing.service';
 import { VendorsService } from 'src/vendors/vendors.service';
-import { Category } from 'src/category/schema/category.schema';
 
 @Injectable()
 export class ProductsService {
@@ -42,7 +38,7 @@ export class ProductsService {
   async create(
     createProductDto: CreateProductDto,
     vendor: string,
-    productImages: Express.Multer.File[], // Accepting multiple image files
+    productImages: Express.Multer.File[],
     featuredImage: Express.Multer.File,
   ) {
     try {
@@ -53,9 +49,8 @@ export class ProductsService {
       if (!category) {
         throw new BadRequestException('Category not found');
       }
-      console.log(category);
 
-           const vendorCheck = await this.vendorModel.findOne({ _id: vendor });
+      const vendorCheck = await this.vendorModel.findOne({ _id: vendor });
 
       if (!vendorCheck) throw new NotFoundException(`Vendor not found `);
 
@@ -72,7 +67,7 @@ export class ProductsService {
         slug,
         vendor: vendorCheck._id,
         createdBy: vendorCheck._id,
-        subcategoryId: createProductDto.subcategoryId || undefined,
+        
       });
 
       // Handle product images
@@ -80,7 +75,7 @@ export class ProductsService {
       if (productImages && productImages.length > 0) {
         const imageUrls = await Promise.all(
           productImages.map(async (file, index) => {
-            const fileBuffer = Buffer.from(file.buffer); // This line corrected
+            const fileBuffer = Buffer.from(file.buffer);
             const uploadedImageUrl =
               await this.azureService.uploadFileToBlobStorage(
                 fileBuffer,
@@ -114,7 +109,6 @@ export class ProductsService {
       return {
         result,
         category,
-        //subcategory,
       };
     } catch (error) {
       console.error('Error creating product:', error);
@@ -138,7 +132,7 @@ export class ProductsService {
         throw new BadRequestException('Category ID is missing');
       }
 
-      const vendorCheck = await this.vendorModel.findOne({ vendor });
+      const vendorCheck = await this.vendorModel.findOne({ _id: vendor });
 
       if (!vendorCheck) throw new NotFoundException(`Vendor not found `);
 
@@ -152,8 +146,8 @@ export class ProductsService {
         ...payload,
         code,
         slug,
-        vendorId: vendorCheck.id,
-        createdBy: vendorCheck.id,
+        vendor: vendorCheck._id,
+        createdBy: vendorCheck._id,
       });
 
       if (productImages && productImages.length > 0) {
@@ -195,6 +189,7 @@ export class ProductsService {
         category,
       };
     } catch (error) {
+      console.log(error)
       throw new BadRequestException(error.message);
     }
   }
@@ -215,7 +210,7 @@ export class ProductsService {
         throw new BadRequestException('Category ID is missing');
       }
 
-      const vendorCheck = await this.vendorModel.findOne({ vendor });
+      const vendorCheck = await this.vendorModel.findOne({ _id: vendor });
 
       if (!vendorCheck) throw new NotFoundException(`Vendor not found `);
 
@@ -224,38 +219,35 @@ export class ProductsService {
         payload.name,
       )}-${code}`;
 
+      const currency = 'NGN';
+
       const product = new this.productModel({
         ...payload,
         code,
         slug,
-        vendor: vendorCheck.id,
-        createdBy: vendorCheck.id,
+        vendor: vendorCheck._id,
+        createdBy: vendorCheck._id,
+        currency,
       });
 
       if (productImages && productImages.length > 0) {
-        // Prepare arrays for buffers, names, and MIME types
-        const fileBuffers: Buffer[] = productImages.map((file) =>
-          Buffer.from(file.buffer),
+        const imageUrls = await Promise.all(
+          productImages.map(async (file, index) => {
+            const fileBuffer = Buffer.from(file.buffer);
+            const uploadedImageUrl =
+              await this.azureService.uploadFileToBlobStorage(
+                fileBuffer,
+                file.originalname,
+                file.mimetype,
+              );
+            return {
+              id: index + 1,
+              url: uploadedImageUrl,
+            };
+          }),
         );
-        const fileNames: string[] = productImages.map(
-          (file) => file.originalname,
-        );
-        const mimeTypes: string[] = productImages.map((file) => file.mimetype);
-
-        // Upload files to Azure Blob Storage
-        const imageUrls = await this.azureService.uploadMultipleToBlobStorage(
-          fileBuffers,
-          fileNames,
-          mimeTypes,
-        );
-
-        // Map returned URLs to include an ID
-        product.images = imageUrls.map((url, index) => ({
-          id: index + 1,
-          url,
-        }));
+        product.images = imageUrls;
       }
-
       // Handle featured image
       if (featuredImage) {
         const fileBuffer = Buffer.from(featuredImage.buffer); // This line corrected
@@ -267,57 +259,145 @@ export class ProductsService {
           );
         product.featured_image = uploadedImageUrl;
       }
-
       const result = await product.save();
       return {
         result,
         category,
       };
     } catch (error) {
-      console.error('THE ERROR', error);
+      console.error('Error creating Wholesale product', error);
       throw new BadRequestException(error.message);
     }
   }
 
-  async addMultipleWholesaleProducts(
-    createMultipleWholeSaleProductsDto: CreateMultipleWholeSaleProductsDto,
+  // async addMultipleWholesaleProducts(
+  //   createMultipleWholeSaleProductsDto: CreateMultipleWholeSaleProductsDto,
+  //   vendor: string,
+  // ) {
+  //   try {
+  //     // Validation phase
+  //     const { products } = createMultipleWholeSaleProductsDto;
+
+  //     // Validate categories and vendors
+
+  //     const vendorCheck = await this.vendorModel.findOne({ vendor });
+  //     if (!vendorCheck) throw new NotFoundException(`Vendor not found`);
+
+  //     // Create products
+  //     const productDocs = products.map((productData) => {
+  //       const code = this.helpers.genCode(10);
+  //       const slug = `${this.helpers.convertProductNameToSlug(
+  //         productData.name,
+  //       )}-${code}`;
+
+  //       const product = new this.productModel({
+  //         ...productData,
+  //         code,
+  //         slug,
+  //         createdBy: vendorCheck.id,
+  //       });
+
+  //       return product;
+  //     });
+
+  //     // **Image Uploads** (Replace with your image upload logic)
+  //     // - Loop through productDocs
+  //     // - For each product, upload its images (if any) to Azure Blob Storage
+  //     // - Update the product document with image URLs
+
+  //     const createdProducts = await this.productModel.insertMany(productDocs);
+  //     return createdProducts;
+  //   } catch (error) {
+  //     throw new error(); // Consider more specific error handling
+  //   }
+  // }
+
+  async createMultipleRetail(
+    createProductsDto: CreateProductsDto,
     vendor: string,
+    productImages: Express.Multer.File[], // Accepting multiple image files
+    featuredImages: Express.Multer.File[], // Accepting multiple featured images
   ) {
     try {
-      // Validation phase
-      const { products } = createMultipleWholeSaleProductsDto;
-
-      // Validate categories and vendors
-
-      const vendorCheck = await this.vendorModel.findOne({ vendor });
+      const vendorCheck = await this.vendorModel.findOne({ _id: vendor });
       if (!vendorCheck) throw new NotFoundException(`Vendor not found`);
 
-      // Create products
-      const productDocs = products.map((productData) => {
+      const products = [];
+
+      for (let i = 0; i < createProductsDto.products.length; i++) {
+        const createProductDto = createProductsDto.products[i];
+
+        // Validate category
+        const category = await this.categoryService.findOne(
+          new mongoose.Types.ObjectId(createProductDto.categoryId),
+        );
+        if (!category) {
+          throw new BadRequestException(
+            `Category not found for product ${i + 1}`,
+          );
+        }
+
+        // Generate unique code and slug
         const code = this.helpers.genCode(10);
         const slug = `${this.helpers.convertProductNameToSlug(
-          productData.name,
+          createProductDto.name,
         )}-${code}`;
 
+        // Create a new product instance
         const product = new this.productModel({
-          ...productData,
+          ...createProductDto,
           code,
           slug,
-          createdBy: vendorCheck.id,
+          vendor: vendorCheck._id,
+          createdBy: vendorCheck._id,
+          subcategoryId: createProductDto.subcategoryId || undefined,
         });
 
-        return product;
-      });
+        // Handle product images
+        if (productImages && productImages.length > 0) {
+          const imageUrls = await Promise.all(
+            productImages.map(async (file, index) => {
+              const fileBuffer = Buffer.from(file.buffer);
+              const uploadedImageUrl =
+                await this.azureService.uploadFileToBlobStorage(
+                  fileBuffer,
+                  file.originalname,
+                  file.mimetype,
+                );
+              return {
+                id: index + 1,
+                url: uploadedImageUrl,
+              };
+            }),
+          );
+          product.images = imageUrls;
+        }
 
-      // **Image Uploads** (Replace with your image upload logic)
-      // - Loop through productDocs
-      // - For each product, upload its images (if any) to Azure Blob Storage
-      // - Update the product document with image URLs
+        // Handle featured image
+        if (featuredImages[i]) {
+          // Ensure there's a corresponding featured image
+          const fileBuffer = Buffer.from(featuredImages[i].buffer);
+          const uploadedImageUrl =
+            await this.azureService.uploadFileToBlobStorage(
+              fileBuffer,
+              featuredImages[i].originalname,
+              featuredImages[i].mimetype,
+            );
+          product.featured_image = uploadedImageUrl;
+        }
 
-      const createdProducts = await this.productModel.insertMany(productDocs);
-      return createdProducts;
+        // Save the product
+        const result = await product.save();
+        products.push(result);
+      }
+
+      return {
+        products,
+        vendor: vendorCheck,
+      };
     } catch (error) {
-      throw new error(); // Consider more specific error handling
+      console.error('Error creating products:', error);
+      throw new BadRequestException(error.message);
     }
   }
 

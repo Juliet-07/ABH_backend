@@ -21,11 +21,11 @@ export class Product {
   @Prop({ type: Number })
   discount?: number;
 
-  @Prop({ type: Number })
-  maximumOrderPerCarton?: number;
+  @Prop({ type: Number, required: false })
+  maximumOrderPerCarton: number;
 
-  @Prop({ type: Number })
-  unitPerCarton?: number;
+  @Prop({ type: Number, required: false })
+  unitPerCarton: number;
 
   @Prop({ required: true })
   slug: string;
@@ -61,7 +61,6 @@ export class Product {
   @Prop({ type: String, required: false })
   sku?: string;
 
-  
   @Prop({ type: String, required: false })
   videoUrl?: string;
 
@@ -89,7 +88,7 @@ export class Product {
   @Prop({ enum: ProductStatusEnums, default: ProductStatusEnums.PENDING })
   status: string;
 
-  @Prop({ default: ProductTypeEnums.RETAIL, enum: ProductTypeEnums })
+  @Prop({ default: ProductTypeEnums, enum: ProductTypeEnums })
   productType: string;
 
   @Prop({ type: String, required: false })
@@ -122,14 +121,14 @@ export class Product {
   @Prop({ type: Boolean, required: false })
   isDigital?: boolean;
 
-  @Prop({ type: Number, required: false })
-  ratings?: number;
+  // @Prop({ type: Number, required: false })
+  // ratings?: number;
 
-  @Prop({ type: Number, required: false })
-  totalReviews?: number;
+  // @Prop({ type: Number, required: false })
+  // totalReviews?: number;
 
-  @Prop({ type: String, required: false })
-  myReview?: string;
+  // @Prop({ type: String, required: false })
+  // myReview?: string;
 
   @Prop({ default: false })
   inWishlist: boolean;
