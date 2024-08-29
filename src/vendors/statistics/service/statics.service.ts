@@ -54,6 +54,34 @@ export class StatisticService {
     }
   }
 
+
+  async trackOrder(orderId: string, vendorId: string) {
+    try {
+      // Step 2: Fetch orders that contain these products
+      const order = await this.orderModel
+        .findOne({
+          _id: orderId,
+          vendorId: vendorId,
+        })
+        .exec();
+
+        if (!order) {
+          throw new NotFoundException(
+            'Order not found or does not belong to this vendor',
+          );
+        }
+  
+
+      return {
+        
+        order,
+      };
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      throw error;
+    }
+  }
+
   async acceptOrder(orderId: string, vendorId: string) {
     try {
       const order = await this.orderModel.findOne({
