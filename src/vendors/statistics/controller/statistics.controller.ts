@@ -15,10 +15,14 @@ import { StatisticService } from '../service/statics.service';
 import { VendorGuard } from 'src/auth/vendor-guard/vendor.guard';
 import { UpdateOrderStatusDto1 } from 'src/orders/dto/update-order-status.dto';
 import { OrderStatusEnum } from 'src/constants';
+import { DropshippingstatisticService } from '../service/dropshipping.stat';
 
 @Controller('vendors-dashboard')
 export class StatisticController {
-  constructor(private readonly statisticService: StatisticService) {}
+  constructor(
+    private readonly statisticService: StatisticService,
+    private readonly dropshippingstatisticService: DropshippingstatisticService,
+  ) {}
 
   @UseGuards(VendorGuard)
   @HttpCode(HttpStatus.OK)
@@ -27,6 +31,15 @@ export class StatisticController {
     const vendorId = req.vendor;
 
     return this.statisticService.getOrdersByVendorId(vendorId);
+  }
+
+  @UseGuards(VendorGuard)
+  @HttpCode(HttpStatus.OK)
+  @Get('/track-orders/:orderId')
+  async TrackOrders(@Param('orderId') orderId: string, @Request() req) {
+    const vendorId = req.vendor;
+
+    return this.statisticService.trackOrder(orderId, vendorId);
   }
 
   @UseGuards(VendorGuard)
@@ -112,5 +125,116 @@ export class StatisticController {
       page: numericPage,
       vendorId,
     });
+  }
+
+  // DROPSHIPPING END HTTP
+
+  @UseGuards(VendorGuard)
+  @HttpCode(HttpStatus.OK)
+  @Get('/my-dropshipping')
+  async AllDropshipping(@Request() req) {
+    const vendorId = req.vendor;
+
+    return this.dropshippingstatisticService.getDropshippingByVendorId(
+      vendorId,
+    );
+  }
+
+  @UseGuards(VendorGuard)
+  @HttpCode(HttpStatus.OK)
+  @Get('/track-dropshipping/:dropshippingId')
+  async TrackDropshipping(
+    @Param('dropshippingId') dropshippingId: string,
+    @Request() req
+  ) {
+    const vendorId = req.vendor;
+
+    return this.dropshippingstatisticService.trackDropshipping(
+      dropshippingId, vendorId,
+    );
+  }
+
+  @UseGuards(VendorGuard)
+  @HttpCode(HttpStatus.OK)
+  @Patch('accept-dropshipping/:dropshippingId')
+  async acceptDropshipping(
+    @Request() req,
+    @Param('dropshippingId') dropshippingId: string,
+  ) {
+    const vendorId = req.vendor;
+
+    return this.dropshippingstatisticService.acceptDropshipping(
+      dropshippingId,
+      vendorId,
+    );
+  }
+
+  @UseGuards(VendorGuard)
+  @HttpCode(HttpStatus.OK)
+  @Post('update-dropshipping-status/:dropshippingId')
+  async updateDropshippingStatus(
+    @Request() req,
+    @Param('dropshippingId') dropshippingId: string,
+    @Body() payload: UpdateOrderStatusDto1,
+  ) {
+    const vendorId = req.vendor;
+
+    return this.dropshippingstatisticService.updatedropshippingStatus(
+      dropshippingId,
+      vendorId,
+      payload,
+    );
+  }
+
+  @UseGuards(VendorGuard)
+  @HttpCode(HttpStatus.OK)
+  @Get('dropshipping-total-sales')
+  async totalSalesForDropshippingVendor(@Request() req) {
+    const vendorId = req.vendor;
+    return this.dropshippingstatisticService.totalSalesForDropshipping(
+      vendorId,
+    );
+  }
+
+  @UseGuards(VendorGuard)
+  @HttpCode(HttpStatus.OK)
+  @Get('dropshipping')
+  async GetDropshippingStatus(
+    @Request() req: any,
+    @Query('status') deliveryStatus?: string,
+    @Query('limit') limit?: number,
+    @Query('page') page?: number,
+  ) {
+    const vendorId = req.vendor;
+
+    // Validate and convert deliveryStatus to enum
+    let validatedStatus: OrderStatusEnum | undefined;
+    if (
+      deliveryStatus &&
+      Object.values(OrderStatusEnum).includes(deliveryStatus as OrderStatusEnum)
+    ) {
+      validatedStatus = deliveryStatus as OrderStatusEnum;
+    }
+
+    // Convert limit and page to numbers
+    const numericLimit = limit ? parseInt(limit.toString(), 10) : undefined;
+    const numericPage = page ? parseInt(page.toString(), 10) : undefined;
+
+    return this.dropshippingstatisticService.dropshippingStatus({
+      deliveryStatus: validatedStatus,
+      limit: numericLimit,
+      page: numericPage,
+      vendorId,
+    });
+  }
+
+  @UseGuards(VendorGuard)
+  @HttpCode(HttpStatus.OK)
+  @Get('dropshipping-revenue')
+  async getMonthlyDropshippingAndRevenue(@Request() req) {
+    const vendorId = req.vendor;
+    return this.dropshippingstatisticService.getMonthlyDropshippingAndRevenueForVendor(
+      vendorId,
+    );
   }
 }

@@ -55,14 +55,7 @@ export class ProductsService {
       }
       console.log(category);
 
-      // const subcategory = await this.categoryService.findOneSubcategory(
-      //   new mongoose.Types.ObjectId(createProductDto.subcategoryId),
-      // );
-
-      // if (!subcategory) throw new NotFoundException(`subcategory not found`);
-      // console.log(subcategory);
-
-      const vendorCheck = await this.vendorModel.findOne({ _id: vendor });
+           const vendorCheck = await this.vendorModel.findOne({ _id: vendor });
 
       if (!vendorCheck) throw new NotFoundException(`Vendor not found `);
 

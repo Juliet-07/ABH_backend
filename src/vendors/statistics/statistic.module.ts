@@ -7,6 +7,8 @@ import { StatisticController } from './controller/statistics.controller';
 import { StatisticService } from './service/statics.service';
 import { AdminModule } from 'src/admin/admin.module';
 import { VendorsModule } from '../vendors.module';
+import { DropshippingstatisticService } from './service/dropshipping.stat';
+import { DropshippingSchema } from 'src/dropshipping/schema/dropshipping.schema';
 
 @Module({
   imports: [
@@ -14,12 +16,13 @@ import { VendorsModule } from '../vendors.module';
       { name: 'Vendor', schema: VendorSchema },
       { name: 'Order', schema: OrderSchema },
       { name: 'Product', schema: ProductSchema },
+      { name: 'Dropshipping', schema: DropshippingSchema },
     ]),
     AdminModule,
     VendorsModule
   ],
   exports: [StatisticService],
   controllers: [StatisticController],
-  providers: [StatisticService],
+  providers: [StatisticService, DropshippingstatisticService],
 })
 export class StatisticModule {}
