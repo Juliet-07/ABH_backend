@@ -10,6 +10,7 @@ import {
   Param,
   Patch,
   Body,
+  Put,
 } from '@nestjs/common';
 import { StatisticService } from '../service/statics.service';
 import { VendorGuard } from 'src/auth/vendor-guard/vendor.guard';
@@ -23,14 +24,18 @@ export class StatisticController {
     private readonly statisticService: StatisticService,
     private readonly dropshippingstatisticService: DropshippingstatisticService,
   ) {}
-
   @UseGuards(VendorGuard)
   @HttpCode(HttpStatus.OK)
   @Get('/my-orders')
-  async AllOrders(@Request() req) {
+  async AllOrders(
+    @Request() req,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+  ) {
     const vendorId = req.vendor;
 
-    return this.statisticService.getOrdersByVendorId(vendorId);
+    // Call the service method with pagination parameters
+    return this.statisticService.getOrdersByVendorId(vendorId, page, limit);
   }
 
   @UseGuards(VendorGuard)
@@ -44,11 +49,15 @@ export class StatisticController {
 
   @UseGuards(VendorGuard)
   @HttpCode(HttpStatus.OK)
-  @Patch('accept-orders/:orderId')
-  async acceptOrder(@Request() req, @Param('orderId') orderId: string) {
+  @Put('accept-orders/:orderId')
+  async acceptOrder(
+    @Request() req,
+    @Param('orderId') orderId: string,
+    @Body() payload: UpdateOrderStatusDto1,
+  ) {
     const vendorId = req.vendor;
 
-    return this.statisticService.acceptOrder(orderId, vendorId);
+    return this.statisticService.acceptOrder(orderId, vendorId, payload);
   }
 
   @UseGuards(VendorGuard)
@@ -132,11 +141,17 @@ export class StatisticController {
   @UseGuards(VendorGuard)
   @HttpCode(HttpStatus.OK)
   @Get('/my-dropshipping')
-  async AllDropshipping(@Request() req) {
+  async AllDropshipping(
+    @Request() req,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+  ) {
     const vendorId = req.vendor;
 
     return this.dropshippingstatisticService.getDropshippingByVendorId(
       vendorId,
+      page,
+      limit,
     );
   }
 
@@ -145,12 +160,13 @@ export class StatisticController {
   @Get('/track-dropshipping/:dropshippingId')
   async TrackDropshipping(
     @Param('dropshippingId') dropshippingId: string,
-    @Request() req
+    @Request() req,
   ) {
     const vendorId = req.vendor;
 
     return this.dropshippingstatisticService.trackDropshipping(
-      dropshippingId, vendorId,
+      dropshippingId,
+      vendorId,
     );
   }
 
@@ -160,12 +176,14 @@ export class StatisticController {
   async acceptDropshipping(
     @Request() req,
     @Param('dropshippingId') dropshippingId: string,
+    @Body() payload: UpdateOrderStatusDto1,
   ) {
     const vendorId = req.vendor;
 
     return this.dropshippingstatisticService.acceptDropshipping(
       dropshippingId,
       vendorId,
+      payload,
     );
   }
 

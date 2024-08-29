@@ -77,15 +77,15 @@ export class CartController {
     return this.cartService.validateCart(req.user.id);
   }
 
-  @Post('/delivery-cost-estimate')
-  @UseGuards(AuthGuard)
-  @HttpCode(HttpStatus.OK)
-  @UsePipes(new ValidationPipe())
-  @ApiBearerAuth('JWT-auth')
-  getDeliveryEstimate(@Request() req, deliveryEstimateDto: DeliveryEstimateDto) {
-    const userId = req.user
-    return this.cartService.getDeliveryEstimate(userId, deliveryEstimateDto);
-  }
+  // @Post('/delivery-cost-estimate')
+  // @UseGuards(AuthGuard)
+  // @HttpCode(HttpStatus.OK)
+  // @UsePipes(new ValidationPipe())
+  // @ApiBearerAuth('JWT-auth')
+  // getDeliveryEstimate(@Request() req, deliveryEstimateDto: DeliveryEstimateDto) {
+  //   const userId = req.user
+  //   return this.cartService.getDeliveryEstimate(userId, deliveryEstimateDto);
+  // }
 
   @Delete('/delete/:productId')
   @UseGuards(AuthGuard)

@@ -13,10 +13,14 @@ import {
 } from 'class-validator';
 import { Currencies } from '../../utils/constants';
 import mongoose from 'mongoose';
+import { ProductTypeEnums } from 'src/constants';
 
 const currency_enums = Object.keys(Currencies);
 
 export class CreateProductDto {
+  @IsEnum(ProductTypeEnums)
+  productType: ProductTypeEnums = ProductTypeEnums.RETAIL;
+
   @IsString()
   @ApiProperty({
     type: String,
@@ -182,4 +186,8 @@ export class CreateProductDto {
     description: 'Product is in wishlist',
   })
   inWishlist: boolean;
+}
+
+export class CreateProductsDto {
+  products: CreateProductDto[];
 }

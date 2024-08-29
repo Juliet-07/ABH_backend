@@ -14,7 +14,6 @@ import { VendorsModule } from './vendors/vendors.module';
 import { CategoryModule } from './category/category.module';
 import { OrdersModule } from './orders/orders.module';
 import { CartModule } from './cart/cart.module';
-import { HydrogenpayService } from './services/hydrogenpay/hydrogenpay.service';
 import { HelpersService } from './utils/helpers/helpers.service';
 import { RedisModule } from './redis/redis.module';
 import { NotificationModule } from './notification/notification.module';
@@ -24,6 +23,7 @@ import { SubscriptionModule } from './subscription/subscription.module';
 import { DashBoardModule } from './admin/dashboard/dashboard.module';
 import { StatisticModule } from './vendors/statistics/statistic.module';
 import { DropshippingModule } from './dropshipping/dropshipping.module';
+import { LogisticModule } from './logistics/logistic.module';
 //import { PaymentModule } from './payment/payment.module';
 
 
@@ -55,7 +55,8 @@ import { DropshippingModule } from './dropshipping/dropshipping.module';
     SubscriptionModule,
     DashBoardModule,
     StatisticModule,
-    DropshippingModule
+    DropshippingModule,
+    LogisticModule
   ],
   controllers: [AppController],
   providers: [

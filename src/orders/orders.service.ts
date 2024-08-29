@@ -23,7 +23,6 @@ import { Product } from 'src/products/schema/product.schema';
 import { Transaction } from 'src/transaction/schema/transaction.schema';
 import { PaymentService } from 'src/payment/service/payments.service';
 import { DeliveryEstimateDto } from 'src/cart/dto/delivery-estimate.dto';
-import { GIGLogisticsService } from 'src/services/logistic/gig-logistics.service';
 import { User } from 'src/user/schema/user.schem';
 
 @Injectable()
@@ -37,71 +36,60 @@ export class OrdersService {
 
     private helper: HelpersService,
     private cartService: CartService,
-    private readonly gigLogisticsService: GIGLogisticsService,
-    private readonly paymentService: PaymentService
-
-  ) { }
-
-
-
-  async getDeliveryEstimate(
-
-    shippingData: DeliveryEstimateDto,
-  ) {
-    try {
-      const price = await this.gigLogisticsService.getShippingPrice(shippingData);
-      console.log('Shipping Price:', price);
-      return price;
-
-
-
-    } catch (error) {
-      console.log("THIS ERROR", error)
-      throw new BadRequestException(error.message);
-    }
-  }
-
-
-
-
+    private readonly paymentService: PaymentService,
+  ) {}
 
   async create(createOrderDto: CreateOrderDto, userId: string) {
     try {
-      const { shippingAddress, billingAddress, shippingMethod, personalInfo, products, shippingFee, paymentGateway } = createOrderDto;
+      const {
+        shippingAddress,
+        billingAddress,
+        shippingMethod,
+        personalInfo,
+        products,
+        shippingFee,
+        paymentGateway,
+      } = createOrderDto;
 
       // Validate products and check availability
       const productDetails = await Promise.all(
         products.map(async (item) => {
-       
           const product = await this.productModel.findById(item.productId);
           if (!product) {
-            throw new NotFoundException(`Product with ID ${item.productId} not found`);
+            throw new NotFoundException(
+              `Product with ID ${item.productId} not found`,
+            );
           }
           if (product.quantity - product.soldQuantity < item.quantity) {
-            throw new BadRequestException(`Insufficient quantity for product ID ${item.productId}`);
+            throw new BadRequestException(
+              `Insufficient quantity for product ID ${item.productId}`,
+            );
           }
           return {
             product,
             quantity: item.quantity,
             discount: item.discount || 0,
-            vendorId: product.vendor
+            vendorId: product.vendor,
           };
-        })
+        }),
       );
 
-      const vendorIds = productDetails.map(item => item.vendorId);
+      const vendorIds = productDetails.map((item) => item.vendorId);
       console.log('Vendor IDs:', vendorIds);
-     
-
 
       const userInfo = await this.userModel.findById(userId);
-      if (!userInfo) throw new NotFoundException('Please login or create an Account with us');
+      if (!userInfo)
+        throw new NotFoundException(
+          'Please login or create an Account with us',
+        );
 
       // Calculate total product amount considering discounts
       const totalProductAmount = productDetails
         .map((item) => {
-          const discountAmount = (item.discount / 100) * item.product.sellingPrice * item.quantity; // Calculate discount
-          const discountedPrice = (item.product.sellingPrice * item.quantity) - discountAmount; // Apply discount
+          const discountAmount =
+            (item.discount / 100) * item.product.sellingPrice * item.quantity; // Calculate discount
+          const discountedPrice =
+            item.product.sellingPrice * item.quantity - discountAmount; // Apply discount
           return discountedPrice;
         })
         .reduce((a, b) => a + b, 0);
@@ -110,7 +98,9 @@ export class OrdersService {
       const vat = parseFloat((totalProductAmount * 0.07).toFixed(2)); // Ensure VAT is a valid decimal
 
       // Calculate total amount including VAT and shipping fee
-      const amount = parseFloat((totalProductAmount + vat + Number(shippingFee)).toFixed(2));
+      const amount = parseFloat(
+        (totalProductAmount + vat + Number(shippingFee)).toFixed(2),
+      );
 
       const transaction = await this.transactionModel.create({
         reference: this.helper.genString(15, '1234567890'),
@@ -118,7 +108,7 @@ export class OrdersService {
         totalProductAmount: amount,
         shippingFee: Number(shippingFee),
         amount,
-        vat
+        vat,
       });
 
       // Create the order with vendorId from the products
@@ -139,7 +129,7 @@ export class OrdersService {
           productId: item.product._id,
           quantity: item.quantity,
           discount: item.discount,
-          vendorId: item.vendorId // Include vendorId in the order
+          vendorId: item.vendorId, // Include vendorId in the order
         })),
       });
 
@@ -153,18 +143,23 @@ export class OrdersService {
             { _id: item.product._id },
             {
               $inc: { soldQuantity: item.quantity },
-              $set: { inStock: (item.product.quantity - (item.product.soldQuantity + item.quantity)) > 0 }
-            }
+              $set: {
+                inStock:
+                  item.product.quantity -
+                    (item.product.soldQuantity + item.quantity) >
+                  0,
+              },
+            },
           );
-        })
+        }),
       );
 
       return {
         order,
-        paymentResponse
+        paymentResponse,
       };
     } catch (error) {
-      console.log("THE ERROR", error);
+      console.log('THE ERROR', error);
       throw new BadRequestException(error.message);
     }
   }
@@ -175,27 +170,31 @@ export class OrdersService {
       amount: order.totalAmount,
       email: userInfo.email,
       customerName: userInfo.firstName,
-      currency: "NGN",
+      currency: 'NGN',
       transactionRef: order.reference,
-      callback: "http://localhost:3000/about-us"
+      callback: 'http://localhost:3000/about-us',
     };
 
     const PaystackPaymentData = {
       amount: order.totalAmount,
       email: userInfo.email,
       reference: order.reference,
-      callback: "http://localhost:3000/about-us"
+      callback: 'http://localhost:3000/about-us',
     };
 
     let paymentResponse;
 
     switch (order.paymentGateway) {
       case PaymentGatewayEnums.HYDROGENPAY:
-        paymentResponse = await this.paymentService.createPayment(HydrogenPaymentData);
+        paymentResponse = await this.paymentService.createPayment(
+          HydrogenPaymentData,
+        );
         break;
 
       case PaymentGatewayEnums.PAYSTACK:
-        paymentResponse = await this.paymentService.initializePayment(PaystackPaymentData);
+        paymentResponse = await this.paymentService.initializePayment(
+          PaystackPaymentData,
+        );
         break;
 
       default:
@@ -204,8 +203,6 @@ export class OrdersService {
 
     return paymentResponse;
   }
-
-
 
   async findAll(limit = 50, page = 1) {
     try {
@@ -247,13 +244,11 @@ export class OrdersService {
     }
   }
 
-
-
   async fetchMyOrders(
     id: string,
     limit = 50,
     page = 1,
-    userType: 'vendorId' | 'user'
+    userType: 'vendorId' | 'user',
   ): Promise<{
     data: Order[];
     totalCount: number;
@@ -272,9 +267,8 @@ export class OrdersService {
       const skip = (page - 1) * limit;
 
       // Prepare the filter based on user type
-      const filter: Record<string, any> = userType === 'vendorId'
-        ? { vendorId: id }
-        : { userId: id };
+      const filter: Record<string, any> =
+        userType === 'vendorId' ? { vendorId: id } : { userId: id };
 
       // Fetch paginated documents
       const orders = await this.orderModel
@@ -285,8 +279,6 @@ export class OrdersService {
         .populate('transactionId')
         .populate('products.productId')
         .exec();
-
-
 
       // Count total number of documents with the filter
       const totalCount = await this.orderModel.countDocuments(filter);
@@ -311,30 +303,29 @@ export class OrdersService {
     }
   }
 
-
   async listOneOrder(orderId: string, userId: string) {
     try {
-      const order = await this.orderModel.findOne({ _id: orderId, userId: userId })
+      const order = await this.orderModel
+        .findOne({ _id: orderId, userId: userId })
 
         .populate('userId')
         .populate('transactionId')
         .populate('products.productId')
         .exec();
 
-      if (!order) throw new NotFoundException(`Order not found`)
+      if (!order) throw new NotFoundException(`Order not found`);
 
       return order;
     } catch (error) {
-      console.error(error)
+      console.error(error);
       throw new BadRequestException('Failed to fetch order.');
     }
   }
 
-
   async updateOrderStatus(
     id: string,
     vendorId: string,
-    updateOrderStatusDto: UpdateOrderStatusDto
+    updateOrderStatusDto: UpdateOrderStatusDto,
   ): Promise<Order> {
     try {
       const { deliveryStatus } = updateOrderStatusDto;
@@ -350,11 +341,15 @@ export class OrdersService {
 
       // Check authorization
       if (order.vendorId.toString() !== vendorId) {
-        throw new UnauthorizedException('You are not authorized to update this order');
+        throw new UnauthorizedException(
+          'You are not authorized to update this order',
+        );
       }
 
       // Fetch the transaction using the transactionId from the order
-      const transaction = await this.transactionModel.findById(order.transactionId);
+      const transaction = await this.transactionModel.findById(
+        order.transactionId,
+      );
 
       if (!transaction) {
         throw new NotFoundException('Transaction not found');
@@ -372,49 +367,63 @@ export class OrdersService {
       switch (deliveryStatus) {
         case OrderStatusEnum.CONFIRMED:
           if (order.deliveryStatus !== OrderStatusEnum.PENDING) {
-            throw new BadRequestException(`Order status should be ${OrderStatusEnum.PENDING}`);
+            throw new BadRequestException(
+              `Order status should be ${OrderStatusEnum.PENDING}`,
+            );
           }
           update.deliveryStatus = OrderStatusEnum.CONFIRMED;
           break;
 
         case OrderStatusEnum.DECLINED:
           if (order.deliveryStatus !== OrderStatusEnum.PENDING) {
-            throw new BadRequestException(`Order status should be ${OrderStatusEnum.PENDING}`);
+            throw new BadRequestException(
+              `Order status should be ${OrderStatusEnum.PENDING}`,
+            );
           }
           update.deliveryStatus = OrderStatusEnum.DECLINED;
           break;
 
         case OrderStatusEnum.PROCESSING:
           if (order.deliveryStatus !== OrderStatusEnum.CONFIRMED) {
-            throw new BadRequestException(`Order status should be ${OrderStatusEnum.CONFIRMED}`);
+            throw new BadRequestException(
+              `Order status should be ${OrderStatusEnum.CONFIRMED}`,
+            );
           }
           update.deliveryStatus = OrderStatusEnum.PROCESSING;
           break;
 
         case OrderStatusEnum.READY_TO_SHIP:
           if (order.deliveryStatus !== OrderStatusEnum.PROCESSING) {
-            throw new BadRequestException(`Order status should be ${OrderStatusEnum.PROCESSING}`);
+            throw new BadRequestException(
+              `Order status should be ${OrderStatusEnum.PROCESSING}`,
+            );
           }
           update.deliveryStatus = OrderStatusEnum.READY_TO_SHIP;
           break;
 
         case OrderStatusEnum.SHIPPED:
           if (order.deliveryStatus !== OrderStatusEnum.READY_TO_SHIP) {
-            throw new BadRequestException(`Order status should be ${OrderStatusEnum.READY_TO_SHIP}`);
+            throw new BadRequestException(
+              `Order status should be ${OrderStatusEnum.READY_TO_SHIP}`,
+            );
           }
           update.deliveryStatus = OrderStatusEnum.SHIPPED;
           break;
 
         case OrderStatusEnum.DELIVERED:
           if (order.deliveryStatus !== OrderStatusEnum.SHIPPED) {
-            throw new BadRequestException(`Order status should be ${OrderStatusEnum.SHIPPED}`);
+            throw new BadRequestException(
+              `Order status should be ${OrderStatusEnum.SHIPPED}`,
+            );
           }
           update.deliveryStatus = OrderStatusEnum.DELIVERED;
           break;
 
         case OrderStatusEnum.RETURNED:
           if (order.deliveryStatus !== OrderStatusEnum.DELIVERED) {
-            throw new BadRequestException(`Order status should be ${OrderStatusEnum.DELIVERED}`);
+            throw new BadRequestException(
+              `Order status should be ${OrderStatusEnum.DELIVERED}`,
+            );
           }
           update.deliveryStatus = OrderStatusEnum.RETURNED;
           break;
@@ -427,7 +436,7 @@ export class OrdersService {
       const updatedOrder = await this.orderModel.findByIdAndUpdate(
         { _id: id },
         update,
-        { new: true } // Return the updated document
+        { new: true }, // Return the updated document
       );
 
       if (!updatedOrder) {
@@ -441,16 +450,13 @@ export class OrdersService {
     }
   }
 
-
   async trackOder(orderId: string): Promise<Order> {
     try {
       const order = await this.orderModel.findOne({
+        _id: orderId,
+      });
 
-        _id: orderId
-
-      })
-
-      if (!order) throw new NotFoundException(`Order not found`)
+      if (!order) throw new NotFoundException(`Order not found`);
 
       return order;
     } catch (error) {
@@ -458,30 +464,22 @@ export class OrdersService {
     }
   }
 
-
-
   async updateOrderStatusPay(reference: string) {
     try {
       const updatedOrder = await this.orderModel.findOneAndUpdate(
         { reference: reference },
         { $set: { status: 'PAID' } },
-        { new: true }
+        { new: true },
       );
 
       if (!updatedOrder) {
-
         throw new NotFoundException('Order not found');
       }
 
       return updatedOrder;
     } catch (error) {
-      console.error(error)
+      console.error(error);
       throw new BadRequestException('Failed to update the order');
     }
   }
-
-
-
 }
-
-

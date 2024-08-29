@@ -68,10 +68,9 @@ export class ProductsController {
   }
 
   @UseGuards(VendorGuard)
-  @UseGuards(AdminAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   @Post('wholesale')
-  @UsePipes(new ValidationPipe())
+  //@UsePipes(new ValidationPipe())
   @ApiBearerAuth('JWT-auth')
   @UseInterceptors(
     FileFieldsInterceptor([
@@ -93,7 +92,7 @@ export class ProductsController {
       throw new BadRequestException('No product images uploaded');
     }
 
-    return this.productsService.create(
+    return this.productsService.createWholesaleProduct(
       payload,
       vendor,
       files.product_images || [],
@@ -102,7 +101,6 @@ export class ProductsController {
   }
 
   @UseGuards(VendorGuard)
-  @UseGuards(AdminAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   @Post('sample')
   @UsePipes(new ValidationPipe())
@@ -123,11 +121,12 @@ export class ProductsController {
     },
   ) {
     const vendor = req.vendor;
+    console.log(vendor);
     if (!files.product_images) {
       throw new BadRequestException('No product images uploaded');
     }
 
-    return this.productsService.create(
+    return this.productsService.sampleProduct(
       payload,
       vendor,
       files.product_images || [],
