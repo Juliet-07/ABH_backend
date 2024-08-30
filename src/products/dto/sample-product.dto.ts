@@ -78,6 +78,8 @@ export class SampleProductDto {
   })
   price: number;
 
+  weight: number;
+
   @IsUrl()
   @IsOptional()
   @ApiProperty({

@@ -73,6 +73,9 @@ export class Product {
   @Prop({ type: Number, default: 0 })
   soldQuantity: number;
 
+  @Prop({ type: Number, required: true })
+  weight: number;
+
   @Prop({ default: true })
   inStock: boolean;
 

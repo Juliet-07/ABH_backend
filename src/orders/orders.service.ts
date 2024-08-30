@@ -3,7 +3,6 @@ import {
   Injectable,
   NotFoundException,
   UnauthorizedException,
-  UnprocessableEntityException,
 } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { HelpersService } from '../utils/helpers/helpers.service';
@@ -14,7 +13,6 @@ import {
   PaymentGatewayEnums,
   PaymentStatusEnum,
 } from '../constants';
-import { ConfirmTransactionStatusDto } from './dto/confirm-transaction-status.dto';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { Order } from './schema/order.schema';
@@ -22,8 +20,9 @@ import { Cart } from 'src/cart/schema/cart.schema';
 import { Product } from 'src/products/schema/product.schema';
 import { Transaction } from 'src/transaction/schema/transaction.schema';
 import { PaymentService } from 'src/payment/service/payments.service';
-import { DeliveryEstimateDto } from 'src/cart/dto/delivery-estimate.dto';
 import { User } from 'src/user/schema/user.schem';
+import { Vendor } from 'src/vendors/schema/vendor.schema';
+import { LogisticService } from 'src/logistics/service/logistic.service';
 
 @Injectable()
 export class OrdersService {
@@ -33,10 +32,12 @@ export class OrdersService {
     @InjectModel(Product.name) private productModel: Model<Product>,
     @InjectModel(Transaction.name) private transactionModel: Model<Transaction>,
     @InjectModel(User.name) private userModel: Model<User>,
+    @InjectModel(Vendor.name) private vendorModel: Model<Vendor>,
 
     private helper: HelpersService,
     private cartService: CartService,
     private readonly paymentService: PaymentService,
+    private readonly logisticService: LogisticService,
   ) {}
 
   async create(createOrderDto: CreateOrderDto, userId: string) {
@@ -47,7 +48,7 @@ export class OrdersService {
         shippingMethod,
         personalInfo,
         products,
-        shippingFee,
+
         paymentGateway,
       } = createOrderDto;
 
@@ -77,6 +78,8 @@ export class OrdersService {
       const vendorIds = productDetails.map((item) => item.vendorId);
       console.log('Vendor IDs:', vendorIds);
 
+      const vendorState = await this.vendorModel.findById(vendorIds);
+
       const userInfo = await this.userModel.findById(userId);
       if (!userInfo)
         throw new NotFoundException(
@@ -97,16 +100,108 @@ export class OrdersService {
       // Calculate VAT (7% of total product amount)
       const vat = parseFloat((totalProductAmount * 0.07).toFixed(2)); // Ensure VAT is a valid decimal
 
+      const totalWeight = await this.calculateTotalWeight(products);
+
+      // Get the shipping fee using the logistics service
+      const token = await this.logisticService.getAuthToken();
+      let calculatedShippingFee = 0;
+      if (token) {
+        // Step 1: Fetch city code from state name
+        const stateCities = await this.logisticService.fetchCitiesInState(
+          token,
+          shippingAddress.state,
+        );
+        let cityCode: string | undefined;
+        if (Array.isArray(stateCities)) {
+          cityCode = stateCities.find(
+            (city) =>
+              city.CityName.toUpperCase() ===
+              shippingAddress.city.toUpperCase(),
+          )?.CityCode;
+        }
+
+        console.log("LOG1",stateCities);
+
+        // Step 2: Fetch town ID from city code
+        let townId: string | undefined;
+        if (cityCode) {
+          const towns = await this.logisticService.fetchDeliveryTowns(
+            token,
+            cityCode,
+          );
+          if (Array.isArray(towns)) {
+            townId = towns.find(
+              (town) =>
+                town.TownName.toUpperCase() ===
+                shippingAddress.city.toUpperCase(),
+            )?.TownID;
+          }
+        }
+
+        console.log("LOG2",townId);
+
+        const feePayload = {
+          Origin: vendorState.state?.toLocaleUpperCase(),
+          Destination: shippingAddress.city.toLocaleUpperCase(),
+          Weight: totalWeight,
+          OnforwardingTownID: '4263',
+        };
+
+        console.log('Fee Payload:', feePayload);
+        const feeDetails = await this.logisticService.calculateDeliveryFee(
+          token,
+          feePayload,
+        );
+        console.log('Delivery Fee Details:', feeDetails);
+
+        if (Array.isArray(feeDetails)) {
+          console.log('Data Array Length:', feeDetails.length);
+          if (feeDetails.length > 0) {
+            const { DeliveryFee, VatAmount, TotalAmount } = feeDetails[0];
+            console.log('Delivery Fee:', DeliveryFee);
+            console.log('VAT Amount:', VatAmount);
+            console.log('Total Amount:', TotalAmount);
+            calculatedShippingFee = TotalAmount;
+          } else {
+            console.log('Data array is empty.');
+            console.warn('Unable to fetch shipping fee, using default.');
+            calculatedShippingFee = 0; // Default or fallback fee
+          }
+        } else {
+          console.log('Response data is not an array or is missing.');
+          console.warn('Unable to fetch shipping fee, using default.');
+          calculatedShippingFee = 0; // Default or fallback fee
+        }
+      }
+
+      //   const feeDetails = await this.logisticService.calculateDeliveryFee(
+      //     token,
+      //     feePayload,
+      //   );
+      //   if (feeDetails) {
+      //     calculatedShippingFee = feeDetails.TotalAmount;
+      //   } else {
+      //     console.warn('Unable to fetch shipping fee, using default.');
+
+      //   }
+      // }
+
+      console.log(calculatedShippingFee);
+
       // Calculate total amount including VAT and shipping fee
+      // const amount = parseFloat(
+      //   (totalProductAmount + vat + Number(shippingFee)).toFixed(2),
+      // );
+
       const amount = parseFloat(
-        (totalProductAmount + vat + Number(shippingFee)).toFixed(2),
+        (totalProductAmount + vat + calculatedShippingFee).toFixed(2),
       );
 
       const transaction = await this.transactionModel.create({
         reference: this.helper.genString(15, '1234567890'),
         paymentGateway,
         totalProductAmount: amount,
-        shippingFee: Number(shippingFee),
+        shippingFee: calculatedShippingFee,
         amount,
         vat,
       });
@@ -118,7 +213,7 @@ export class OrdersService {
         billingAddress,
         personalInfo,
         shippingMethod,
-        shippingFee,
+        shippingFee: calculatedShippingFee,
         paymentGateway,
         vendorId: vendorIds,
         vat,
@@ -161,6 +256,28 @@ export class OrdersService {
     } catch (error) {
       console.log('THE ERROR', error);
       throw new BadRequestException(error.message);
+    }
+  }
+  async calculateTotalWeight(
+    products: { productId: string; quantity: number }[],
+  ): Promise<number> {
+    try {
+      const totalWeight = await Promise.all(
+        products.map(async (item) => {
+          const product = await this.productModel.findById(item.productId);
+          if (!product) {
+            throw new NotFoundException(
+              `Product with ID ${item.productId} not found`,
+            );
+          }
+          return product.weight * item.quantity; // Assuming `product.weight` is the weight of one unit
+        }),
+      );
+
+      return totalWeight.reduce((sum, weight) => sum + weight, 0);
+    } catch (error) {
+      console.error('Error calculating total weight:', error.message);
+      throw new BadRequestException('Error calculating total weight');
     }
   }
 

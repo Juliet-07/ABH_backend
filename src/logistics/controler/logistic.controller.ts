@@ -1,4 +1,4 @@
-import { Controller, Get, HttpCode, HttpStatus, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query } from '@nestjs/common';
 import { LogisticService } from '../service/logistic.service';
 
 @Controller('logistic')
@@ -30,18 +30,25 @@ export class LogisticController {
   }
 
 
-  @Get('state-cities')
-  async getCitiesInState(@Query('stateName') stateName: string) {
+  @Get('/state/cities')
+  async getCitiesInState(@Query() query: any) {
+    console.log('Received query:', query);  // This will log the entire query object
+    const stateName = query.stateName || query.StateName;  // Fallback in case of different casing
+    if (!stateName) {
+      return { error: 'State name is required' };
+    }
     const token = await this.logisticService.getAuthToken();
     if (token) {
       return await this.logisticService.fetchCitiesInState(token, stateName);
     }
     return { error: 'Unable to fetch cities, authentication failed.' };
   }
+  
 
   @Get('delivery-towns')
-  async getDeliveryTowns(@Query('cityCode') cityCode: string) {
+  async getDeliveryTowns(@Query() query: any) {
     const token = await this.logisticService.getAuthToken();
+    const cityCode = query.cityCode || query.CityCode
     if (token) {
       return await this.logisticService.fetchDeliveryTowns(token, cityCode);
     }
@@ -49,7 +56,15 @@ export class LogisticController {
   }
 
   @Post('delivery-fee')
-  async calculateFee(@Query() payload: any) {
+  async calculateFee(@Body() payload: { 
+    Origin: string; 
+    Destination: string; 
+    Weight: number; 
+    PickupType?: string; 
+    OnforwardingTownID?: string; 
+  }) {
+    console.log('Received payload for delivery fee calculation:', payload);
+    
     const token = await this.logisticService.getAuthToken();
     if (token) {
       return await this.logisticService.calculateDeliveryFee(token, payload);

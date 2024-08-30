@@ -33,8 +33,8 @@ export class LogisticService {
         },
       });
 
-      const token = response.data.access_token; // Assuming the token is returned in `access_token`
-      console.log('Access Token:', token);
+      const token = response.data.access_token;
+
       return token; // Return the token for further use
     } catch (error) {
       console.error(
@@ -89,10 +89,10 @@ export class LogisticService {
   async fetchCitiesInState(
     token: string,
     stateName: string,
-  ) {
+  ): Promise<any[] | { error: string }> {
     try {
       const response = await axios.get(
-        `${this.stateCitiesUrl}?StateName=${stateName}`,
+        `${this.stateCitiesUrl}?StateName=${encodeURIComponent(stateName)}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -102,7 +102,6 @@ export class LogisticService {
       );
 
       const cities = response.data;
-      console.log('CHECK', response);
       console.log(`Cities in State ${stateName}:`, cities);
       return cities;
     } catch (error) {
@@ -110,6 +109,7 @@ export class LogisticService {
         'Error fetching cities in state:',
         error.response ? error.response.data : error.message,
       );
+      return { error: 'Failed to fetch cities in state. Please try again.' };
     }
   }
 
@@ -117,10 +117,13 @@ export class LogisticService {
   async fetchDeliveryTowns(
     token: string,
     cityCode: string,
-  ): Promise<any[] | undefined> {
+  ): Promise<any[] | { error: string }> {
     try {
+      console.log(
+        `Fetching delivery towns for city code: ${cityCode} with token: ${token}`,
+      );
       const response = await axios.get(
-        `${this.deliveryTownsUrl}?CityCode=${cityCode}`,
+        `${this.deliveryTownsUrl}?CityCode=${encodeURIComponent(cityCode)}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -146,22 +149,46 @@ export class LogisticService {
     payload: {
       Origin: string;
       Destination: string;
-      Weight: string;
-      PickupType?: string; // Optional (1 for Pickup and 2 for DropOff)
-      OnforwardingTownID?: string; // Optional if shipment with Onforwarding
+      Weight: number;
+      PickupType?: string;
+      OnforwardingTownID?: string;
     },
   ): Promise<any | undefined> {
     try {
+      console.log('Calculating delivery fee with payload:', payload);
       const response = await axios.post(this.deliveryFeeUrl, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
+      // Log the full response for detailed inspection
+      console.log('Full API Response:', response.data);
 
+      // Check and log the response data type
+      console.log('Response Data Type:', typeof response.data);
+
+      // Extract and log the fee details
       const feeDetails = response.data;
-      console.log('Delivery Fee Details:', feeDetails);
-      return feeDetails;
+      console.log('Fee Details:', feeDetails);
+
+      // Verify if data is present and is an array
+      if (Array.isArray(feeDetails)) {
+        console.log('Data Array Length:', feeDetails.length);
+        if (feeDetails.length > 0) {
+          const { DeliveryFee, VatAmount, TotalAmount } = feeDetails[0];
+          console.log('Delivery Fee:', DeliveryFee);
+          console.log('VAT Amount:', VatAmount);
+          console.log('Total Amount:', TotalAmount);
+          return feeDetails;
+        } else {
+          console.log('Data array is empty.');
+          return undefined;
+        }
+      } else {
+        console.log('Response data is not an array or is missing.');
+        return undefined;
+      }
     } catch (error) {
       console.error(
         'Error calculating delivery fee:',

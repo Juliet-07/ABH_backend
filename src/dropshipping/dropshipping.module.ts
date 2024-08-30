@@ -20,6 +20,8 @@ import { SubscriptionSchema } from 'src/subscription/schema/subscription.schema'
 import { OrdersService } from 'src/orders/orders.service';
 import { OrderSchema } from 'src/orders/schema/order.schema';
 import { DropshippingController } from './controller/dropshipping.controller';
+import { VendorSchema } from 'src/vendors/schema/vendor.schema';
+import { LogisticService } from 'src/logistics/service/logistic.service';
 
 @Module({
   imports: [
@@ -31,7 +33,8 @@ import { DropshippingController } from './controller/dropshipping.controller';
       { name: 'User', schema: UserSchema },
       { name: 'Admin', schema: AdminSchema },
       { name: 'Subscription', schema: SubscriptionSchema },
-      { name: 'Order', schema: OrderSchema }, ,
+      { name: 'Order', schema: OrderSchema },
+      { name: 'Vendor', schema: VendorSchema },
     ]),
     UserModule,
     VendorsModule,
@@ -40,10 +43,15 @@ import { DropshippingController } from './controller/dropshipping.controller';
     AdminModule,
     PaymentModule,
     SubscriptionModule,
-       
   ],
   exports: [],
   controllers: [DropshippingController],
-  providers: [DropshippingService, HelpersService, PaymentService, OrdersService],
+  providers: [
+    DropshippingService,
+    HelpersService,
+    PaymentService,
+    OrdersService,
+    LogisticService,
+  ],
 })
 export class DropshippingModule {}
