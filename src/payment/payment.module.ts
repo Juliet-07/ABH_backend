@@ -14,6 +14,8 @@ import { SubscriptionService } from 'src/subscription/service/subscription.servi
 import { SubscriptionSchema } from 'src/subscription/schema/subscription.schema';
 import { UserModule } from 'src/user/user.module';
 import { UserSchema } from 'src/user/schema/user.schem';
+import { VendorSchema } from 'src/vendors/schema/vendor.schema';
+import { LogisticService } from 'src/logistics/service/logistic.service';
 
 @Module({
   imports: [
@@ -25,6 +27,7 @@ import { UserSchema } from 'src/user/schema/user.schem';
       { name: 'Transaction', schema: TransactionSchema },
       { name: 'Subscription', schema: SubscriptionSchema },
       { name: 'User', schema: UserSchema },
+      { name: 'Vendor', schema: VendorSchema },
     ]),
     CartModule,
     UserModule,
@@ -34,8 +37,8 @@ import { UserSchema } from 'src/user/schema/user.schem';
     PaymentService,
     OrdersService,
     HelpersService,
-    SubscriptionService,
+    SubscriptionService,LogisticService
   ],
-  exports: [PaymentService],
+  exports: [PaymentService,],
 })
 export class PaymentModule {}

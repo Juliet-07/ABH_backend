@@ -67,6 +67,7 @@ export enum PaymentStatusEnum {
 
 export enum ShippingMethodEnums {
   GIG_LOGISTICS = 'GIG_LOGISTICS',
+  REDSTART_LOGISTICS = 'REDSTART_LOGISTICS',
   NIPOST = 'NIPOST',
   OFFLINE = 'OFFLINE',
 }

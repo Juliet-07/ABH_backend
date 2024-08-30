@@ -63,9 +63,9 @@ export class CreateOrderDto {
   @Type(() => PersonalInfoDto)
   personalInfo: PersonalInfoDto;
 
-  @IsDefined()
-  @IsNumber()
-  shippingFee: number;
+  // @IsDefined()
+  // @IsNumber()
+  // shippingFee: number;
 
   @IsDefined()
   @IsEnum(ShippingMethodEnums)
