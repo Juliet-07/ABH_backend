@@ -103,6 +103,7 @@ export class LogisticService {
 
       const cities = response.data;
       console.log(`Cities in State ${stateName}:`, cities);
+
       return cities;
     } catch (error) {
       console.error(
@@ -151,7 +152,7 @@ export class LogisticService {
       Destination: string;
       Weight: number;
       PickupType?: string;
-      OnforwardingTownID?: string;
+      OnforwardingTownID: string;
     },
   ): Promise<any | undefined> {
     try {
