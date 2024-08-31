@@ -48,7 +48,7 @@ export class OrdersService {
         shippingMethod,
         personalInfo,
         products,
-
+        shippingFee,
         paymentGateway,
       } = createOrderDto;
 
@@ -78,7 +78,7 @@ export class OrdersService {
       const vendorIds = productDetails.map((item) => item.vendorId);
       console.log('Vendor IDs:', vendorIds);
 
-      const vendorState = await this.vendorModel.findById(vendorIds);
+      //const vendorState = await this.vendorModel.findById(vendorIds);
 
       const userInfo = await this.userModel.findById(userId);
       if (!userInfo)
@@ -100,108 +100,16 @@ export class OrdersService {
       // Calculate VAT (7% of total product amount)
       const vat = parseFloat((totalProductAmount * 0.07).toFixed(2)); // Ensure VAT is a valid decimal
 
-      const totalWeight = await this.calculateTotalWeight(products);
-
-      // Get the shipping fee using the logistics service
-      const token = await this.logisticService.getAuthToken();
-      let calculatedShippingFee = 0;
-      if (token) {
-        // Step 1: Fetch city code from state name
-        const stateCities = await this.logisticService.fetchCitiesInState(
-          token,
-          shippingAddress.state,
-        );
-        let cityCode: string | undefined;
-        if (Array.isArray(stateCities)) {
-          cityCode = stateCities.find(
-            (city) =>
-              city.CityName.toUpperCase() ===
-              shippingAddress.city.toUpperCase(),
-          )?.CityCode;
-        }
-
-        console.log("LOG1",stateCities);
-
-        // Step 2: Fetch town ID from city code
-        let townId: string | undefined;
-        if (cityCode) {
-          const towns = await this.logisticService.fetchDeliveryTowns(
-            token,
-            cityCode,
-          );
-          if (Array.isArray(towns)) {
-            townId = towns.find(
-              (town) =>
-                town.TownName.toUpperCase() ===
-                shippingAddress.city.toUpperCase(),
-            )?.TownID;
-          }
-        }
-
-        console.log("LOG2",townId);
-
-        const feePayload = {
-          Origin: vendorState.state?.toLocaleUpperCase(),
-          Destination: shippingAddress.city.toLocaleUpperCase(),
-          Weight: totalWeight,
-          OnforwardingTownID: '4263',
-        };
-
-        console.log('Fee Payload:', feePayload);
-        const feeDetails = await this.logisticService.calculateDeliveryFee(
-          token,
-          feePayload,
-        );
-        console.log('Delivery Fee Details:', feeDetails);
-
-        if (Array.isArray(feeDetails)) {
-          console.log('Data Array Length:', feeDetails.length);
-          if (feeDetails.length > 0) {
-            const { DeliveryFee, VatAmount, TotalAmount } = feeDetails[0];
-            console.log('Delivery Fee:', DeliveryFee);
-            console.log('VAT Amount:', VatAmount);
-            console.log('Total Amount:', TotalAmount);
-            calculatedShippingFee = TotalAmount;
-          } else {
-            console.log('Data array is empty.');
-            console.warn('Unable to fetch shipping fee, using default.');
-            calculatedShippingFee = 0; // Default or fallback fee
-          }
-        } else {
-          console.log('Response data is not an array or is missing.');
-          console.warn('Unable to fetch shipping fee, using default.');
-          calculatedShippingFee = 0; // Default or fallback fee
-        }
-      }
-
-      //   const feeDetails = await this.logisticService.calculateDeliveryFee(
-      //     token,
-      //     feePayload,
-      //   );
-      //   if (feeDetails) {
-      //     calculatedShippingFee = feeDetails.TotalAmount;
-      //   } else {
-      //     console.warn('Unable to fetch shipping fee, using default.');
-
-      //   }
-      // }
-
-      console.log(calculatedShippingFee);
-
-      // Calculate total amount including VAT and shipping fee
-      // const amount = parseFloat(
-      //   (totalProductAmount + vat + Number(shippingFee)).toFixed(2),
-      // );
-
+     
       const amount = parseFloat(
-        (totalProductAmount + vat + calculatedShippingFee).toFixed(2),
+        (totalProductAmount + vat).toFixed(2),
       );
 
       const transaction = await this.transactionModel.create({
         reference: this.helper.genString(15, '1234567890'),
         paymentGateway,
         totalProductAmount: amount,
-        shippingFee: calculatedShippingFee,
+        shippingFee,
         amount,
         vat,
       });
@@ -213,7 +121,7 @@ export class OrdersService {
         billingAddress,
         personalInfo,
         shippingMethod,
-        shippingFee: calculatedShippingFee,
+        shippingFee,
         paymentGateway,
         vendorId: vendorIds,
         vat,

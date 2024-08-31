@@ -61,7 +61,7 @@ export class LogisticController {
     Destination: string; 
     Weight: number; 
     PickupType?: string; 
-    OnforwardingTownID?: string; 
+    OnforwardingTownID: string; 
   }) {
     console.log('Received payload for delivery fee calculation:', payload);
     

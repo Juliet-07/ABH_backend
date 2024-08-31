@@ -1,4 +1,13 @@
-import { IsDefined, IsEnum, IsOptional, IsArray, ValidateNested, IsNumber, IsString, IsDecimal } from 'class-validator';
+import {
+  IsDefined,
+  IsEnum,
+  IsOptional,
+  IsArray,
+  ValidateNested,
+  IsNumber,
+  IsString,
+  IsDecimal,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { PaymentGatewayEnums, ShippingMethodEnums } from '../../constants';
 
@@ -13,7 +22,12 @@ class AddressDto {
   state: string;
 
   @IsDefined()
+  @IsOptional()
   country: string;
+
+  @IsDefined()
+  @IsOptional()
+  town: string;
 }
 
 class PersonalInfoDto {
@@ -39,12 +53,10 @@ class ProductDto {
   @IsNumber()
   quantity: number;
 
-
   @IsOptional()
-  discount?: number
+  discount?: number;
 
-
-   vendorId: string;
+  vendorId: string;
 }
 
 export class CreateOrderDto {
@@ -63,9 +75,9 @@ export class CreateOrderDto {
   @Type(() => PersonalInfoDto)
   personalInfo: PersonalInfoDto;
 
-  // @IsDefined()
-  // @IsNumber()
-  // shippingFee: number;
+  @IsDefined()
+  @IsNumber()
+  shippingFee: number;
 
   @IsDefined()
   @IsEnum(ShippingMethodEnums)
@@ -82,5 +94,5 @@ export class CreateOrderDto {
   products: ProductDto[];
 
   // @IsDecimal()
-  vat: number
+  vat: number;
 }
