@@ -13,6 +13,9 @@ import {
   UseGuards,
   Request,
   Query,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -23,6 +26,7 @@ import { LoginResponse } from './user.interface';
 import { AuthGuard } from '../auth/auth.guard';
 import { AdminAuthGuard } from '../auth/admin-auth/admin-auth.guard';
 import { VerifyUserDto } from './dto/verify-user.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('User')
 @Controller('user')
@@ -42,6 +46,12 @@ export class UserController {
   @UsePipes(new ValidationPipe())
   login(@Body() loginUserDto: LoginUserDto): Promise<LoginResponse> {
     return this.userService.login(loginUserDto);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('forget-password')
+  async forgetPassword(@Body('email') email: string) {
+    return await this.userService.requestForgotPasswordVerificationCode(email);
   }
 
   // Request for Verification code
@@ -83,10 +93,32 @@ export class UserController {
   }
 
   @UseGuards(AuthGuard)
-  @Patch(':id')
+  @Patch('update-profile')
   @ApiBearerAuth('JWT-auth')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(+id, updateUserDto);
+  update(@Body() updateUserDto: UpdateUserDto, @Request() req) {
+    const userId = req.user;
+    return this.userService.update(userId, updateUserDto);
+  }
+
+  @Patch('reset-password')
+  async ResetPasswd(
+    @Body('email') email: string,
+    @Body('otp') otp: string,
+    @Body('newPassword') newPassword: string,
+  ) {
+    return await this.userService.changePassword(email, otp, newPassword);
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch('update-image')
+  @UseInterceptors(FileInterceptor('image'))
+  @ApiBearerAuth('JWT-auth')
+  uploadImage(@UploadedFile() image: Express.Multer.File, @Request() req) {
+    if (!image) {
+      throw new BadRequestException('Image file is required');
+    }
+    const userId = req.user;
+    return this.userService.uploadImage(userId, image);
   }
 
   @UseGuards(AuthGuard)
