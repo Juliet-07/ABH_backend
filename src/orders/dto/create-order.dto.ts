@@ -6,7 +6,6 @@ import {
   ValidateNested,
   IsNumber,
   IsString,
-  IsDecimal,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PaymentGatewayEnums, ShippingMethodEnums } from '../../constants';
@@ -23,11 +22,11 @@ class AddressDto {
 
   @IsDefined()
   @IsOptional()
-  country: string;
+  country?: string;
 
   @IsDefined()
   @IsOptional()
-  town: string;
+  town?: string;
 }
 
 class PersonalInfoDto {

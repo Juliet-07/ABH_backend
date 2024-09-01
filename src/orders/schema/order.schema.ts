@@ -69,7 +69,8 @@ export class Order {
       street: { type: String, required: true },
       city: { type: String, required: true },
       state: { type: String, required: true },
-      country: { type: String, required: true },
+      country: { type: String, required: false },
+      town: { type: String, required: false },
     },
     required: true,
   })
@@ -77,7 +78,8 @@ export class Order {
     street: string;
     city: string;
     state: string;
-    country: string;
+    country?: string;
+    town?: string;
   };
 
   @Prop({
