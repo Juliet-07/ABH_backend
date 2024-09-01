@@ -5,7 +5,6 @@ export type UserDocument = User & Document;
 
 @Schema({ timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } })
 export class User {
-
   @Prop({ required: true })
   firstName: string;
 
@@ -48,6 +47,8 @@ export class User {
   @Prop({ select: false, required: true })
   password: string;
 
+  @Prop({ required: false })
+  image: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

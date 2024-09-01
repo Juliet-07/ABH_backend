@@ -1,4 +1,5 @@
 import {
+  BadGatewayException,
   BadRequestException,
   Injectable,
   NotFoundException,
@@ -17,6 +18,7 @@ import * as bcrypt from 'bcrypt';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from './schema/user.schem';
+import { AzureService } from 'src/utils/uploader/azure';
 
 @Injectable()
 export class UserService {
@@ -28,7 +30,8 @@ export class UserService {
     private helpers: HelpersService,
     private mailingSerivce: MailingService,
     private redisService: RedisService,
-  ) { }
+    private readonly azureService: AzureService,
+  ) {}
 
   async create(createUserDto: CreateUserDto): Promise<void> {
     try {
@@ -56,7 +59,6 @@ export class UserService {
       await user.save();
 
       // Optionally: Invalidate cache here if necessary
-
     } catch (error) {
       console.error('The ERROR', error);
       throw new BadRequestException(error.message);
@@ -74,9 +76,11 @@ export class UserService {
   async login(loginUserDto: LoginUserDto): Promise<LoginResponse> {
     try {
       const { email, password } = loginUserDto;
-      const user = await this.userModel.findOne({
-        email,
-      }).select('password status');
+      const user = await this.userModel
+        .findOne({
+          email,
+        })
+        .select('password status');
       if (!user) throw new NotFoundException('User Not Found');
       const isPasswordCorrect = await bcrypt.compare(password, user.password);
       if (!isPasswordCorrect)
@@ -85,11 +89,14 @@ export class UserService {
       // if (!user.verified) throw new MisdirectedException('Pls verify your account')
 
       const lastLoginAt = new Date().toISOString();
-      await this.userModel.findOneAndUpdate({ _id: user._id }, {
-        $set: {
-          lastLoginAt,
-        }
-      });
+      await this.userModel.findOneAndUpdate(
+        { _id: user._id },
+        {
+          $set: {
+            lastLoginAt,
+          },
+        },
+      );
       const payload = { _id: user._id, email, lastLoginAt };
       return {
         accessToken: await this.jwtService.signAsync(payload),
@@ -112,23 +119,28 @@ export class UserService {
       const { token: verificationCode, expiresIn: verificationCodeExpiresIn } =
         this.helpers.generateVerificationCode();
 
-      await this.userModel.findOneAndUpdate({ _id: user.id }, {
-        $set: {
-          verificationCode,
-          verificationCodeExpiresIn,
-        }
-      });
+      await this.userModel.findOneAndUpdate(
+        { _id: user.id },
+        {
+          $set: {
+            verificationCode,
+            verificationCodeExpiresIn,
+          },
+        },
+      );
 
       // Send Email For Token
       try {
         await this.mailingSerivce.send({
           subject: 'Email Verification',
           email: user.email,
-          html: `${user.firstName} ${user.lastName}, Pls use the OTP code <b style="font-size: 20px;">${verificationCode}</b> for verification, code expires by ${new Date(
+          html: `${user.firstName} ${
+            user.lastName
+          }, Pls use the OTP code <b style="font-size: 20px;">${verificationCode}</b> for verification, code expires by ${new Date(
             verificationCodeExpiresIn,
           ).toLocaleDateString()}`,
         });
-      } catch (error) { }
+      } catch (error) {}
     } catch (error) {
       throw error;
     }
@@ -139,9 +151,7 @@ export class UserService {
       const { code, email } = verifyUserDto;
 
       const user = await this.userModel.findOne({
-
         email,
-
       });
 
       if (!user)
@@ -176,12 +186,8 @@ export class UserService {
   // getProfile
   async getProfile(userId: string): Promise<User> {
     try {
-     
-
       const user = await this.userModel.findOne({
         _id: userId,
-        
-
       });
 
       if (!user)
@@ -194,12 +200,12 @@ export class UserService {
   }
 
   async findAll() {
-    const users = await this.userModel.find()
+    const users = await this.userModel.find();
 
     return users;
   }
 
-  async requestForgotPasswordVerificationCode(email: string): Promise<void> {
+  async requestForgotPasswordVerificationCode(email: string): Promise<string> {
     try {
       if (!email) {
         throw new BadRequestException("Email can't be empty");
@@ -211,28 +217,99 @@ export class UserService {
       const { token: verificationCode, expiresIn: verificationCodeExpiresIn } =
         this.helpers.generateVerificationCode();
 
-      await this.userModel.findOneAndUpdate({ _id: user.id }, {
-        $et: {
-          verificationCode,
-          verificationCodeExpiresIn,
-        }
-      });
+      const check = await this.userModel.findOneAndUpdate(
+        { _id: user.id },
+        {
+          $set: {
+            verificationCode,
+            verificationCodeExpiresIn,
+          },
+        },
+      );
 
       // Send Email For Token
       try {
         await this.mailingSerivce.send({
           subject: 'Email Verification',
           email: user.email,
-          html: ` ${user.firstName} ${user.lastName}, Pls use the OTP code <b style="font-size: 20px;">${verificationCode}</b> for verification, code expires by ${new Date(
+          html: ` ${user.firstName} ${
+            user.lastName
+          }, Pls use the OTP code <b style="font-size: 20px;">${verificationCode}</b> for verification, code expires by ${new Date(
             verificationCodeExpiresIn,
           ).toLocaleDateString()}`,
         });
-      } catch (error) { }
+
+        return ' Otp sent to your mail';
+      } catch (error) {}
     } catch (error) {
       throw error;
     }
   }
 
+  async changePassword(email: string, otp: string, newPassword: string) {
+    try {
+      const user = await this.userModel.findOne({ email: email });
+
+      if (!user) throw new NotFoundException(`User not found`);
+
+      if (user.verificationCode !== otp)
+        throw new BadGatewayException(`Incorrect otp`);
+
+      const checkExpiredOtp = await this.helpers.hasCodeExpired(
+        user.verificationCodeExpiresIn,
+      );
+
+      if (checkExpiredOtp) throw new BadGatewayException(`OTP has expired`);
+
+      const saltRounds = 8;
+      const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+      await this.userModel.findByIdAndUpdate(
+        { _id: user._id },
+        {
+          $set: {
+            verificationCode: null,
+            verificationCodeExpiresIn: null,
+            password: hashedPassword,
+            lastPasswordResetAt: Date().toString(),
+          },
+        },
+      );
+
+      return `Password  reset was successful`;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async uploadImage(userId: string, image: Express.Multer.File) {
+    try {
+      const user = await this.userModel.findOne({ _id: userId });
+
+      if (!user) throw new NotFoundException(`User not found`);
+
+      let imageUrl: string | undefined;
+
+      if (image) {
+        // Use pdfFile to get the buffer and other details
+        const fileBuffer = Buffer.from(image.buffer); // Corrected
+        imageUrl = await this.azureService.uploadFileToBlobStorage(
+          fileBuffer,
+          image.originalname,
+          image.mimetype,
+        );
+      }
+
+      await this.userModel.findByIdAndUpdate(
+        { _id: user._id },
+        { $set: { image: imageUrl } },
+      );
+
+      return `Profile photo updated successfully `;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
 
   // async findAll(): Promise<User[]> {
   //   try {
@@ -262,8 +339,14 @@ export class UserService {
     return `This action returns a #${id} user`;
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
-    await this.userModel.findOneAndUpdate({ _id: id }, updateUserDto);
+  async update(userId: string, updateUserDto: UpdateUserDto) {
+    const user = await this.userModel.findOne({ _id: userId });
+
+    if (!user) throw new NotFoundException(`User not found`);
+
+    await this.userModel.findOneAndUpdate({ _id: userId }, updateUserDto);
+
+    return `Profile Updated `
   }
 
   remove(id: number) {

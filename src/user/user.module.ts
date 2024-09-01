@@ -7,6 +7,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UserSchema } from './schema/user.schem';
 import { AdminService } from 'src/admin/admin.service';
 import { AdminSchema } from 'src/admin/schema/admin.schema';
+import { AzureService } from 'src/utils/uploader/azure';
 
 @Module({
   imports: [  MongooseModule.forFeature([
@@ -16,6 +17,6 @@ import { AdminSchema } from 'src/admin/schema/admin.schema';
   ])],
   exports: [UserService],
   controllers: [UserController],
-  providers: [UserService, HelpersService, MailingService, AdminService],
+  providers: [UserService, HelpersService, MailingService, AdminService, AzureService],
 })
 export class UserModule { }
