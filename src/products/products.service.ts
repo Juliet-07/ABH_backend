@@ -67,7 +67,6 @@ export class ProductsService {
         slug,
         vendor: vendorCheck._id,
         createdBy: vendorCheck._id,
-        
       });
 
       // Handle product images
@@ -189,7 +188,7 @@ export class ProductsService {
         category,
       };
     } catch (error) {
-      console.log(error)
+      console.log(error);
       throw new BadRequestException(error.message);
     }
   }
@@ -689,7 +688,10 @@ export class ProductsService {
     try {
       const products = await this.productModel
         .find({ vendor: vendor })
-
+        .populate({
+          path: 'vendor',
+          select: ['-password'],
+        })
         .populate('categoryId')
         .populate('subcategoryId');
 
@@ -718,10 +720,10 @@ export class ProductsService {
           productType: 'RETAIL',
         })
 
-        // .populate({
-        //   path: 'vendor',
-        //   select: ['-password',]
-        // })
+        .populate({
+          path: 'vendor',
+          select: ['-password'],
+        })
         .populate('categoryId')
         .populate('subcategoryId')
         .skip(skip)
@@ -752,10 +754,10 @@ export class ProductsService {
       const product = await this.productModel
         .findOne({ _id: productId, productType: 'RETAIL' })
 
-        // .populate({
-        //   path: 'vendor',
-        //   select: ['-password',]
-        // })
+        .populate({
+          path: 'vendor',
+          select: ['-password'],
+        })
         .populate('categoryId');
 
       if (!product) throw new NotFoundException(`Product not found`);
@@ -779,10 +781,10 @@ export class ProductsService {
           productType: 'WHOLESALE',
         })
 
-        // .populate({
-        //   path: 'vendor',
-        //   select: ['-password',]
-        // })
+        .populate({
+          path: 'vendor',
+          select: ['-password'],
+        })
         .populate('categoryId')
         .populate('subcategoryId')
         .skip(skip)
@@ -812,6 +814,11 @@ export class ProductsService {
     try {
       const product = await this.productModel
         .findOne({ _id: productId, productType: 'WHOLESALE' })
+        .populate({
+          path: 'vendor',
+          select: ['-password'],
+        })
+        .populate('categoryId')
 
         .populate('categoryId');
 
@@ -835,6 +842,10 @@ export class ProductsService {
         .find({
           status: 'APPROVED',
           productType: 'SAMPLE_PRODUCT',
+        })
+        .populate({
+          path: 'vendor',
+          select: ['-password'],
         })
 
         .populate('categoryId')
@@ -866,7 +877,11 @@ export class ProductsService {
     try {
       const product = await this.productModel
         .findOne({ _id: productId, productType: 'SAMPLE_PRODUCT' })
-
+        .populate({
+          path: 'vendor',
+          select: ['-password'],
+        })
+        .populate('categoryId')
         .populate('categoryId');
 
       if (!product) throw new NotFoundException(`Product not found`);
@@ -919,10 +934,10 @@ export class ProductsService {
 
       const data = await this.productModel
         .find(searchCriteria)
-        // .populate({
-        //   path: 'vendor',
-        //   select: ['-password'],
-        // })
+        .populate({
+          path: 'vendor',
+          select: ['-password'],
+        })
         .populate('categoryId')
         .populate('subcategoryId')
         .skip(skip)
