@@ -1,4 +1,5 @@
 import {
+  BadGatewayException,
   BadRequestException,
   ForbiddenException,
   Injectable,
@@ -70,9 +71,6 @@ export class VendorsService {
         code,
         cacCertificateUrl,
       });
-
-      // Invalidate cache after a new vendor is created
-      // await this.cacheManager.del(this.cacheKey);
 
       delete result.password;
 
@@ -274,15 +272,15 @@ export class VendorsService {
       const vendor = await this.vendorModel.findOne({ email });
       if (!vendor) throw new NotFoundException('Vendor not found');
 
-      const { token: verificationCode, expiresIn: verificationCodeExpiresIn } =
+      const { token: forgotPasswordVerificationCode, expiresIn: forgotPasswordVerificationCodeExpiresIn } =
         this.helpers.generateVerificationCode();
 
       await this.vendorModel.findOneAndUpdate(
         { _id: vendor.id },
         {
           $set: {
-            verificationCode,
-            verificationCodeExpiresIn,
+            forgotPasswordVerificationCode,
+            forgotPasswordVerificationCodeExpiresIn,
           },
         },
       );
@@ -294,8 +292,8 @@ export class VendorsService {
           email: vendor.email,
           html: `  ${vendor.firstName} ${
             vendor.lastName
-          }, Pls use the OTP code <b style="font-size: 20px;">${verificationCode}</b> for verification, code expires by ${new Date(
-            verificationCodeExpiresIn,
+          }, Pls use the OTP code <b style="font-size: 20px;">${forgotPasswordVerificationCode}</b> for verification, code expires by ${new Date(
+            forgotPasswordVerificationCodeExpiresIn,
           ).toLocaleDateString()}`,
         });
       } catch (error) {}
@@ -313,25 +311,34 @@ export class VendorsService {
       // Ensure page and limit are numbers
       const currentPage = Number(page);
       const pageSize = Number(limit);
-  
+
       // Validate page and limit
       if (currentPage < 1 || pageSize < 1) {
-        throw new BadRequestException('Page number and limit must be greater than zero');
+        throw new BadRequestException(
+          'Page number and limit must be greater than zero',
+        );
       }
-  
+
       // Prepare the filter
-      const statusFilter: { status?: VendorStatusEnums | { $in: VendorStatusEnums[] } } = {};
-  
+      const statusFilter: {
+        status?: VendorStatusEnums | { $in: VendorStatusEnums[] };
+      } = {};
+
       // If a status is provided, set the filter accordingly
       if (filter?.status) {
-        if (filter.status === VendorStatusEnums.ACTIVE || filter.status === VendorStatusEnums.INACTIVE) {
+        if (
+          filter.status === VendorStatusEnums.ACTIVE ||
+          filter.status === VendorStatusEnums.INACTIVE
+        ) {
           statusFilter.status = filter.status; // Filter by single status
         } else {
           // If you want to filter by both ACTIVE and INACTIVE
-          statusFilter.status = { $in: [VendorStatusEnums.ACTIVE, VendorStatusEnums.INACTIVE] };
+          statusFilter.status = {
+            $in: [VendorStatusEnums.ACTIVE, VendorStatusEnums.INACTIVE],
+          };
         }
       }
-  
+
       // Fetch paginated items based on the query
       const [items, total] = await Promise.all([
         this.vendorModel
@@ -341,7 +348,7 @@ export class VendorsService {
           .exec(),
         this.vendorModel.countDocuments(statusFilter).exec(),
       ]);
-  
+
       return {
         items,
         total,
@@ -350,7 +357,6 @@ export class VendorsService {
       throw new BadRequestException(error.message);
     }
   }
-  
 
   async findVendorWithToken(id: string | any): Promise<Vendor> {
     const data = await this.vendorModel.findOne({ id });
@@ -396,8 +402,83 @@ export class VendorsService {
     }
   }
 
-  async update(id: number, updateVendorDto: UpdateVendorDto) {
-    await this.vendorModel.findOneAndUpdate({ _id: id }, updateVendorDto);
+
+
+  async changePassword(email: string, otp: string, newPassword: string) {
+    try {
+      const user = await this.vendorModel.findOne({ email: email });
+
+      if (!user) throw new NotFoundException(`User not found`);
+
+      if (user.forgotPasswordVerificationCode !== otp)
+        throw new BadGatewayException(`Incorrect otp`);
+
+      const checkExpiredOtp = await this.helpers.hasCodeExpired(
+        user.forgotPasswordVerificationCodeExpiresIn,
+      );
+
+      if (checkExpiredOtp) throw new BadGatewayException(`OTP has expired`);
+
+      const saltRounds = 8;
+      const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+      await this.vendorModel.findByIdAndUpdate(
+        { _id: user._id },
+        {
+          $set: {
+            forgotPasswordVerificationCode: null,
+            forgotPasswordVerificationCodeExpiresIn: null,
+            password: hashedPassword,
+            lastPasswordResetAt: Date().toString(),
+          },
+        },
+      );
+
+      return `Password  reset was successful`;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async uploadImage(vendorId: string, image: Express.Multer.File) {
+    try {
+      const user = await this.vendorModel.findOne({ _id: vendorId });
+
+      if (!user) throw new NotFoundException(`User not found`);
+
+      let imageUrl: string | undefined;
+
+      if (image) {
+        // Use pdfFile to get the buffer and other details
+        const fileBuffer = Buffer.from(image.buffer); // Corrected
+        imageUrl = await this.azureService.uploadFileToBlobStorage(
+          fileBuffer,
+          image.originalname,
+          image.mimetype,
+        );
+      }
+
+      await this.vendorModel.findByIdAndUpdate(
+        { _id: user._id },
+        { $set: { image: imageUrl } },
+      );
+
+      return `Profile photo updated successfully `;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async update(vendorId: string, updateVendorDto: UpdateVendorDto) {
+    await this.vendorModel.findOneAndUpdate({ _id: vendorId }, updateVendorDto);
+
+    const user = await this.vendorModel.findOne({ _id: vendorId });
+
+    if (!user) throw new NotFoundException(`User not found`);
+
+    await this.vendorModel.findOneAndUpdate({ _id: vendorId }, updateVendorDto);
+
+    return `Profile Updated `;
   }
 
   remove(id: number) {
