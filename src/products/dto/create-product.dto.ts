@@ -44,6 +44,8 @@ export class CreateProductDto {
   @IsString()
   unit: string;
 
+  @IsNotEmpty()
+  //@IsNumber()
   weight: number;
 
   @IsString()
