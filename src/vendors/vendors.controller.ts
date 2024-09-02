@@ -32,17 +32,13 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { AzureService } from 'src/utils/uploader/azure';
 import { VendorStatusEnums } from 'src/constants';
 
-
-
 @ApiTags('Vendors')
 @Controller('vendors')
 export class VendorsController {
   constructor(
     private readonly vendorsService: VendorsService,
     private readonly azureService: AzureService,
-    
-
-  ) { }
+  ) {}
 
   // Create Vendor
   @Post()
@@ -57,7 +53,6 @@ export class VendorsController {
     }
 
     return this.vendorsService.create(createVendorDto, cacCertificate);
-
   }
 
   //  Vendor Login
@@ -109,13 +104,11 @@ export class VendorsController {
   async findAll(
     @Query('page') page = 1,
     @Query('limit') limit = 10,
-    @Query('filter.status') status?: VendorStatusEnums
+    @Query('filter.status') status?: VendorStatusEnums,
   ) {
     const filter = status ? { status } : undefined;
     return this.vendorsService.findAll(page, limit, filter);
   }
-
-
 
   @UseGuards(AdminAuthGuard)
   @Get(':id')
@@ -125,10 +118,11 @@ export class VendorsController {
   }
 
   @UseGuards(VendorGuard)
-  @Patch(':id')
+  @Patch('update-profile')
   @ApiBearerAuth('JWT-auth')
-  update(@Param('id') id: string, @Body() updateVendorDto: UpdateVendorDto) {
-    return this.vendorsService.update(+id, updateVendorDto);
+  update(@Body() updateVendorDto: UpdateVendorDto, @Request() req) {
+    const vendorId = req.vendor;
+    return this.vendorsService.update(vendorId, updateVendorDto);
   }
 
   @UseGuards(VendorGuard)
@@ -138,14 +132,38 @@ export class VendorsController {
     return this.vendorsService.remove(+id);
   }
 
+  @HttpCode(HttpStatus.OK)
+  @Post('forget-password')
+  async forgetPassword(@Body('email') email: string) {
+    return await this.vendorsService.requestForgotPasswordVerificationCode(email);
+  }
+
+  @Patch('reset-password')
+  async ResetPasswd(
+    @Body('email') email: string,
+    @Body('otp') otp: string,
+    @Body('newPassword') newPassword: string,
+  ) {
+    return await this.vendorsService.changePassword(email, otp, newPassword);
+  }
+
+  @UseGuards(VendorGuard)
+  @Patch('update-image')
+  @UseInterceptors(FileInterceptor('image'))
+  @ApiBearerAuth('JWT-auth')
+  uploadImage(@UploadedFile() image: Express.Multer.File, @Request() req) {
+    if (!image) {
+      throw new BadRequestException('Image file is required');
+    }
+    const vendorId = req.vendor;
+    return this.vendorsService.uploadImage(vendorId, image);
+  }
+
+
   @Patch('/block-status/:vendorId')
   async toggleBlockVendor(
     @Param('vendorId') vendorId: string,
   ): Promise<string> {
     return this.vendorsService.blockAndUnblockVendor(vendorId);
   }
-
-
-  
 }
-

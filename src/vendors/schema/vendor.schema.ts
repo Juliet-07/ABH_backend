@@ -25,7 +25,8 @@ export class Vendor {
   address?: string;
 
   @Prop({ type: String })
-  code?: string;featured_image
+  code?: string;
+  featured_image;
 
   @Prop({ type: String })
   store?: string;
@@ -81,6 +82,9 @@ export class Vendor {
 
   @Prop({ type: Date })
   lastPasswordResetAt?: Date;
+
+  @Prop({ type: String, required: false })
+  image?: string;
 
   @Prop({ type: String, select: false })
   password?: string;
