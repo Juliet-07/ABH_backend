@@ -78,6 +78,7 @@ export class SampleProductDto {
   })
   price: number;
 
+  @IsNotEmpty()
   weight: number;
 
   @IsUrl()

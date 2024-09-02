@@ -36,6 +36,7 @@ export class CreateWholeSaleProductDto {
   //@IsNumber()
   unitPerCarton: number;
 
+  @IsNotEmpty()
   weight: number;
 
   subcategoryId?: mongoose.Types.ObjectId;
