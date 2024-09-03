@@ -311,44 +311,46 @@ export class VendorsService {
       // Ensure page and limit are numbers
       const currentPage = Number(page);
       const pageSize = Number(limit);
-
+  
       // Validate page and limit
       if (currentPage < 1 || pageSize < 1) {
         throw new BadRequestException(
           'Page number and limit must be greater than zero',
         );
       }
-
-      // Prepare the filter
-      const statusFilter: {
+  
+      // Initialize the filter
+      const query: {
         status?: VendorStatusEnums | { $in: VendorStatusEnums[] };
       } = {};
-
-      // If a status is provided, set the filter accordingly
+  
+      // Apply the filter only if a specific status is provided
       if (filter?.status) {
         if (
           filter.status === VendorStatusEnums.ACTIVE ||
-          filter.status === VendorStatusEnums.INACTIVE
+          filter.status === VendorStatusEnums.INACTIVE ||
+          filter.status === VendorStatusEnums.PENDING
         ) {
-          statusFilter.status = filter.status; // Filter by single status
+          // Filter by a single status
+          query.status = filter.status;
         } else {
-          // If you want to filter by both ACTIVE and INACTIVE
-          statusFilter.status = {
+          // If you want to filter by multiple statuses (e.g., ACTIVE and INACTIVE)
+          query.status = {
             $in: [VendorStatusEnums.ACTIVE, VendorStatusEnums.INACTIVE],
           };
         }
       }
-
+  
       // Fetch paginated items based on the query
       const [items, total] = await Promise.all([
         this.vendorModel
-          .find(statusFilter)
+          .find(query) // Use the constructed query
           .skip((currentPage - 1) * pageSize)
           .limit(pageSize)
           .exec(),
-        this.vendorModel.countDocuments(statusFilter).exec(),
+        this.vendorModel.countDocuments(query).exec(),
       ]);
-
+  
       return {
         items,
         total,
@@ -357,6 +359,7 @@ export class VendorsService {
       throw new BadRequestException(error.message);
     }
   }
+  
 
   async findVendorWithToken(id: string | any): Promise<Vendor> {
     const data = await this.vendorModel.findOne({ id });
