@@ -33,10 +33,11 @@ export class StatisticService {
   async getOrdersByVendorId(vendorId: string, page: number, limit: number) {
     try {
       const skip = (page - 1) * limit;
-      // Step 2: Fetch orders that contain these products
+
+      // Step 2: Fetch orders that contain products with the specified vendorId
       const orders = await this.orderModel
         .find({
-          vendorId: { $in: [vendorId] },
+          'products.vendorId': vendorId,
         })
         .populate({
           path: 'userId',
@@ -46,8 +47,9 @@ export class StatisticService {
         .skip(skip)
         .limit(limit)
         .exec();
+
       const totalOrders = await this.orderModel.countDocuments({
-        vendorId: vendorId,
+        'products.vendorId': vendorId,
       });
 
       return {
@@ -96,7 +98,7 @@ export class StatisticService {
     try {
       const order = await this.orderModel.findOne({
         _id: orderId,
-        vendorId: vendorId,
+        'products.vendorId': vendorId,
       });
 
       if (!order) {
@@ -129,7 +131,7 @@ export class StatisticService {
     try {
       const order = await this.orderModel.findOne({
         _id: orderId,
-        vendorId: vendorId,
+        'products.vendorId': vendorId,
       });
 
       if (!order) {
@@ -184,10 +186,12 @@ export class StatisticService {
     try {
       const totalSales = await this.orderModel
         .find({
-          vendorId: vendorId, // Filter by vendorId
-          status: 'PAID', // Assuming you have a status field to check if the order is paid
+          'products.vendorId': vendorId, 
+          status: 'PAID', 
         })
         .exec();
+
+        
 
       // Calculate total sales amount
       const totalAmount = totalSales.reduce(
@@ -221,7 +225,7 @@ export class StatisticService {
 
       // Build the match criteria
       const matchCriteria: Record<string, any> = {
-        vendorId: vendorId,
+        'products.vendorId': vendorId, 
       };
 
       if (
@@ -258,7 +262,7 @@ export class StatisticService {
   async getMonthlyOrdersAndRevenueForVendor(vendorId: string) {
     try {
       const orders = (await this.orderModel.find({
-        vendorId: vendorId,
+        'products.vendorId': vendorId, 
         status: 'PAID',
       })) as OrderDocument[]; // Cast to OrderDocument[]
 
