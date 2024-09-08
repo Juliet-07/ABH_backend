@@ -132,7 +132,7 @@ export class OrdersService {
           productId: item.product._id,
           quantity: item.quantity,
           discount: item.discount,
-          vendorId: item.vendorId, // Include vendorId in the order
+          vendorId: item.vendorId, 
         })),
       });
 

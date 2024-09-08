@@ -15,7 +15,7 @@ import { Admin } from 'src/admin/schema/admin.schema';
 import { Vendor } from 'src/vendors/schema/vendor.schema';
 import { RedisService } from 'src/redis/redis.service';
 import { Product } from './schema/product.schema';
-import { CreateWholeSaleProductDto } from './dto/wholesale-product.dto';
+import { CreateMultipleWholeSaleProductsDto, CreateWholeSaleProductDto } from './dto/wholesale-product.dto';
 import { SampleProductDto } from './dto/sample-product.dto';
 import { MailingService } from 'src/utils/mailing/mailing.service';
 import { VendorsService } from 'src/vendors/vendors.service';
@@ -269,47 +269,79 @@ export class ProductsService {
     }
   }
 
-  // async addMultipleWholesaleProducts(
-  //   createMultipleWholeSaleProductsDto: CreateMultipleWholeSaleProductsDto,
-  //   vendor: string,
-  // ) {
-  //   try {
-  //     // Validation phase
-  //     const { products } = createMultipleWholeSaleProductsDto;
-
-  //     // Validate categories and vendors
-
-  //     const vendorCheck = await this.vendorModel.findOne({ vendor });
-  //     if (!vendorCheck) throw new NotFoundException(`Vendor not found`);
-
-  //     // Create products
-  //     const productDocs = products.map((productData) => {
-  //       const code = this.helpers.genCode(10);
-  //       const slug = `${this.helpers.convertProductNameToSlug(
-  //         productData.name,
-  //       )}-${code}`;
-
-  //       const product = new this.productModel({
-  //         ...productData,
-  //         code,
-  //         slug,
-  //         createdBy: vendorCheck.id,
-  //       });
-
-  //       return product;
-  //     });
-
-  //     // **Image Uploads** (Replace with your image upload logic)
-  //     // - Loop through productDocs
-  //     // - For each product, upload its images (if any) to Azure Blob Storage
-  //     // - Update the product document with image URLs
-
-  //     const createdProducts = await this.productModel.insertMany(productDocs);
-  //     return createdProducts;
-  //   } catch (error) {
-  //     throw new error(); // Consider more specific error handling
-  //   }
-  // }
+  async addMultipleWholesaleProducts(
+    createMultipleWholeSaleProductsDto: CreateMultipleWholeSaleProductsDto,
+    vendor: string,
+    allProductImages: { [key: string]: Express.Multer.File[] },
+    allFeaturedImages: { [key: string]: Express.Multer.File },
+  ) {
+    try {
+      const { products } = createMultipleWholeSaleProductsDto;
+  
+      // Validate vendor
+      const vendorCheck = await this.vendorModel.findOne({ _id: vendor });
+      if (!vendorCheck) throw new NotFoundException(`Vendor not found`);
+  
+      // Process products with image handling
+      const productDocs = await Promise.all(
+        products.map(async (productData, index) => {
+          const code = this.helpers.genCode(10);
+          const slug = `${this.helpers.convertProductNameToSlug(productData.name)}-${code}`;
+  
+          // Initialize the new product
+          const product = new this.productModel({
+            ...productData,
+            code,
+            slug,
+            createdBy: vendorCheck._id,
+          });
+  
+          // **Handle Product Images**
+          const productImages = allProductImages[productData.name] || []; // Using the name as the key
+          if (productImages.length > 0) {
+            const imageUrls = await Promise.all(
+              productImages.map(async (file, imageIndex) => {
+                const fileBuffer = Buffer.from(file.buffer);
+                const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(
+                  fileBuffer,
+                  file.originalname,
+                  file.mimetype,
+                );
+                return {
+                  id: imageIndex + 1,
+                  url: uploadedImageUrl,
+                };
+              }),
+            );
+            product.images = imageUrls;
+          }
+  
+          // **Handle Featured Image**
+          const featuredImage = allFeaturedImages[productData.name]; // Using the name as the key
+          if (featuredImage) {
+            const fileBuffer = Buffer.from(featuredImage.buffer);
+            const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(
+              fileBuffer,
+              featuredImage.originalname,
+              featuredImage.mimetype,
+            );
+            product.featured_image = uploadedImageUrl;
+          }
+  
+          return product;
+        }),
+      );
+  
+      // Save products to the database
+      const createdProducts = await this.productModel.insertMany(productDocs);
+      return createdProducts;
+    } catch (error) {
+      console.error('Error creating multiple wholesale products:', error);
+      throw new BadRequestException(error.message);
+    }
+  }
+  
+  
 
   async createMultipleRetail(
     createProductsDto: CreateProductsDto,
@@ -956,5 +988,13 @@ export class ProductsService {
     } catch (error) {
       throw new Error(`Error fetching products: ${error.message}`);
     }
+  }
+
+  async getProductsByCategory(categoryId: string): Promise<Product[]> {
+    // Fetch products matching the category
+    const products = await this.productModel
+      .find({ categoryId: categoryId })
+      .exec();
+    return products;
   }
 }
