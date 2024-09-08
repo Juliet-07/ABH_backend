@@ -197,14 +197,14 @@ export class OrdersService {
       customerName: userInfo.firstName,
       currency: 'NGN',
       transactionRef: order.reference,
-      callback: 'http://localhost:3000/about-us',
+      callback: 'http://localhost:3000/confirm-order',
     };
 
     const PaystackPaymentData = {
       amount: order.totalAmount,
       email: userInfo.email,
       reference: order.reference,
-      callback: 'http://localhost:3000/about-us',
+      callback: 'http://localhost:3000/confirm-order',
     };
 
     let paymentResponse;
