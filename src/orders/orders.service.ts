@@ -129,7 +129,7 @@ export class OrdersService {
         transactionId: transaction._id,
         totalAmount: amount,
         products: productDetails.map((item) => ({
-          productId: item.product._id,
+          productId: item.product.id,
           quantity: item.quantity,
           discount: item.discount,
           vendorId: item.vendorId, 

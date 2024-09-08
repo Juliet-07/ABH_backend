@@ -36,7 +36,7 @@ export class StatisticService {
       // Step 2: Fetch orders that contain these products
       const orders = await this.orderModel
         .find({
-          vendorId: vendorId,
+          vendorId: { $in: [vendorId] },
         })
         .populate({
           path: 'userId',
