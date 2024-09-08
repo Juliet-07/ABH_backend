@@ -39,6 +39,7 @@ export class StatisticService {
         .find({
           'products.vendorId': vendorId,
         })
+        .sort({ createdAt: -1 })
         .populate({
           path: 'userId',
           select: '-password',
@@ -73,6 +74,7 @@ export class StatisticService {
           _id: orderId,
           vendorId: vendorId,
         })
+        .sort({ createdAt: -1 })
         .exec();
 
       if (!order) {
