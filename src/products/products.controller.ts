@@ -138,28 +138,16 @@ export class ProductsController {
   @UseGuards(AdminAuthGuard)
   @Get('admin-all')
   @ApiBearerAuth('JWT-auth')
-  async findAllProductForAdmin(
-    @Query('limit') limit?: number,
-    @Query('page') page?: number,
-  ) {
-    return await this.productsService.findAllProductForAdmin({
-      limit,
-      page,
-    });
+  async findAllProductForAdmin() {
+    return await this.productsService.findAllProductForAdmin();
   }
 
   @UseGuards(AdminAuthGuard)
   @Get()
   @ApiBearerAuth('JWT-auth')
-  async getProductsForAdmin(
-    @Query('status') status?: string,
-    @Query('limit') limit?: number,
-    @Query('page') page?: number,
-  ) {
+  async getProductsForAdmin(@Query('status') status?: string) {
     return await this.productsService.findAllForAdmin({
       status,
-      limit,
-      page,
     });
   }
 
@@ -293,8 +281,6 @@ export class ProductsController {
     // Call the service method
     return this.productsService.findAllForUser({ limit, page, search });
   }
-
-
 
   @Get('category/:categoryId')
   async getProductsByCategory(@Param('categoryId') categoryId: string) {

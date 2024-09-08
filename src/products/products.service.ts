@@ -585,20 +585,8 @@ export class ProductsService {
     }
   }
 
-  async findAllForAdmin({
-    status,
-    limit = 10,
-    page = 1,
-  }: {
-    status?: string;
-    limit?: number;
-    page?: number;
-  }) {
+  async findAllForAdmin({ status }: { status?: string }) {
     try {
-      const pageSize = Math.max(1, limit);
-      const currentPage = Math.max(1, page);
-      const skip = (currentPage - 1) * pageSize;
-
       const defaultStatus = 'PENDING';
 
       // Build search criteria
@@ -612,29 +600,20 @@ export class ProductsService {
 
       console.log('Search criteria:', searchCriteria);
 
+      // Fetch all products matching the search criteria without pagination
       const data = await this.productModel
         .find(searchCriteria)
-
         .populate({
           path: 'vendor',
           select: ['-password'],
         })
         .populate('categoryId')
         .populate('subcategoryId')
-        .skip(skip)
-        .limit(pageSize)
         .exec();
 
-      const totalCount = await this.productModel.countDocuments(searchCriteria);
-
-      const result = {
-        page: pageSize,
-        currentPage,
-        totalPages: Math.ceil(totalCount / pageSize),
+      return {
         data,
       };
-
-      return result;
     } catch (error) {
       throw new Error(`Error fetching products: ${error.message}`);
     }
@@ -681,18 +660,8 @@ export class ProductsService {
     }
   }
 
-  async findAllProductForAdmin({
-    limit = 10,
-    page = 1,
-  }: {
-    limit?: number;
-    page?: number;
-  }) {
+  async findAllProductForAdmin() {
     try {
-      const pageSize = Math.max(1, limit);
-      const currentPage = Math.max(1, page);
-      const skip = (currentPage - 1) * pageSize;
-
       const data = await this.productModel
         .find()
 
@@ -701,17 +670,11 @@ export class ProductsService {
           select: ['-password'],
         })
         .populate('categoryId')
-        .populate('subcategoryId')
-        .skip(skip)
-        .limit(limit);
+        .populate('subcategoryId');
 
-      const totalCount = await this.productModel.countDocuments();
-      console.log(data.length);
       const result = {
         count: data.length,
-        page: pageSize,
-        currentPage,
-        totalPages: Math.ceil(totalCount / pageSize),
+
         data,
       };
 

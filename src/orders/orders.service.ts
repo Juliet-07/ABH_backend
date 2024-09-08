@@ -100,9 +100,8 @@ export class OrdersService {
       // Calculate VAT (7% of total product amount)
       const vat = parseFloat((totalProductAmount * 0.07).toFixed(2)); // Ensure VAT is a valid decimal
 
-     
       const amount = parseFloat(
-        (totalProductAmount + vat).toFixed(2),
+        (totalProductAmount + vat + shippingFee).toFixed(2),
       );
 
       const transaction = await this.transactionModel.create({
@@ -132,7 +131,7 @@ export class OrdersService {
           productId: item.product.id,
           quantity: item.quantity,
           discount: item.discount,
-          vendorId: item.vendorId, 
+          vendorId: item.vendorId,
         })),
       });
 
