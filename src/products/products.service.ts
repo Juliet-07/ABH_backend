@@ -664,6 +664,7 @@ export class ProductsService {
     try {
       const data = await this.productModel
         .find()
+        .sort({ createdAt: -1 })
 
         .populate({
           path: 'vendor',
@@ -688,6 +689,7 @@ export class ProductsService {
     try {
       const products = await this.productModel
         .find({ vendor: vendor })
+        .sort({ createdAt: -1 })
         .populate({
           path: 'vendor',
           select: ['-password'],
@@ -724,6 +726,7 @@ export class ProductsService {
           path: 'vendor',
           select: ['-password'],
         })
+        .sort({ createdAt: -1 })
         .populate('categoryId')
         .populate('subcategoryId')
         .skip(skip)
@@ -758,6 +761,7 @@ export class ProductsService {
           path: 'vendor',
           select: ['-password'],
         })
+        .sort({ createdAt: -1 })
         .populate('categoryId');
 
       if (!product) throw new NotFoundException(`Product not found`);
@@ -780,7 +784,7 @@ export class ProductsService {
           status: 'APPROVED',
           productType: 'WHOLESALE',
         })
-
+        .sort({ createdAt: -1 })
         .populate({
           path: 'vendor',
           select: ['-password'],
@@ -818,6 +822,7 @@ export class ProductsService {
           path: 'vendor',
           select: ['-password'],
         })
+        .sort({ createdAt: -1 })
         .populate('categoryId')
 
         .populate('categoryId');
@@ -843,6 +848,7 @@ export class ProductsService {
           status: 'APPROVED',
           productType: 'SAMPLE_PRODUCT',
         })
+        .sort({ createdAt: -1 })
         .populate({
           path: 'vendor',
           select: ['-password'],
@@ -881,6 +887,7 @@ export class ProductsService {
           path: 'vendor',
           select: ['-password'],
         })
+        .sort({ createdAt: -1 })
         .populate('categoryId')
         .populate('categoryId');
 
@@ -938,6 +945,7 @@ export class ProductsService {
           path: 'vendor',
           select: ['-password'],
         })
+        .sort({ createdAt: -1 })
         .populate('categoryId')
         .populate('subcategoryId')
         .skip(skip)
@@ -965,6 +973,7 @@ export class ProductsService {
     // Fetch products matching the category
     const products = await this.productModel
       .find({ categoryId: categoryId, status: 'APPROVED' })
+      .sort({ createdAt: -1 })
       .exec();
     return {
       counts: products.length,

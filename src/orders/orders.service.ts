@@ -177,7 +177,7 @@ export class OrdersService {
               `Product with ID ${item.productId} not found`,
             );
           }
-          return product.weight * item.quantity; // Assuming `product.weight` is the weight of one unit
+          return product.weight * item.quantity;
         }),
       );
 
