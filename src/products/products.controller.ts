@@ -293,4 +293,11 @@ export class ProductsController {
     // Call the service method
     return this.productsService.findAllForUser({ limit, page, search });
   }
+
+
+
+  @Get('category/:categoryId')
+  async getProductsByCategory(@Param('categoryId') categoryId: string) {
+    return this.productsService.getProductsByCategory(categoryId);
+  }
 }
