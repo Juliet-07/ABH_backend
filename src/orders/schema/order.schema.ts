@@ -21,11 +21,11 @@ export class Order {
   userId: string;
 
   @Prop({
-    type: mongoose.Schema.Types.ObjectId,
+    type: [mongoose.Schema.Types.ObjectId], // Make it an array of ObjectIds
     ref: 'Vendor',
     required: false,
   })
-  vendorId: string;
+  vendorId: string[];
 
   @Prop({
     type: [
