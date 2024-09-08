@@ -15,7 +15,10 @@ import { Admin } from 'src/admin/schema/admin.schema';
 import { Vendor } from 'src/vendors/schema/vendor.schema';
 import { RedisService } from 'src/redis/redis.service';
 import { Product } from './schema/product.schema';
-import { CreateMultipleWholeSaleProductsDto, CreateWholeSaleProductDto } from './dto/wholesale-product.dto';
+import {
+  CreateMultipleWholeSaleProductsDto,
+  CreateWholeSaleProductDto,
+} from './dto/wholesale-product.dto';
 import { SampleProductDto } from './dto/sample-product.dto';
 import { MailingService } from 'src/utils/mailing/mailing.service';
 import { VendorsService } from 'src/vendors/vendors.service';
@@ -277,17 +280,19 @@ export class ProductsService {
   ) {
     try {
       const { products } = createMultipleWholeSaleProductsDto;
-  
+
       // Validate vendor
       const vendorCheck = await this.vendorModel.findOne({ _id: vendor });
       if (!vendorCheck) throw new NotFoundException(`Vendor not found`);
-  
+
       // Process products with image handling
       const productDocs = await Promise.all(
         products.map(async (productData, index) => {
           const code = this.helpers.genCode(10);
-          const slug = `${this.helpers.convertProductNameToSlug(productData.name)}-${code}`;
-  
+          const slug = `${this.helpers.convertProductNameToSlug(
+            productData.name,
+          )}-${code}`;
+
           // Initialize the new product
           const product = new this.productModel({
             ...productData,
@@ -295,18 +300,19 @@ export class ProductsService {
             slug,
             createdBy: vendorCheck._id,
           });
-  
+
           // **Handle Product Images**
           const productImages = allProductImages[productData.name] || []; // Using the name as the key
           if (productImages.length > 0) {
             const imageUrls = await Promise.all(
               productImages.map(async (file, imageIndex) => {
                 const fileBuffer = Buffer.from(file.buffer);
-                const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(
-                  fileBuffer,
-                  file.originalname,
-                  file.mimetype,
-                );
+                const uploadedImageUrl =
+                  await this.azureService.uploadFileToBlobStorage(
+                    fileBuffer,
+                    file.originalname,
+                    file.mimetype,
+                  );
                 return {
                   id: imageIndex + 1,
                   url: uploadedImageUrl,
@@ -315,23 +321,24 @@ export class ProductsService {
             );
             product.images = imageUrls;
           }
-  
+
           // **Handle Featured Image**
           const featuredImage = allFeaturedImages[productData.name]; // Using the name as the key
           if (featuredImage) {
             const fileBuffer = Buffer.from(featuredImage.buffer);
-            const uploadedImageUrl = await this.azureService.uploadFileToBlobStorage(
-              fileBuffer,
-              featuredImage.originalname,
-              featuredImage.mimetype,
-            );
+            const uploadedImageUrl =
+              await this.azureService.uploadFileToBlobStorage(
+                fileBuffer,
+                featuredImage.originalname,
+                featuredImage.mimetype,
+              );
             product.featured_image = uploadedImageUrl;
           }
-  
+
           return product;
         }),
       );
-  
+
       // Save products to the database
       const createdProducts = await this.productModel.insertMany(productDocs);
       return createdProducts;
@@ -340,8 +347,6 @@ export class ProductsService {
       throw new BadRequestException(error.message);
     }
   }
-  
-  
 
   async createMultipleRetail(
     createProductsDto: CreateProductsDto,
@@ -965,7 +970,7 @@ export class ProductsService {
       }
 
       const data = await this.productModel
-        .find(searchCriteria)
+        .find({ searchCriteria, status: 'APPROVED' })
         .populate({
           path: 'vendor',
           select: ['-password'],
@@ -975,7 +980,10 @@ export class ProductsService {
         .skip(skip)
         .limit(limit);
 
-      const totalCount = await this.productModel.countDocuments(searchCriteria);
+      const totalCount = await this.productModel.countDocuments({
+        searchCriteria,
+        status: 'APPROVED',
+      });
 
       const result = {
         page: pageSize,
@@ -990,11 +998,14 @@ export class ProductsService {
     }
   }
 
-  async getProductsByCategory(categoryId: string): Promise<Product[]> {
+  async getProductsByCategory(categoryId: string) {
     // Fetch products matching the category
     const products = await this.productModel
-      .find({ categoryId: categoryId })
+      .find({ categoryId: categoryId, status: 'APPROVED' })
       .exec();
-    return products;
+    return {
+      counts: products.length,
+      products,
+    };
   }
 }
