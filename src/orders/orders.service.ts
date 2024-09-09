@@ -506,4 +506,22 @@ export class OrdersService {
       throw new BadRequestException('Failed to update the order');
     }
   }
+
+  async getOrderByRef(reference: string) {
+    try {
+      const order = await this.orderModel.findOne({ reference: reference });
+      console.log(order)
+
+      if (!order) throw new NotFoundException(`Order not found`);
+
+      return order;
+    } catch (error) {
+      console.error(error);
+      // Handle specific error cases
+      if (error instanceof NotFoundException) {
+        throw error; // Re-throw if it's a NotFoundException
+      }
+      throw new BadRequestException('Failed to get the order');
+    }
+  }
 }
