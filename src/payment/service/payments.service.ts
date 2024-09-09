@@ -62,11 +62,11 @@ export class PaymentService {
     }
   }
 
-  async verifyOrderTransaction(transactionRef: string) {
+  async verifyOrderTransaction(TransactionRef: string) {
     try {
       const response = await axios.post(
         this.hydroVerify,
-        { TransactionRef: transactionRef },
+        { TransactionRef: TransactionRef },
         {
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
@@ -80,11 +80,11 @@ export class PaymentService {
         response.data.data.transactionStatus === 'Paid'
       ) {
         const order = await this.ordersService.updateOrderStatusPay(
-          transactionRef,
+          TransactionRef,
         );
 
         await this.transactionModel.findOneAndUpdate(
-          { reference: transactionRef },
+          { reference: TransactionRef },
           { $set: { status: 'PAID' } },
         );
         if (order) {

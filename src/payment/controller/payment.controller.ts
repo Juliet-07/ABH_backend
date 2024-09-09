@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Query,
 } from '@nestjs/common';
 import { PaymentService } from '../service/payments.service';
 import { CreatePaymentDto, CreatePayStackPaymentDto } from '../dto/initiat.dto';
@@ -28,6 +29,11 @@ export class PaymentController {
     } catch (error) {
       throw new BadRequestException('Transaction verification failed');
     }
+  }
+
+  @Get('verify')
+  async verifyPayment(@Query('transactionRef') TransactionRef: string) {
+    return await this.paymentService.verifyOrderTransaction(TransactionRef);
   }
 
   @Post('subscription-verify')
