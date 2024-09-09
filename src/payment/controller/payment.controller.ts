@@ -21,12 +21,30 @@ export class PaymentController {
     return this.paymentService.createPayment(createPaymentDto);
   }
 
+  // @Post('order-verify')
+  // @HttpCode(HttpStatus.OK)
+  // async handleCallbackOrder(@Body('TransactionRef') TransactionRef: string) {
+  //   try {
+  //     return await this.paymentService.verifyOrderTransaction(TransactionRef);
+  //   } catch (error) {
+  //     throw new BadRequestException('Transaction verification failed');
+  //   }
+  // }
+
   @Post('order-verify')
   @HttpCode(HttpStatus.OK)
-  async handleCallbackOrder(@Body('TransactionRef') transactionRef: string) {
+  async handleCallbackOrders(@Body() body: any) {
+    console.log('Received webhook payload:', body);
+    const transactionRef = body.transactionRef;
+
+    if (!transactionRef) {
+      throw new BadRequestException('Transaction reference not provided');
+    }
+
     try {
       return await this.paymentService.verifyOrderTransaction(transactionRef);
     } catch (error) {
+      console.error('Error handling callback order:', error);
       throw new BadRequestException('Transaction verification failed');
     }
   }
