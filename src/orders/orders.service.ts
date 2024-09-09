@@ -196,14 +196,14 @@ export class OrdersService {
       customerName: userInfo.firstName,
       currency: 'NGN',
       transactionRef: order.reference,
-      callback: 'abh-customer.vercel.app/confirm-order',
+      callback: 'abh.oritsetech.online/payments/verify',
     };
 
     const PaystackPaymentData = {
       amount: order.totalAmount,
       email: userInfo.email,
       reference: order.reference,
-      callback: 'http://localhost:3000/confirm-order',
+      callback: 'abh.oritsetech.online/payments',
     };
 
     let paymentResponse;
