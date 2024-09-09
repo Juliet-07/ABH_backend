@@ -32,7 +32,7 @@ export class PaymentController {
   }
 
   @Get('verify')
-  async verifyPayment(@Query('transactionRef') TransactionRef: string) {
+  async verifyPayment(@Query('TransactionRef') TransactionRef: string) {
     return await this.paymentService.verifyOrderTransaction(TransactionRef);
   }
 
