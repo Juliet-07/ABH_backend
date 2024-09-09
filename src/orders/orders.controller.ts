@@ -160,4 +160,10 @@ export class OrdersController {
   TrackOrder(@Param('orderId') orderId: string) {
     return this.ordersService.trackOder(orderId);
   }
+
+  @Get('list/:reference')
+  @HttpCode(HttpStatus.OK)
+  GetOrderByRef(@Param('reference') reference: string) {
+    return this.ordersService.getOrderByRef(reference);
+  }
 }
