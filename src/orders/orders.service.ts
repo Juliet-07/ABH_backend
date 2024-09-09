@@ -196,7 +196,7 @@ export class OrdersService {
       customerName: userInfo.firstName,
       currency: 'NGN',
       transactionRef: order.reference,
-      callback: 'http://localhost:3000/confirm-order',
+      callback: 'http://localhost:5500/payments/verify',
     };
 
     const PaystackPaymentData = {
