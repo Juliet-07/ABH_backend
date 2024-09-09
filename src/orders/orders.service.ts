@@ -196,7 +196,7 @@ export class OrdersService {
       customerName: userInfo.firstName,
       currency: 'NGN',
       transactionRef: order.reference,
-      callback: 'http://localhost:5500/payments/verify',
+      callback: 'abh-customer.vercel.app/confirm-order',
     };
 
     const PaystackPaymentData = {
