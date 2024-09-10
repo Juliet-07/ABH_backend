@@ -11,16 +11,16 @@ import { OrderStatusEnum, PaymentStatus } from 'src/constants';
 import { UpdateOrderStatusDto1 } from 'src/orders/dto/update-order-status.dto';
 import { Order } from 'src/orders/schema/order.schema';
 import { Product } from 'src/products/schema/product.schema';
-
 import { Document } from 'mongoose';
+import { SingleOrder } from 'src/orders/schema/singleOreder.schema';
 
 export interface OrderDocument extends Document {
   status: PaymentStatus;
   deliveryStatus: OrderStatusEnum;
   userId: string;
   totalAmount: number;
-  created_at: Date; // Custom name for createdAt
-  updated_at: Date; // Custom name for updatedAt
+  created_at: Date;
+  updated_at: Date;
 }
 
 @Injectable()
@@ -28,36 +28,25 @@ export class StatisticService {
   constructor(
     @InjectModel(Order.name) private orderModel: Model<Order>,
     @InjectModel(Product.name) private productModel: Model<Product>,
+    @InjectModel(SingleOrder.name) private singleOrderModel: Model<SingleOrder>,
   ) {}
-
-  async getOrdersByVendorId(vendorId: string, page: number, limit: number) {
+  async getOrdersByVendorId(vendorId: string) {
     try {
-      const skip = (page - 1) * limit;
-
-      // Step 2: Fetch orders that contain products with the specified vendorId
-      const orders = await this.orderModel
+      const orders = await this.singleOrderModel
         .find({
-          'products.vendorId': vendorId,
+          vendorId: vendorId,
         })
         .sort({ createdAt: -1 })
         .populate({
           path: 'userId',
           select: '-password',
         })
-        .populate('products.productId')
-        .skip(skip)
-        .limit(limit)
+        .populate('productId')
         .exec();
-
-      const totalOrders = await this.orderModel.countDocuments({
-        'products.vendorId': vendorId,
-      });
+      console.log(orders);
 
       return {
         count: orders.length,
-        totalOrders,
-        totalPages: Math.ceil(totalOrders / limit),
-        currentPage: page,
         orders,
       };
     } catch (error) {
@@ -98,9 +87,9 @@ export class StatisticService {
     payload: UpdateOrderStatusDto1,
   ) {
     try {
-      const order = await this.orderModel.findOne({
+      const order = await this.singleOrderModel.findOne({
         _id: orderId,
-        'products.vendorId': vendorId,
+        vendorId: vendorId,
       });
 
       if (!order) {
@@ -113,7 +102,7 @@ export class StatisticService {
         throw new BadRequestException(`Payment not confirmed yet`);
       }
 
-      const updatedStatus = await this.orderModel.findOneAndUpdate(
+      const updatedStatus = await this.singleOrderModel.findOneAndUpdate(
         { _id: orderId },
         { $set: { deliveryStatus: payload.deliveryStatus } },
         { new: true },
@@ -131,9 +120,9 @@ export class StatisticService {
     payload: UpdateOrderStatusDto1,
   ) {
     try {
-      const order = await this.orderModel.findOne({
+      const order = await this.singleOrderModel.findOne({
         _id: orderId,
-        'products.vendorId': vendorId,
+        vendorId: vendorId,
       });
 
       if (!order) {
@@ -146,7 +135,7 @@ export class StatisticService {
         throw new BadRequestException(`Payment not confirmed yet`);
       }
 
-      const updatedStatus = await this.orderModel.findOneAndUpdate(
+      const updatedStatus = await this.singleOrderModel.findOneAndUpdate(
         { _id: orderId },
         { $set: { deliveryStatus: payload.deliveryStatus } },
         { new: true },
@@ -155,7 +144,7 @@ export class StatisticService {
       return updatedStatus;
     } catch (error) {
       console.log(error);
-      throw new BadGatewayException(error.message);
+      throw new BadRequestException(error.message);
     }
   }
 
@@ -186,18 +175,16 @@ export class StatisticService {
 
   async totalSalesForVendor(vendorId: string) {
     try {
-      const totalSales = await this.orderModel
+      const totalSales = await this.singleOrderModel
         .find({
-          'products.vendorId': vendorId, 
-          status: 'PAID', 
+          vendorId: vendorId,
+          status: 'PAID',
         })
         .exec();
 
-        
-
       // Calculate total sales amount
       const totalAmount = totalSales.reduce(
-        (acc, order) => acc + order.totalAmount,
+        (acc, order) => acc + order.amount,
         0,
       );
 
@@ -211,23 +198,13 @@ export class StatisticService {
 
   async orderStatus({
     deliveryStatus,
-    limit = 10,
-    page = 1,
+
     vendorId,
-  }: {
-    deliveryStatus?: OrderStatusEnum;
-    limit?: number;
-    page?: number;
-    vendorId: string;
   }) {
     try {
-      const pageSize = Math.max(1, limit);
-      const currentPage = Math.max(1, page);
-      const skip = (currentPage - 1) * pageSize;
-
       // Build the match criteria
       const matchCriteria: Record<string, any> = {
-        'products.vendorId': vendorId, 
+        'products.vendorId': vendorId,
       };
 
       if (
@@ -240,18 +217,12 @@ export class StatisticService {
       // Fetch orders with pagination
       const data = await this.orderModel
         .find(matchCriteria)
-        .skip(skip)
-        .limit(pageSize)
-        .exec();
 
-      // Count total documents matching criteria
-      const totalCount = await this.orderModel.countDocuments(matchCriteria);
+        .exec();
 
       // Prepare the result
       const result = {
-        page: pageSize,
-        currentPage,
-        totalPages: Math.ceil(totalCount / pageSize),
+        count: data.length,
         data,
       };
 
@@ -264,9 +235,9 @@ export class StatisticService {
   async getMonthlyOrdersAndRevenueForVendor(vendorId: string) {
     try {
       const orders = (await this.orderModel.find({
-        'products.vendorId': vendorId, 
+        'products.vendorId': vendorId,
         status: 'PAID',
-      })) as OrderDocument[]; // Cast to OrderDocument[]
+      })) as OrderDocument[];
 
       const monthlyData: {
         [key: string]: {
@@ -278,9 +249,9 @@ export class StatisticService {
       } = {};
 
       orders.forEach((order) => {
-        const createdAt = new Date(order.created_at); // Use created_at instead of createdAt
+        const createdAt = new Date(order.created_at);
         const year = createdAt.getFullYear();
-        const month = createdAt.getMonth() + 1; // Months are zero-indexed
+        const month = createdAt.getMonth() + 1;
 
         const key = `${year}-${month}`;
 

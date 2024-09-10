@@ -56,6 +56,8 @@ class ProductDto {
   discount?: number;
 
   vendorId: string;
+
+  sellingPrice: number;
 }
 
 export class CreateOrderDto {

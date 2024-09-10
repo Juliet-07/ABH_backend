@@ -20,13 +20,7 @@ export class Dropshipping {
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
   userId: string;
 
-  @Prop({
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Vendor',
-    required: false,
-  })
-  vendorId: string;
-
+  
   @Prop({
     type: [
       {

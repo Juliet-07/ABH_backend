@@ -11,21 +11,18 @@ export type OrderDocument = Order & Document;
 
 @Schema({ timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } })
 export class Order {
-  @Prop({ enum: PaymentStatus, default: PaymentStatus.PENDING })
+  @Prop({ type: String, enum: PaymentStatus, default: PaymentStatus.PENDING })
   status: PaymentStatus;
 
-  @Prop({ enum: OrderStatusEnum, default: OrderStatusEnum.PENDING })
+  @Prop({
+    type: String,
+    enum: OrderStatusEnum,
+    default: OrderStatusEnum.PENDING,
+  })
   deliveryStatus: OrderStatusEnum;
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
   userId: string;
-
-  @Prop({
-    type: [mongoose.Schema.Types.ObjectId], // Make it an array of ObjectIds
-    ref: 'Vendor',
-    required: false,
-  })
-  vendorId: string[];
 
   @Prop({
     type: [
@@ -57,9 +54,6 @@ export class Order {
     required: true,
   })
   transactionId: string;
-
-  @Prop({ type: Number, required: false })
-  quantity: number;
 
   @Prop({ required: true })
   totalAmount: number;
@@ -113,7 +107,7 @@ export class Order {
     country?: string;
   };
 
-  @Prop({ enum: ShippingMethodEnums, required: false })
+  @Prop({ type: String, enum: ShippingMethodEnums, required: false })
   shippingMethod: ShippingMethodEnums;
 
   @Prop({ required: true })
@@ -125,7 +119,7 @@ export class Order {
   @Prop({ type: Number, required: true })
   vat: number;
 
-  @Prop({ enum: PaymentGatewayEnums, required: true })
+  @Prop({ type: String, enum: PaymentGatewayEnums, required: true })
   paymentGateway: PaymentGatewayEnums;
 }
 

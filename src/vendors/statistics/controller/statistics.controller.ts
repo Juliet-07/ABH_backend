@@ -27,15 +27,11 @@ export class StatisticController {
   @UseGuards(VendorGuard)
   @HttpCode(HttpStatus.OK)
   @Get('/my-orders')
-  async AllOrders(
-    @Request() req,
-    @Query('page') page = 1,
-    @Query('limit') limit = 10,
-  ) {
+  async AllOrders(@Request() req) {
     const vendorId = req.vendor;
 
     // Call the service method with pagination parameters
-    return this.statisticService.getOrdersByVendorId(vendorId, page, limit);
+    return this.statisticService.getOrdersByVendorId(vendorId);
   }
 
   @UseGuards(VendorGuard)
@@ -109,9 +105,7 @@ export class StatisticController {
   @Get('orders')
   async orderStatus(
     @Request() req: any,
-    @Query('status') deliveryStatus?: string,
-    @Query('limit') limit?: number,
-    @Query('page') page?: number,
+    @Query('status') deliveryStatus: string,
   ) {
     const vendorId = req.vendor;
 
@@ -124,14 +118,9 @@ export class StatisticController {
       validatedStatus = deliveryStatus as OrderStatusEnum;
     }
 
-    // Convert limit and page to numbers
-    const numericLimit = limit ? parseInt(limit.toString(), 10) : undefined;
-    const numericPage = page ? parseInt(page.toString(), 10) : undefined;
-
     return this.statisticService.orderStatus({
       deliveryStatus: validatedStatus,
-      limit: numericLimit,
-      page: numericPage,
+
       vendorId,
     });
   }
@@ -141,17 +130,11 @@ export class StatisticController {
   @UseGuards(VendorGuard)
   @HttpCode(HttpStatus.OK)
   @Get('/my-dropshipping')
-  async AllDropshipping(
-    @Request() req,
-    @Query('page') page = 1,
-    @Query('limit') limit = 10,
-  ) {
+  async AllDropshipping(@Request() req) {
     const vendorId = req.vendor;
 
     return this.dropshippingstatisticService.getDropshippingByVendorId(
       vendorId,
-      page,
-      limit,
     );
   }
 
@@ -220,8 +203,6 @@ export class StatisticController {
   async GetDropshippingStatus(
     @Request() req: any,
     @Query('status') deliveryStatus?: string,
-    @Query('limit') limit?: number,
-    @Query('page') page?: number,
   ) {
     const vendorId = req.vendor;
 
@@ -234,14 +215,8 @@ export class StatisticController {
       validatedStatus = deliveryStatus as OrderStatusEnum;
     }
 
-    // Convert limit and page to numbers
-    const numericLimit = limit ? parseInt(limit.toString(), 10) : undefined;
-    const numericPage = page ? parseInt(page.toString(), 10) : undefined;
-
     return this.dropshippingstatisticService.dropshippingStatus({
       deliveryStatus: validatedStatus,
-      limit: numericLimit,
-      page: numericPage,
       vendorId,
     });
   }

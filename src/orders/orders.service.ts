@@ -23,6 +23,7 @@ import { PaymentService } from 'src/payment/service/payments.service';
 import { User } from 'src/user/schema/user.schem';
 import { Vendor } from 'src/vendors/schema/vendor.schema';
 import { LogisticService } from 'src/logistics/service/logistic.service';
+import { SingleOrder } from './schema/singleOreder.schema';
 
 @Injectable()
 export class OrdersService {
@@ -33,6 +34,7 @@ export class OrdersService {
     @InjectModel(Transaction.name) private transactionModel: Model<Transaction>,
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(Vendor.name) private vendorModel: Model<Vendor>,
+    @InjectModel(SingleOrder.name) private singleOrderModel: Model<SingleOrder>,
 
     private helper: HelpersService,
     private cartService: CartService,
@@ -66,17 +68,25 @@ export class OrdersService {
               `Insufficient quantity for product ID ${item.productId}`,
             );
           }
+
+
+          const sellingPrice = item.sellingPrice || product.sellingPrice;
+          if (sellingPrice === undefined) {
+            throw new BadRequestException(
+              `Selling price is not defined for product ID ${item.productId}`,
+            );
+          }
+
+
           return {
             product,
             quantity: item.quantity,
             discount: item.discount || 0,
             vendorId: product.vendor,
+            sellingPrice
           };
         }),
       );
-
-      const vendorIds = productDetails.map((item) => item.vendorId);
-      console.log('Vendor IDs:', vendorIds);
 
       //const vendorState = await this.vendorModel.findById(vendorIds);
 
@@ -122,7 +132,6 @@ export class OrdersService {
         shippingMethod,
         shippingFee,
         paymentGateway,
-        vendorId: vendorIds,
         vat,
         reference: transaction.reference,
         transactionId: transaction._id,
@@ -155,6 +164,25 @@ export class OrdersService {
           );
         }),
       );
+
+      try {
+        // Prepare single orders for insertion
+        const singleOrders = productDetails.map((item) => ({
+          vendorId: item.vendorId,
+          orderId: order._id,
+          productId: item.product.id,
+          quantity: item.quantity,
+          userId: userId,
+          amount: item.sellingPrice,
+        }));
+
+        console.log(singleOrders);
+
+        // Insert Single orders
+        await this.singleOrderModel.insertMany(singleOrders);
+      } catch (error) {
+        console.error('Error inserting single orders:', error);
+      }
 
       return {
         order,
@@ -268,58 +296,47 @@ export class OrdersService {
     }
   }
 
-  async fetchMyOrders(
-    id: string,
-    limit = 50,
-    page = 1,
-    userType: 'vendorId' | 'user',
-  ): Promise<{
-    data: Order[];
-    totalCount: number;
-    currentPage: number;
-    prevPage: number | null;
-    nextPage: number | null;
-    currentLimit: number;
-    totalPages: number;
-  }> {
+  async fetchVendorMyOrders(vendorId: string) {
     try {
       // Ensure limit and page are positive integers
-      limit = Math.max(1, limit);
-      page = Math.max(1, page);
-
-      // Calculate the number of documents to skip
-      const skip = (page - 1) * limit;
-
-      // Prepare the filter based on user type
-      const filter: Record<string, any> =
-        userType === 'vendorId' ? { vendorId: id } : { userId: id };
 
       // Fetch paginated documents
       const orders = await this.orderModel
-        .find(filter)
-        .limit(limit)
-        .skip(skip)
+        .find({ vendorId })
+
         .populate('userId')
         .populate('transactionId')
         .populate('products.productId')
         .exec();
 
       // Count total number of documents with the filter
-      const totalCount = await this.orderModel.countDocuments(filter);
-
-      // Calculate pagination metadata
-      const totalPages = Math.ceil(totalCount / limit);
-      const prevPage = page > 1 ? page - 1 : null;
-      const nextPage = page < totalPages ? page + 1 : null;
 
       return {
         data: orders,
-        totalCount,
-        currentPage: page,
-        prevPage,
-        nextPage,
-        currentLimit: limit,
-        totalPages,
+      };
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      throw new BadRequestException('Failed to fetch orders.');
+    }
+  }
+
+  async fetchMyOrders(userId: string) {
+    try {
+      // Ensure limit and page are positive integers
+
+      // Fetch paginated documents
+      const orders = await this.orderModel
+        .find({ userId })
+
+        .populate('userId')
+        .populate('transactionId')
+        .populate('products.productId')
+        .exec();
+
+      // Count total number of documents with the filter
+
+      return {
+        data: orders,
       };
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -346,133 +363,133 @@ export class OrdersService {
     }
   }
 
-  async updateOrderStatus(
-    id: string,
-    vendorId: string,
-    updateOrderStatusDto: UpdateOrderStatusDto,
-  ): Promise<Order> {
-    try {
-      const { deliveryStatus } = updateOrderStatusDto;
+  // async updateOrderStatus(
+  //   id: string,
+  //   vendorId: string,
+  //   updateOrderStatusDto: UpdateOrderStatusDto,
+  // ): Promise<Order> {
+  //   try {
+  //     const { deliveryStatus } = updateOrderStatusDto;
 
-      // Fetch the order with its transaction ID
-      const order = await this.orderModel.findOne({
-        _id: id,
-      });
+  //     // Fetch the order with its transaction ID
+  //     const order = await this.orderModel.findOne({
+  //       _id: id,
+  //     });
 
-      if (!order) {
-        throw new NotFoundException('Order not found');
-      }
+  //     if (!order) {
+  //       throw new NotFoundException('Order not found');
+  //     }
 
-      // Check authorization
-      if (order.vendorId.toString() !== vendorId) {
-        throw new UnauthorizedException(
-          'You are not authorized to update this order',
-        );
-      }
+  //     // Check authorization
+  //     if (order.vendorId.toString() !== vendorId) {
+  //       throw new UnauthorizedException(
+  //         'You are not authorized to update this order',
+  //       );
+  //     }
 
-      // Fetch the transaction using the transactionId from the order
-      const transaction = await this.transactionModel.findById(
-        order.transactionId,
-      );
+  //     // Fetch the transaction using the transactionId from the order
+  //     const transaction = await this.transactionModel.findById(
+  //       order.transactionId,
+  //     );
 
-      if (!transaction) {
-        throw new NotFoundException('Transaction not found');
-      }
+  //     if (!transaction) {
+  //       throw new NotFoundException('Transaction not found');
+  //     }
 
-      // Check payment status
-      if (transaction.status !== PaymentStatusEnum.SUCCESSFUL) {
-        throw new BadRequestException('Payment not confirmed yet');
-      }
+  //     // Check payment status
+  //     if (transaction.status !== PaymentStatusEnum.SUCCESSFUL) {
+  //       throw new BadRequestException('Payment not confirmed yet');
+  //     }
 
-      // Prepare the update object based on the new status
-      const update: Partial<Order> = { deliveryStatus };
+  //     // Prepare the update object based on the new status
+  //     const update: Partial<Order> = { deliveryStatus };
 
-      // Switch case to validate and set the correct status
-      switch (deliveryStatus) {
-        case OrderStatusEnum.CONFIRMED:
-          if (order.deliveryStatus !== OrderStatusEnum.PENDING) {
-            throw new BadRequestException(
-              `Order status should be ${OrderStatusEnum.PENDING}`,
-            );
-          }
-          update.deliveryStatus = OrderStatusEnum.CONFIRMED;
-          break;
+  //     // Switch case to validate and set the correct status
+  //     switch (deliveryStatus) {
+  //       case OrderStatusEnum.CONFIRMED:
+  //         if (order.deliveryStatus !== OrderStatusEnum.PENDING) {
+  //           throw new BadRequestException(
+  //             `Order status should be ${OrderStatusEnum.PENDING}`,
+  //           );
+  //         }
+  //         update.deliveryStatus = OrderStatusEnum.CONFIRMED;
+  //         break;
 
-        case OrderStatusEnum.DECLINED:
-          if (order.deliveryStatus !== OrderStatusEnum.PENDING) {
-            throw new BadRequestException(
-              `Order status should be ${OrderStatusEnum.PENDING}`,
-            );
-          }
-          update.deliveryStatus = OrderStatusEnum.DECLINED;
-          break;
+  //       case OrderStatusEnum.DECLINED:
+  //         if (order.deliveryStatus !== OrderStatusEnum.PENDING) {
+  //           throw new BadRequestException(
+  //             `Order status should be ${OrderStatusEnum.PENDING}`,
+  //           );
+  //         }
+  //         update.deliveryStatus = OrderStatusEnum.DECLINED;
+  //         break;
 
-        case OrderStatusEnum.PROCESSING:
-          if (order.deliveryStatus !== OrderStatusEnum.CONFIRMED) {
-            throw new BadRequestException(
-              `Order status should be ${OrderStatusEnum.CONFIRMED}`,
-            );
-          }
-          update.deliveryStatus = OrderStatusEnum.PROCESSING;
-          break;
+  //       case OrderStatusEnum.PROCESSING:
+  //         if (order.deliveryStatus !== OrderStatusEnum.CONFIRMED) {
+  //           throw new BadRequestException(
+  //             `Order status should be ${OrderStatusEnum.CONFIRMED}`,
+  //           );
+  //         }
+  //         update.deliveryStatus = OrderStatusEnum.PROCESSING;
+  //         break;
 
-        case OrderStatusEnum.READY_TO_SHIP:
-          if (order.deliveryStatus !== OrderStatusEnum.PROCESSING) {
-            throw new BadRequestException(
-              `Order status should be ${OrderStatusEnum.PROCESSING}`,
-            );
-          }
-          update.deliveryStatus = OrderStatusEnum.READY_TO_SHIP;
-          break;
+  //       case OrderStatusEnum.READY_TO_SHIP:
+  //         if (order.deliveryStatus !== OrderStatusEnum.PROCESSING) {
+  //           throw new BadRequestException(
+  //             `Order status should be ${OrderStatusEnum.PROCESSING}`,
+  //           );
+  //         }
+  //         update.deliveryStatus = OrderStatusEnum.READY_TO_SHIP;
+  //         break;
 
-        case OrderStatusEnum.SHIPPED:
-          if (order.deliveryStatus !== OrderStatusEnum.READY_TO_SHIP) {
-            throw new BadRequestException(
-              `Order status should be ${OrderStatusEnum.READY_TO_SHIP}`,
-            );
-          }
-          update.deliveryStatus = OrderStatusEnum.SHIPPED;
-          break;
+  //       case OrderStatusEnum.SHIPPED:
+  //         if (order.deliveryStatus !== OrderStatusEnum.READY_TO_SHIP) {
+  //           throw new BadRequestException(
+  //             `Order status should be ${OrderStatusEnum.READY_TO_SHIP}`,
+  //           );
+  //         }
+  //         update.deliveryStatus = OrderStatusEnum.SHIPPED;
+  //         break;
 
-        case OrderStatusEnum.DELIVERED:
-          if (order.deliveryStatus !== OrderStatusEnum.SHIPPED) {
-            throw new BadRequestException(
-              `Order status should be ${OrderStatusEnum.SHIPPED}`,
-            );
-          }
-          update.deliveryStatus = OrderStatusEnum.DELIVERED;
-          break;
+  //       case OrderStatusEnum.DELIVERED:
+  //         if (order.deliveryStatus !== OrderStatusEnum.SHIPPED) {
+  //           throw new BadRequestException(
+  //             `Order status should be ${OrderStatusEnum.SHIPPED}`,
+  //           );
+  //         }
+  //         update.deliveryStatus = OrderStatusEnum.DELIVERED;
+  //         break;
 
-        case OrderStatusEnum.RETURNED:
-          if (order.deliveryStatus !== OrderStatusEnum.DELIVERED) {
-            throw new BadRequestException(
-              `Order status should be ${OrderStatusEnum.DELIVERED}`,
-            );
-          }
-          update.deliveryStatus = OrderStatusEnum.RETURNED;
-          break;
+  //       case OrderStatusEnum.RETURNED:
+  //         if (order.deliveryStatus !== OrderStatusEnum.DELIVERED) {
+  //           throw new BadRequestException(
+  //             `Order status should be ${OrderStatusEnum.DELIVERED}`,
+  //           );
+  //         }
+  //         update.deliveryStatus = OrderStatusEnum.RETURNED;
+  //         break;
 
-        default:
-          throw new BadRequestException('Invalid Status');
-      }
+  //       default:
+  //         throw new BadRequestException('Invalid Status');
+  //     }
 
-      // Update the order status
-      const updatedOrder = await this.orderModel.findByIdAndUpdate(
-        { _id: id },
-        update,
-        { new: true }, // Return the updated document
-      );
+  //     // Update the order status
+  //     const updatedOrder = await this.orderModel.findByIdAndUpdate(
+  //       { _id: id },
+  //       update,
+  //       { new: true }, // Return the updated document
+  //     );
 
-      if (!updatedOrder) {
-        throw new NotFoundException('Order not found for update');
-      }
+  //     if (!updatedOrder) {
+  //       throw new NotFoundException('Order not found for update');
+  //     }
 
-      return updatedOrder;
-    } catch (error) {
-      console.error('Error updating order status:', error);
-      throw new BadRequestException(error.message);
-    }
-  }
+  //     return updatedOrder;
+  //   } catch (error) {
+  //     console.error('Error updating order status:', error);
+  //     throw new BadRequestException(error.message);
+  //   }
+  // }
 
   async trackOder(orderId: string): Promise<Order> {
     try {
@@ -495,10 +512,15 @@ export class OrdersService {
         { $set: { status: 'PAID' } },
         { new: true },
       );
-
+     
       if (!updatedOrder) {
         throw new NotFoundException('Order not found');
       }
+
+      await this.singleOrderModel.updateMany(
+        { orderId: updatedOrder._id },
+        { $set: { status: 'PAID' } },
+      );
 
       return updatedOrder;
     } catch (error) {
@@ -510,7 +532,7 @@ export class OrdersService {
   async getOrderByRef(reference: string) {
     try {
       const order = await this.orderModel.findOne({ reference: reference });
-      console.log(order)
+      console.log(order);
 
       if (!order) throw new NotFoundException(`Order not found`);
 
