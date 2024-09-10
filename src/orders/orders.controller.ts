@@ -50,7 +50,7 @@ export class OrdersController {
   }
 
   @Get('vendor/me')
-  @UseGuards(VendorGuard) // Ensure the guard is correctly implemented
+  @UseGuards(VendorGuard) 
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth('JWT-auth')
   async fetchVendorOrders(
@@ -71,12 +71,7 @@ export class OrdersController {
       }
 
       // Call the service method
-      return await this.ordersService.fetchMyOrders(
-        req.vendor.id,
-        limitNumber,
-        pageNumber,
-        'vendorId',
-      );
+      return await this.ordersService.fetchMyOrders(req.vendor.id);
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -86,31 +81,12 @@ export class OrdersController {
   @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth('JWT-auth')
-  async fetchUserOrders(
-    @Request() req,
-    @Query('page') page = 1,
-    @Query('limit') limit = 10,
-  ) {
+  async fetchUserOrders(@Request() req) {
     try {
-      // Ensure limit and page are numbers
-      const pageNumber = Number(page);
-      const limitNumber = Number(limit);
       const userId = req.user;
 
-      // Ensure page and limit are positive integers
-      if (pageNumber < 1 || limitNumber < 1) {
-        throw new BadRequestException(
-          'Page number and limit must be greater than zero',
-        );
-      }
-
       // Call the service method
-      return await this.ordersService.fetchMyOrders(
-        userId,
-        limitNumber,
-        pageNumber,
-        'user',
-      );
+      return await this.ordersService.fetchMyOrders(userId);
     } catch (error) {
       console.error('Error fetching user orders:', error);
       throw new BadRequestException('Failed to fetch user orders.');
@@ -126,22 +102,22 @@ export class OrdersController {
     return await this.ordersService.listOneOrder(orderId, userId);
   }
 
-  @Put('status/:id')
-  @UseGuards(VendorGuard)
-  @HttpCode(HttpStatus.OK)
-  @UsePipes(new ValidationPipe())
-  @ApiBearerAuth('JWT-auth')
-  updateOrderStatus(
-    @Param('id') id: string,
-    @Req() req,
-    @Body() updateOrderStatusDto: UpdateOrderStatusDto,
-  ) {
-    return this.ordersService.updateOrderStatus(
-      id,
-      req.vendor.id,
-      updateOrderStatusDto,
-    );
-  }
+  // @Put('status/:id')
+  // @UseGuards(VendorGuard)
+  // @HttpCode(HttpStatus.OK)
+  // @UsePipes(new ValidationPipe())
+  // @ApiBearerAuth('JWT-auth')
+  // updateOrderStatus(
+  //   @Param('id') id: string,
+  //   @Req() req,
+  //   @Body() updateOrderStatusDto: UpdateOrderStatusDto,
+  // ) {
+  //   return this.ordersService.updateOrderStatus(
+  //     id,
+  //     req.vendor.id,
+  //     updateOrderStatusDto,
+  //   );
+  // }
 
   // @Post('confirm/:transactionId')
   // @UseGuards(AuthGuard)

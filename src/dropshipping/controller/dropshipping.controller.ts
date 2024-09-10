@@ -8,7 +8,8 @@ import {
   UsePipes,
   ValidationPipe,
   Request,
-  BadRequestException,
+  Query,
+  Get,
 } from '@nestjs/common';
 import { DropshippingService } from '../service/dropshipping.service';
 import { ApiBearerAuth } from '@nestjs/swagger';
@@ -34,6 +35,13 @@ export class DropshippingController {
   async handleCallbackSub(@Body('TransactionRef') transactionRef: string) {
     return await this.dropshippingService.verifyDropshippingTransaction(
       transactionRef,
+    );
+  }
+
+  @Get('verify')
+  async verifyPayment(@Query('TransactionRef') TransactionRef: string) {
+    return await this.dropshippingService.verifyDropshippingTransaction(
+      TransactionRef,
     );
   }
 }

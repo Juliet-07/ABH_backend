@@ -12,14 +12,15 @@ import { Dropshipping } from 'src/dropshipping/schema/dropshipping.schema';
 import { UpdateOrderStatusDto1 } from 'src/orders/dto/update-order-status.dto';
 
 import { Document } from 'mongoose';
+import { SingleDropshipping } from 'src/dropshipping/schema/singledropshipping.schema';
 
 export interface DropshippingDocument extends Document {
   status: PaymentStatus;
   deliveryStatus: OrderStatusEnum;
   userId: string;
   totalAmount: number;
-  created_at: Date; // Custom name for createdAt
-  updated_at: Date; // Custom name for updatedAt
+  created_at: Date;
+  updated_at: Date;
 }
 
 @Injectable()
@@ -27,38 +28,25 @@ export class DropshippingstatisticService {
   constructor(
     @InjectModel(Dropshipping.name)
     private dropshippingModel: Model<Dropshipping>,
+    @InjectModel(SingleDropshipping.name)
+    private SingleDropshippingModel: Model<SingleDropshipping>,
   ) {}
 
-  async getDropshippingByVendorId(
-    vendorId: string,
-    page: number,
-    limit: number,
-  ) {
+  async getDropshippingByVendorId(vendorId: string) {
     try {
-      const skip = (page - 1) * limit;
-
-      const dropshipping = await this.dropshippingModel
-        .find({
-          vendorId: vendorId,
-        })
+      const dropshipping = await this.SingleDropshippingModel.find({
+        vendorId: vendorId,
+      })
         .populate({
           path: 'userId',
           select: '-password',
         })
-        .populate('products.productId')
-        .skip(skip)
-        .limit(limit)
+        .populate('productId')
         .exec();
-
-      const totalOrders = await this.dropshippingModel.countDocuments({
-        vendorId: vendorId,
-      });
 
       return {
         count: dropshipping.length,
-        totalOrders,
-        totalPages: Math.ceil(totalOrders / limit),
-        currentPage: page,
+
         dropshipping,
       };
     } catch (error) {
@@ -97,7 +85,7 @@ export class DropshippingstatisticService {
     payload: UpdateOrderStatusDto1,
   ) {
     try {
-      const dropshipping = await this.dropshippingModel.findOne({
+      const dropshipping = await this.SingleDropshippingModel.findOne({
         _id: dropshippingId,
         vendorId: vendorId,
       });
@@ -162,8 +150,8 @@ export class DropshippingstatisticService {
     try {
       const totalSales = await this.dropshippingModel
         .find({
-          vendorId: vendorId, // Filter by vendorId
-          status: 'PAID', // Assuming you have a status field to check if the order is paid
+          vendorId: vendorId,
+          status: 'PAID',
         })
         .exec();
 
@@ -173,7 +161,7 @@ export class DropshippingstatisticService {
         0,
       );
 
-      return totalAmount; // Return the total sales amount
+      return totalAmount;
     } catch (error) {
       throw new Error(
         `Error calculating total sales for vendor: ${error.message}`,
@@ -181,22 +169,8 @@ export class DropshippingstatisticService {
     }
   }
 
-  async dropshippingStatus({
-    deliveryStatus,
-    limit = 10,
-    page = 1,
-    vendorId,
-  }: {
-    deliveryStatus?: OrderStatusEnum;
-    limit?: number;
-    page?: number;
-    vendorId: string;
-  }) {
+  async dropshippingStatus({ deliveryStatus, vendorId }) {
     try {
-      const pageSize = Math.max(1, limit);
-      const currentPage = Math.max(1, page);
-      const skip = (currentPage - 1) * pageSize;
-
       // Build the match criteria
       const matchCriteria: Record<string, any> = {
         vendorId: vendorId,
@@ -210,22 +184,13 @@ export class DropshippingstatisticService {
       }
 
       // Fetch orders with pagination
-      const data = await this.dropshippingModel
-        .find(matchCriteria)
-        .skip(skip)
-        .limit(pageSize)
-        .exec();
-
-      // Count total documents matching criteria
-      const totalCount = await this.dropshippingModel.countDocuments(
+      const data = await this.SingleDropshippingModel.find(
         matchCriteria,
-      );
+      ).exec();
 
       // Prepare the result
       const result = {
-        page: pageSize,
-        currentPage,
-        totalPages: Math.ceil(totalCount / pageSize),
+        count: data.length,
         data,
       };
 

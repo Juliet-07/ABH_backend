@@ -16,6 +16,7 @@ import { UserModule } from 'src/user/user.module';
 import { UserSchema } from 'src/user/schema/user.schem';
 import { VendorSchema } from 'src/vendors/schema/vendor.schema';
 import { LogisticService } from 'src/logistics/service/logistic.service';
+import { SingleOrderSchema } from 'src/orders/schema/singleOreder.schema';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { LogisticService } from 'src/logistics/service/logistic.service';
       { name: 'Subscription', schema: SubscriptionSchema },
       { name: 'User', schema: UserSchema },
       { name: 'Vendor', schema: VendorSchema },
+      { name: 'SingleOrder', schema: SingleOrderSchema },
     ]),
     CartModule,
     UserModule,

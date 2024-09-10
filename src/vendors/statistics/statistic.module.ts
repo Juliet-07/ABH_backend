@@ -9,6 +9,8 @@ import { AdminModule } from 'src/admin/admin.module';
 import { VendorsModule } from '../vendors.module';
 import { DropshippingstatisticService } from './service/dropshipping.stat';
 import { DropshippingSchema } from 'src/dropshipping/schema/dropshipping.schema';
+import { SingleOrderSchema } from 'src/orders/schema/singleOreder.schema';
+import { SingleDropshippingSchema } from 'src/dropshipping/schema/singledropshipping.schema';
 
 @Module({
   imports: [
@@ -17,6 +19,8 @@ import { DropshippingSchema } from 'src/dropshipping/schema/dropshipping.schema'
       { name: 'Order', schema: OrderSchema },
       { name: 'Product', schema: ProductSchema },
       { name: 'Dropshipping', schema: DropshippingSchema },
+      { name: 'SingleOrder', schema: SingleOrderSchema },
+      { name: 'SingleDropshipping', schema: SingleDropshippingSchema },
     ]),
     AdminModule,
     VendorsModule
