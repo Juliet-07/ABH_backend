@@ -464,6 +464,7 @@ export class DropshippingService {
           quantity: item.quantity,
           userId: userId,
           amount: item.sellingPrice,
+          shippingAddress
         }));
 
         // Insert Single orders
