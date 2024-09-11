@@ -217,7 +217,6 @@ export class StatisticService {
       // Fetch orders with pagination
       const data = await this.orderModel
         .find(matchCriteria)
-
         .exec();
 
       // Prepare the result

@@ -174,6 +174,7 @@ export class OrdersService {
           quantity: item.quantity,
           userId: userId,
           amount: item.sellingPrice,
+          shippingAddress
         }));
 
         console.log(singleOrders);
