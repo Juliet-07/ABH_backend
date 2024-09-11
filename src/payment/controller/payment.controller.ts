@@ -35,14 +35,14 @@ export class PaymentController {
   @HttpCode(HttpStatus.OK)
   async handleCallbackOrders(@Body() body: any) {
     console.log('Received webhook payload:', body);
-    const transactionRef = body.transactionRef;
+    const TransactionRef = body.TransactionRef;
 
-    if (!transactionRef) {
+    if (!TransactionRef) {
       throw new BadRequestException('Transaction reference not provided');
     }
 
     try {
-      return await this.paymentService.verifyOrderTransaction(transactionRef);
+      return await this.paymentService.verifyOrderTransaction(TransactionRef);
     } catch (error) {
       console.error('Error handling callback order:', error);
       throw new BadRequestException('Transaction verification failed');
