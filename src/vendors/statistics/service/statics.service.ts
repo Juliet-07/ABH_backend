@@ -213,7 +213,7 @@ export class StatisticService {
       }
 
       // Fetch orders with pagination
-      const data = await this.orderModel.find(matchCriteria).exec();
+      const data = await this.singleOrderModel.find(matchCriteria).exec();
 
       // Prepare the result
       const result = {
