@@ -45,10 +45,9 @@ export enum PaymentStatus {
 
 export enum OrderStatusEnum {
   PENDING = 'PENDING',
-  CONFIRMED = 'CONFIRMED',
   DECLINED = 'DECLINED',
   PROCESSING = 'PROCESSING',
-  READY_TO_SHIP = 'READY_TO_SHIP',
+  READY= 'READY',
   SHIPPED = 'SHIPPED',
   DELIVERED = 'DELIVERED',
   RETURNED = 'RETURNED',
@@ -67,7 +66,7 @@ export enum PaymentStatusEnum {
 
 export enum ShippingMethodEnums {
   GIG_LOGISTICS = 'GIG_LOGISTICS',
-  REDSTART_LOGISTICS = 'REDSTART_LOGISTICS',
+  REDSTAR_LOGISTICS = 'REDSTAR_LOGISTICS',
   NIPOST = 'NIPOST',
   OFFLINE = 'OFFLINE',
 }

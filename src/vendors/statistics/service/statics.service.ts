@@ -33,16 +33,15 @@ export class StatisticService {
   async getOrdersByVendorId(vendorId: string) {
     try {
       const orders = await this.singleOrderModel
-        .find({
-          vendorId: vendorId,
-        })
+        .find({ vendorId })
         .sort({ createdAt: -1 })
         .populate({
           path: 'userId',
           select: '-password',
         })
-        .populate('productId')
+        .populate('products.productId')
         .exec();
+
       console.log(orders);
 
       return {
@@ -51,7 +50,7 @@ export class StatisticService {
       };
     } catch (error) {
       console.error('Error fetching orders:', error);
-      throw error;
+      throw new BadRequestException('Could not fetch orders for the vendor.');
     }
   }
 
@@ -175,20 +174,23 @@ export class StatisticService {
 
   async totalSalesForVendor(vendorId: string) {
     try {
+      // Fetch all paid orders for the specified vendor
       const totalSales = await this.singleOrderModel
         .find({
-          vendorId: vendorId,
+          vendorId,
           status: 'PAID',
         })
         .exec();
 
-      // Calculate total sales amount
-      const totalAmount = totalSales.reduce(
-        (acc, order) => acc + order.amount,
-        0,
-      );
+      // Calculate total sales amount by summing the amounts of all products in each order
+      const totalAmount = totalSales.reduce((acc, order) => {
+        const orderTotal = order.products.reduce((orderAcc, product) => {
+          return orderAcc + product.amount;
+        }, 0);
+        return acc + orderTotal;
+      }, 0);
 
-      return totalAmount; // Return the total sales amount
+      return totalAmount;
     } catch (error) {
       throw new Error(
         `Error calculating total sales for vendor: ${error.message}`,
@@ -196,11 +198,7 @@ export class StatisticService {
     }
   }
 
-  async orderStatus({
-    deliveryStatus,
-
-    vendorId,
-  }) {
+  async orderStatus({ deliveryStatus, vendorId }) {
     try {
       // Build the match criteria
       const matchCriteria: Record<string, any> = {
@@ -215,9 +213,7 @@ export class StatisticService {
       }
 
       // Fetch orders with pagination
-      const data = await this.orderModel
-        .find(matchCriteria)
-        .exec();
+      const data = await this.orderModel.find(matchCriteria).exec();
 
       // Prepare the result
       const result = {
@@ -233,11 +229,14 @@ export class StatisticService {
 
   async getMonthlyOrdersAndRevenueForVendor(vendorId: string) {
     try {
-      const orders = (await this.orderModel.find({
-        'products.vendorId': vendorId,
+      // Fetch all paid orders for the specified vendor
+      const orders = (await this.singleOrderModel.find({
+        vendorId: vendorId,
         status: 'PAID',
       })) as OrderDocument[];
+      console.log(orders);
 
+      // Initialize an object to hold monthly data
       const monthlyData: {
         [key: string]: {
           year: number;
@@ -247,29 +246,33 @@ export class StatisticService {
         };
       } = {};
 
+      // Process each order to aggregate monthly data
       orders.forEach((order) => {
         const createdAt = new Date(order.created_at);
         const year = createdAt.getFullYear();
-        const month = createdAt.getMonth() + 1;
+        const month = createdAt.getMonth() + 1; // Months are zero-indexed
 
         const key = `${year}-${month}`;
 
+        // Initialize monthly data if it doesn't exist
         if (!monthlyData[key]) {
           monthlyData[key] = {
-            year: year,
-            month: month,
+            year,
+            month,
             totalOrders: 0,
             totalRevenue: 0,
           };
         }
 
+        // Update totals for the month
         monthlyData[key].totalOrders += 1;
         monthlyData[key].totalRevenue += order.totalAmount;
       });
 
+      // Convert the monthly data object to an array for easier handling
       const result = Object.values(monthlyData);
-      console.log(result);
-      return result;
+      console.log(result); // Log the result for debugging
+      return result; // Return the aggregated monthly data
     } catch (error) {
       throw new Error(
         `Error fetching monthly orders and revenue for vendor: ${error.message}`,
