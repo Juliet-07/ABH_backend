@@ -10,8 +10,6 @@ import {
   HttpStatus,
   UsePipes,
   ValidationPipe,
-  Req,
-  Put,
   Query,
   BadRequestException,
 } from '@nestjs/common';
@@ -20,7 +18,6 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { VendorGuard } from '../auth/vendor-guard/vendor.guard';
-import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { AdminAuthGuard } from '../auth/admin-auth/admin-auth.guard';
 
 @Controller('orders')

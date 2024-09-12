@@ -2,17 +2,11 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { HelpersService } from '../utils/helpers/helpers.service';
 import { CartService } from '../cart/cart.service';
-import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
-import {
-  OrderStatusEnum,
-  PaymentGatewayEnums,
-  PaymentStatusEnum,
-} from '../constants';
+import { OrderStatusEnum, PaymentGatewayEnums } from '../constants';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { Order } from './schema/order.schema';
@@ -42,6 +36,202 @@ export class OrdersService {
     private readonly logisticService: LogisticService,
   ) {}
 
+  // async create(createOrderDto: CreateOrderDto, userId: string) {
+  //   try {
+  //     const {
+  //       shippingAddress,
+  //       billingAddress,
+  //       shippingMethod,
+  //       personalInfo,
+  //       products,
+  //       shippingFee,
+  //       paymentGateway,
+  //     } = createOrderDto;
+
+  //     // Validate products and check availability
+  //     const productDetails = await Promise.all(
+  //       products.map(async (item) => {
+  //         const product = await this.productModel.findById(item.productId);
+  //         if (!product) {
+  //           throw new NotFoundException(
+  //             `Product with ID ${item.productId} not found`,
+  //           );
+  //         }
+  //         if (product.quantity - product.soldQuantity < item.quantity) {
+  //           throw new BadRequestException(
+  //             `Insufficient quantity for product ID ${item.productId}`,
+  //           );
+  //         }
+
+  //         const sellingPrice = item.sellingPrice || product.sellingPrice;
+  //         if (sellingPrice === undefined) {
+  //           throw new BadRequestException(
+  //             `Selling price is not defined for product ID ${item.productId}`,
+  //           );
+  //         }
+
+  //         return {
+  //           product,
+  //           quantity: item.quantity,
+  //           discount: item.discount || 0,
+  //           vendorId: product.vendor,
+  //           sellingPrice,
+  //         };
+  //       }),
+  //     );
+
+  //     //const vendorState = await this.vendorModel.findById(vendorIds);
+
+  //     const userInfo = await this.userModel.findById(userId);
+  //     if (!userInfo)
+  //       throw new NotFoundException(
+  //         'Please login or create an Account with us',
+  //       );
+
+  //     // Calculate total product amount considering discounts
+  //     const totalProductAmount = productDetails
+  //       .map((item) => {
+  //         const discountAmount =
+  //           (item.discount / 100) * item.product.sellingPrice * item.quantity; // Calculate discount
+  //         const discountedPrice =
+  //           item.product.sellingPrice * item.quantity - discountAmount; // Apply discount
+  //         return discountedPrice;
+  //       })
+  //       .reduce((a, b) => a + b, 0);
+
+  //     // Calculate VAT (7% of total product amount)
+  //     const vat = parseFloat((totalProductAmount * 0.07).toFixed(2)); // Ensure VAT is a valid decimal
+
+  //     const amount = parseFloat(
+  //       (totalProductAmount + vat + shippingFee).toFixed(2),
+  //     );
+
+  //     const transaction = await this.transactionModel.create({
+  //       reference: this.helper.genString(15, '1234567890'),
+  //       paymentGateway,
+  //       totalProductAmount: amount,
+  //       shippingFee,
+  //       amount,
+  //       vat,
+  //     });
+
+  //     // Create the order with vendorId from the products
+  //     const order = await this.orderModel.create({
+  //       userId,
+  //       shippingAddress,
+  //       billingAddress,
+  //       personalInfo,
+  //       shippingMethod,
+  //       shippingFee,
+  //       paymentGateway,
+  //       vat,
+  //       reference: transaction.reference,
+  //       transactionId: transaction._id,
+  //       totalAmount: amount,
+  //       products: productDetails.map((item) => ({
+  //         productId: item.product.id,
+  //         quantity: item.quantity,
+  //         discount: item.discount,
+  //         vendorId: item.vendorId,
+  //       })),
+  //     });
+
+  //     // Payment processing logic...
+  //     const paymentResponse = await this.processPayment(order, userInfo);
+
+  //     // Update soldQuantity and check inStock status
+  //     await Promise.all(
+  //       productDetails.map(async (item) => {
+  //         await this.productModel.findByIdAndUpdate(
+  //           { _id: item.product._id },
+  //           {
+  //             $inc: { soldQuantity: item.quantity },
+  //             $set: {
+  //               inStock:
+  //                 item.product.quantity -
+  //                   (item.product.soldQuantity + item.quantity) >
+  //                 0,
+  //             },
+  //           },
+  //         );
+  //       }),
+  //     );
+
+  //     // Prepare single orders for insertion
+  //     const vendorOrdersMap = new Map();
+
+  //     for (const item of productDetails) {
+  //       const vendorId = item.vendorId;
+  //       if (!vendorOrdersMap.has(vendorId)) {
+  //         vendorOrdersMap.set(vendorId, {
+  //           vendorId: vendorId,
+  //           orderId: order._id,
+  //           userId: userId,
+  //           shippingAddress: shippingAddress,
+  //           deliveryStatus: OrderStatusEnum.PENDING,
+  //           products: [],
+  //           totalAmount: 0, // Initialize totalAmount for the vendor order
+  //         });
+  //       }
+
+  //       const vendorOrder = vendorOrdersMap.get(vendorId);
+  //       const productAmount = item.sellingPrice * item.quantity; // Calculate product amount
+  //       vendorOrder.products.push({
+  //         productId: item.product.id,
+  //         quantity: item.quantity,
+  //         amount: productAmount, // Set the amount for the product
+  //       });
+  //       vendorOrder.totalAmount += productAmount; // Update totalAmount for the vendor order
+  //     }
+
+  //     // Check if an existing order for the vendor already exists
+  //     for (const vendorOrder of vendorOrdersMap.values()) {
+  //       const existingOrder = await this.singleOrderModel.findOne({
+  //         vendorId: vendorOrder.vendorId,
+  //       });
+
+  //       if (existingOrder) {
+  //         // If an existing order is found, update it with new products
+  //         existingOrder.products.push(...vendorOrder.products);
+  //         existingOrder.totalAmount += vendorOrder.totalAmount; // Update total amount
+  //         await existingOrder.save(); // Save the updated order
+  //       } else {
+  //         // If no existing order, create a new one
+  //         await this.singleOrderModel.create(vendorOrder);
+  //       }
+  //     }
+  //     return {
+  //       order,
+  //       paymentResponse,
+  //     };
+  //   } catch (error) {
+  //     console.log('THE ERROR', error);
+  //     throw new BadRequestException(error.message);
+  //   }
+  // }
+  async calculateTotalWeight(
+    products: { productId: string; quantity: number }[],
+  ): Promise<number> {
+    try {
+      const totalWeight = await Promise.all(
+        products.map(async (item) => {
+          const product = await this.productModel.findById(item.productId);
+          if (!product) {
+            throw new NotFoundException(
+              `Product with ID ${item.productId} not found`,
+            );
+          }
+          return product.weight * item.quantity;
+        }),
+      );
+
+      return totalWeight.reduce((sum, weight) => sum + weight, 0);
+    } catch (error) {
+      console.error('Error calculating total weight:', error.message);
+      throw new BadRequestException('Error calculating total weight');
+    }
+  }
+
   async create(createOrderDto: CreateOrderDto, userId: string) {
     try {
       const {
@@ -54,74 +244,24 @@ export class OrdersService {
         paymentGateway,
       } = createOrderDto;
 
-      // Validate products and check availability
-      const productDetails = await Promise.all(
-        products.map(async (item) => {
-          const product = await this.productModel.findById(item.productId);
-          if (!product) {
-            throw new NotFoundException(
-              `Product with ID ${item.productId} not found`,
-            );
-          }
-          if (product.quantity - product.soldQuantity < item.quantity) {
-            throw new BadRequestException(
-              `Insufficient quantity for product ID ${item.productId}`,
-            );
-          }
-
-
-          const sellingPrice = item.sellingPrice || product.sellingPrice;
-          if (sellingPrice === undefined) {
-            throw new BadRequestException(
-              `Selling price is not defined for product ID ${item.productId}`,
-            );
-          }
-
-
-          return {
-            product,
-            quantity: item.quantity,
-            discount: item.discount || 0,
-            vendorId: product.vendor,
-            sellingPrice
-          };
-        }),
-      );
-
-      //const vendorState = await this.vendorModel.findById(vendorIds);
-
-      const userInfo = await this.userModel.findById(userId);
-      if (!userInfo)
-        throw new NotFoundException(
-          'Please login or create an Account with us',
-        );
-
-      // Calculate total product amount considering discounts
-      const totalProductAmount = productDetails
-        .map((item) => {
-          const discountAmount =
-            (item.discount / 100) * item.product.sellingPrice * item.quantity; // Calculate discount
-          const discountedPrice =
-            item.product.sellingPrice * item.quantity - discountAmount; // Apply discount
-          return discountedPrice;
-        })
-        .reduce((a, b) => a + b, 0);
-
-      // Calculate VAT (7% of total product amount)
-      const vat = parseFloat((totalProductAmount * 0.07).toFixed(2)); // Ensure VAT is a valid decimal
-
-      const amount = parseFloat(
-        (totalProductAmount + vat + shippingFee).toFixed(2),
-      );
-
-      const transaction = await this.transactionModel.create({
-        reference: this.helper.genString(15, '1234567890'),
-        paymentGateway,
-        totalProductAmount: amount,
-        shippingFee,
-        amount,
+      const productDetails = await this.validateAndFetchProducts(products);
+      const userInfo = await this.validateUser(userId);
+      const totalProductAmount =
+        this.calculateTotalProductAmount(productDetails);
+      const vat = this.calculateVAT(totalProductAmount);
+      const amount = this.calculateTotalAmount(
+        totalProductAmount,
         vat,
-      });
+        shippingFee,
+      );
+
+      const transaction = await this.createTransaction(
+        paymentGateway,
+        amount,
+        shippingFee,
+        vat,
+        
+      );
 
       // Create the order with vendorId from the products
       const order = await this.orderModel.create({
@@ -144,46 +284,15 @@ export class OrdersService {
         })),
       });
 
-      // Payment processing logic...
       const paymentResponse = await this.processPayment(order, userInfo);
+      await this.updateProductQuantities(productDetails);
 
-      // Update soldQuantity and check inStock status
-      await Promise.all(
-        productDetails.map(async (item) => {
-          await this.productModel.findByIdAndUpdate(
-            { _id: item.product._id },
-            {
-              $inc: { soldQuantity: item.quantity },
-              $set: {
-                inStock:
-                  item.product.quantity -
-                    (item.product.soldQuantity + item.quantity) >
-                  0,
-              },
-            },
-          );
-        }),
+      await this.handleVendorOrders(
+        productDetails,
+        order._id,
+        userId,
+        shippingAddress,
       );
-
-      try {
-        // Prepare single orders for insertion
-        const singleOrders = productDetails.map((item) => ({
-          vendorId: item.vendorId,
-          orderId: order._id,
-          productId: item.product.id,
-          quantity: item.quantity,
-          userId: userId,
-          amount: item.sellingPrice,
-          shippingAddress
-        }));
-
-        console.log(singleOrders);
-
-        // Insert Single orders
-        await this.singleOrderModel.insertMany(singleOrders);
-      } catch (error) {
-        console.error('Error inserting single orders:', error);
-      }
 
       return {
         order,
@@ -194,26 +303,137 @@ export class OrdersService {
       throw new BadRequestException(error.message);
     }
   }
-  async calculateTotalWeight(
-    products: { productId: string; quantity: number }[],
-  ): Promise<number> {
-    try {
-      const totalWeight = await Promise.all(
-        products.map(async (item) => {
-          const product = await this.productModel.findById(item.productId);
-          if (!product) {
-            throw new NotFoundException(
-              `Product with ID ${item.productId} not found`,
-            );
-          }
-          return product.weight * item.quantity;
-        }),
-      );
 
-      return totalWeight.reduce((sum, weight) => sum + weight, 0);
-    } catch (error) {
-      console.error('Error calculating total weight:', error.message);
-      throw new BadRequestException('Error calculating total weight');
+  // Helper Functions
+
+  async validateAndFetchProducts(products) {
+    return Promise.all(
+      products.map(async (item) => {
+        const product = await this.productModel.findById(item.productId);
+        if (!product) {
+          throw new NotFoundException(
+            `Product with ID ${item.productId} not found`,
+          );
+        }
+        if (product.quantity - product.soldQuantity < item.quantity) {
+          throw new BadRequestException(
+            `Insufficient quantity for product ID ${item.productId}`,
+          );
+        }
+
+        const sellingPrice = item.sellingPrice || product.sellingPrice;
+        if (sellingPrice === undefined) {
+          throw new BadRequestException(
+            `Selling price is not defined for product ID ${item.productId}`,
+          );
+        }
+
+        return {
+          product,
+          quantity: item.quantity,
+          discount: item.discount || 0,
+          vendorId: product.vendor,
+          sellingPrice,
+        };
+      }),
+    );
+  }
+
+  async validateUser(userId: string) {
+    const userInfo = await this.userModel.findById(userId);
+    if (!userInfo) {
+      throw new NotFoundException('Please login or create an Account with us');
+    }
+    return userInfo;
+  }
+
+  calculateTotalProductAmount(productDetails) {
+    return productDetails
+      .map((item) => {
+        const discountAmount =
+          (item.discount / 100) * item.product.sellingPrice * item.quantity;
+        return item.product.sellingPrice * item.quantity - discountAmount;
+      })
+      .reduce((a, b) => a + b, 0);
+  }
+
+  calculateVAT(totalProductAmount) {
+    return parseFloat((totalProductAmount * 0.07).toFixed(2));
+  }
+
+  calculateTotalAmount(totalProductAmount, vat, shippingFee) {
+    return parseFloat((totalProductAmount + vat + shippingFee).toFixed(2));
+  }
+
+  async createTransaction(paymentGateway, amount, shippingFee, vat) {
+    return await this.transactionModel.create({
+      reference: this.helper.genString(15, '1234567890'),
+      paymentGateway,
+      totalProductAmount: amount,
+      shippingFee,
+      amount,
+      vat,
+    });
+  }
+
+  async updateProductQuantities(productDetails) {
+    await Promise.all(
+      productDetails.map(async (item) => {
+        await this.productModel.findByIdAndUpdate(
+          { _id: item.product._id },
+          {
+            $inc: { soldQuantity: item.quantity },
+            $set: {
+              inStock:
+                item.product.quantity -
+                  (item.product.soldQuantity + item.quantity) >
+                0,
+            },
+          },
+        );
+      }),
+    );
+  }
+
+  async handleVendorOrders(productDetails, orderId, userId, shippingAddress) {
+    const vendorOrdersMap = new Map();
+
+    for (const item of productDetails) {
+      const vendorId = item.vendorId;
+      if (!vendorOrdersMap.has(vendorId)) {
+        vendorOrdersMap.set(vendorId, {
+          vendorId: vendorId,
+          orderId: orderId,
+          userId: userId,
+          shippingAddress: shippingAddress,
+          deliveryStatus: OrderStatusEnum.PENDING,
+          products: [],
+          totalAmount: 0,
+        });
+      }
+
+      const vendorOrder = vendorOrdersMap.get(vendorId);
+      const productAmount = item.sellingPrice * item.quantity;
+      vendorOrder.products.push({
+        productId: item.product.id,
+        quantity: item.quantity,
+        amount: productAmount,
+      });
+      vendorOrder.totalAmount += productAmount;
+    }
+
+    for (const vendorOrder of vendorOrdersMap.values()) {
+      const existingOrder = await this.singleOrderModel.findOne({
+        vendorId: vendorOrder.vendorId,
+      });
+
+      if (existingOrder) {
+        existingOrder.products.push(...vendorOrder.products);
+        existingOrder.totalAmount += vendorOrder.totalAmount;
+        await existingOrder.save();
+      } else {
+        await this.singleOrderModel.create(vendorOrder);
+      }
     }
   }
 
@@ -323,20 +543,15 @@ export class OrdersService {
 
   async fetchMyOrders(userId: string) {
     try {
-      // Ensure limit and page are positive integers
-
-      // Fetch paginated documents
-      const orders = await this.orderModel
+      const orders = await this.singleOrderModel
         .find({ userId })
 
         .populate('userId')
-        .populate('transactionId')
         .populate('products.productId')
         .exec();
 
-      // Count total number of documents with the filter
-
       return {
+        count: orders.length,
         data: orders,
       };
     } catch (error) {
@@ -347,11 +562,9 @@ export class OrdersService {
 
   async listOneOrder(orderId: string, userId: string) {
     try {
-      const order = await this.orderModel
+      const order = await this.singleOrderModel
         .findOne({ _id: orderId, userId: userId })
-
         .populate('userId')
-        .populate('transactionId')
         .populate('products.productId')
         .exec();
 
@@ -513,7 +726,7 @@ export class OrdersService {
         { $set: { status: 'PAID' } },
         { new: true },
       );
-     
+
       if (!updatedOrder) {
         throw new NotFoundException('Order not found');
       }

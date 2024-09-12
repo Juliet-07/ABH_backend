@@ -43,7 +43,7 @@ class PersonalInfoDto {
   phoneNumber: string;
 }
 
-class ProductDto {
+export class ProductDto {
   @IsDefined()
   @IsString()
   productId: string;
@@ -59,6 +59,20 @@ class ProductDto {
 
   sellingPrice: number;
 }
+
+export type ProductDetail = {
+  product: {
+    _id: string;
+    sellingPrice: number;
+    quantity: number;
+    soldQuantity: number;
+    vendor: string;
+  };
+  quantity: number;
+  discount: number;
+  vendorId: string;
+  sellingPrice: number;
+};
 
 export class CreateOrderDto {
   @IsDefined()

@@ -6,7 +6,6 @@ import {
   ValidateNested,
   IsNumber,
   IsString,
-  IsDecimal,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import {
@@ -26,7 +25,12 @@ class AddressDto {
   state: string;
 
   @IsDefined()
-  country: string;
+  @IsOptional()
+  country?: string;
+
+  @IsDefined()
+  @IsOptional()
+  town?: string;
 }
 
 class PersonalInfoDto {
@@ -68,6 +72,20 @@ class DropShippingDto {
 
   reference: string;
 }
+
+export type ProductDetail = {
+  product: {
+    _id: string;
+    sellingPrice: number;
+    quantity: number;
+    soldQuantity: number;
+    vendor: string;
+  };
+  quantity: number;
+  discount: number;
+  vendorId: string;
+  sellingPrice: number;
+};
 
 export class CreateDropShippingDto {
   @IsDefined()

@@ -342,76 +342,34 @@ export class DropshippingService {
         shippingFee,
         paymentGateway,
       } = payload;
-
-      // Validate products and check availability
-      const productDetails = await Promise.all(
-        products.map(async (item) => {
-          const product = await this.productModel.findById(item.productId);
-          if (!product) {
-            throw new NotFoundException(
-              `Product with ID ${item.productId} not found`,
-            );
-          }
-          if (product.quantity - product.soldQuantity < item.quantity) {
-            throw new BadRequestException(
-              `Insufficient quantity for product ID ${item.productId}`,
-            );
-          }
-
-          const sellingPrice = item.sellingPrice || product.sellingPrice;
-          if (sellingPrice === undefined) {
-            throw new BadRequestException(
-              `Selling price is not defined for product ID ${item.productId}`,
-            );
-          }
-
-          return {
-            product,
-            quantity: item.quantity,
-            discount: item.discount || 0,
-            vendorId: product.vendor,
-            sellingPrice,
-          };
-        }),
-      );
-
-      const userInfo = await this.userModel.findById(userId);
-      if (!userInfo) {
-        throw new NotFoundException(
-          'Please login or create an Account with us',
-        );
+  
+      // Validate required fields
+      if (!shippingAddress) {
+        throw new BadRequestException('Shipping address is required');
       }
-
-      // Calculate total product amount considering discounts
-      const totalProductAmount = productDetails
-        .map((item) => {
-          const discountAmount =
-            (item.discount / 100) * item.product.sellingPrice * item.quantity;
-          const discountedPrice =
-            item.product.sellingPrice * item.quantity - discountAmount;
-          return discountedPrice;
-        })
-        .reduce((a, b) => a + b, 0);
-
-      // Calculate VAT (7% of total product amount)
-      const vat = parseFloat((totalProductAmount * 0.07).toFixed(2));
-
-      // Calculate the final total amount including VAT, shipping fee, and subscription fee (if applicable)
-      const amount = parseFloat(
-        totalProductAmount + vat + Number(shippingFee).toFixed(2),
-      );
-      const ref = await this.helper.genString(15, '1234567890');
-
-      // Create transaction
-      const transaction = await this.transactionModel.create({
-        reference: ref,
-        paymentGateway,
-        totalProductAmount: amount,
-        shippingFee: Number(shippingFee),
-        amount,
-        vat,
-      });
-
+  
+      const productDetails = await this.validateAndFetchProducts(products);
+      const userInfo = await this.validateUser(userId);
+      const totalProductAmount = this.calculateTotalProductAmount(productDetails);
+      const vat = this.calculateVAT(totalProductAmount);
+  
+      // Log values for debugging
+      console.log('Total Product Amount:', totalProductAmount);
+      console.log('VAT:', vat);
+      console.log('Shipping Fee:', shippingFee);
+  
+      // Ensure all values are valid numbers
+      if (isNaN(totalProductAmount) || isNaN(vat) || isNaN(shippingFee)) {
+        throw new BadRequestException('Invalid values for total amount calculation');
+      }
+  
+      const amount = this.calculateTotalAmount(totalProductAmount, vat, shippingFee);
+      if (isNaN(amount)) {
+        throw new BadRequestException('Calculated total amount is invalid');
+      }
+  
+      const transaction = await this.createTransaction(paymentGateway, amount, shippingFee, vat);
+  
       // Create the order with vendorId from the products
       const dropshipping = await this.dropshippingModel.create({
         userId,
@@ -422,57 +380,23 @@ export class DropshippingService {
         shippingFee,
         paymentGateway,
         vat,
-        // vendorId: vendorIds,
-        reference: ref,
+        reference: transaction.reference,
         transactionId: transaction._id,
         totalAmount: amount,
         products: productDetails.map((item) => ({
-          productId: item.product._id,
+          productId: item.product.id,
           quantity: item.quantity,
           discount: item.discount,
           vendorId: item.vendorId,
         })),
       });
-
+  
       // Payment processing logic...
       const paymentResponse = await this.processPayment(dropshipping, userInfo);
-
-      // Update soldQuantity and check inStock status
-      await Promise.all(
-        productDetails.map(async (item) => {
-          await this.productModel.findByIdAndUpdate(
-            { _id: item.product._id },
-            {
-              $inc: { soldQuantity: item.quantity },
-              $set: {
-                inStock:
-                  item.product.quantity -
-                    (item.product.soldQuantity + item.quantity) >
-                  0,
-              },
-            },
-          );
-        }),
-      );
-
-      try {
-        // Prepare single orders for insertion
-        const singleOrders = productDetails.map((item) => ({
-          vendorId: item.vendorId,
-          orderId: dropshipping._id,
-          productId: item.product.id,
-          quantity: item.quantity,
-          userId: userId,
-          amount: item.sellingPrice,
-          shippingAddress
-        }));
-
-        // Insert Single orders
-        await this.SingleDropshippingModel.insertMany(singleOrders);
-      } catch (error) {
-        console.error('Error inserting single orders:', error);
-      }
-
+  
+      await this.updateProductQuantities(productDetails);
+      await this.handleVendorOrders(productDetails, dropshipping._id, userId, shippingAddress);
+  
       return {
         dropshipping,
         paymentResponse,
@@ -482,6 +406,7 @@ export class DropshippingService {
       throw new BadRequestException(error.message);
     }
   }
+  
 
   async updateDropshippingPayment(reference: string) {
     try {
@@ -537,31 +462,7 @@ export class DropshippingService {
     return paymentResponse;
   }
 
-  // Helper method to calculate end date based on subscription type
-  private calculateEndDate(type: string): Date {
-    const startDate = new Date();
-    let endDate: Date;
-
-    switch (type) {
-      case 'DAILY':
-        endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + 1);
-        break;
-      case 'WEEKLY':
-        endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + 7);
-        break;
-      case 'MONTHLY':
-        endDate = new Date(startDate);
-        endDate.setMonth(startDate.getMonth() + 1);
-        break;
-      default:
-        throw new BadRequestException('Invalid subscription type');
-    }
-
-    return endDate;
-  }
-
+ 
   async verifyDropshippingTransaction(TransactionRef: string) {
     try {
       const response = await axios.post(
@@ -616,4 +517,163 @@ export class DropshippingService {
   //      endDate: this.calculateEndDate(payload.subscriptionDetails.type),
   //      reference: ref,
   //    });
+
+  async validateAndFetchProducts(products) {
+    return Promise.all(
+      products.map(async (item) => {
+        const product = await this.productModel.findById(item.productId);
+        if (!product) {
+          throw new NotFoundException(
+            `Product with ID ${item.productId} not found`,
+          );
+        }
+        if (product.quantity - product.soldQuantity < item.quantity) {
+          throw new BadRequestException(
+            `Insufficient quantity for product ID ${item.productId}`,
+          );
+        }
+
+        const sellingPrice = item.sellingPrice || product.sellingPrice;
+        if (sellingPrice === undefined) {
+          throw new BadRequestException(
+            `Selling price is not defined for product ID ${item.productId}`,
+          );
+        }
+
+        return {
+          product,
+          quantity: item.quantity,
+          discount: item.discount || 0,
+          vendorId: product.vendor,
+          sellingPrice,
+        };
+      }),
+    );
+  }
+
+  async validateUser(userId: string) {
+    const userInfo = await this.userModel.findById(userId);
+    if (!userInfo) {
+      throw new NotFoundException('Please login or create an Account with us');
+    }
+    return userInfo;
+  }
+
+  calculateTotalProductAmount(productDetails) {
+    return productDetails
+      .map((item) => {
+        const discountAmount =
+          (item.discount / 100) * item.product.sellingPrice * item.quantity;
+        return item.product.sellingPrice * item.quantity - discountAmount;
+      })
+      .reduce((a, b) => a + b, 0);
+  }
+
+  calculateVAT(totalProductAmount) {
+    return parseFloat((totalProductAmount * 0.07).toFixed(2));
+  }
+
+  calculateTotalAmount(totalProductAmount, vat, shippingFee) {
+    return parseFloat((totalProductAmount + vat + shippingFee).toFixed(2));
+  }
+
+  async createTransaction(paymentGateway, amount, shippingFee, vat) {
+    return await this.transactionModel.create({
+      reference: this.helper.genString(15, '1234567890'),
+      paymentGateway,
+      totalProductAmount: amount,
+      shippingFee,
+      amount,
+      vat,
+    });
+  }
+
+  async updateProductQuantities(productDetails) {
+    await Promise.all(
+      productDetails.map(async (item) => {
+        await this.productModel.findByIdAndUpdate(
+          { _id: item.product._id },
+          {
+            $inc: { soldQuantity: item.quantity },
+            $set: {
+              inStock:
+                item.product.quantity -
+                  (item.product.soldQuantity + item.quantity) >
+                0,
+            },
+          },
+        );
+      }),
+    );
+  }
+
+  async handleVendorOrders(productDetails, orderId, userId, shippingAddress) {
+    const vendorOrdersMap = new Map();
+
+    for (const item of productDetails) {
+      const vendorId = item.vendorId;
+      if (!vendorOrdersMap.has(vendorId)) {
+        vendorOrdersMap.set(vendorId, {
+          vendorId: vendorId,
+          orderId: orderId,
+          userId: userId,
+          shippingAddress: shippingAddress,
+          products: [],
+          totalAmount: 0,
+        });
+      }
+
+      const vendorOrder = vendorOrdersMap.get(vendorId);
+      const productAmount = item.sellingPrice * item.quantity;
+      vendorOrder.products.push({
+        productId: item.product.id,
+        quantity: item.quantity,
+        amount: productAmount,
+      });
+      vendorOrder.totalAmount += productAmount;
+    }
+
+    for (const vendorOrder of vendorOrdersMap.values()) {
+      const existingOrder = await this.SingleDropshippingModel.findOne({
+        vendorId: vendorOrder.vendorId,
+      });
+
+      if (existingOrder) {
+        existingOrder.products.push(...vendorOrder.products);
+        existingOrder.totalAmount += vendorOrder.totalAmount;
+        await existingOrder.save();
+      } else {
+        await this.SingleDropshippingModel.create(vendorOrder);
+      }
+    }
+  }
+
+
+   // Helper method to calculate end date based on subscription type
+   private calculateEndDate(type: string): Date {
+    const startDate = new Date();
+    let endDate: Date;
+
+    switch (type) {
+      case 'DAILY':
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 1);
+        break;
+      case 'WEEKLY':
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 7);
+        break;
+      case 'MONTHLY':
+        endDate = new Date(startDate);
+        endDate.setMonth(startDate.getMonth() + 1);
+        break;
+      default:
+        throw new BadRequestException('Invalid subscription type');
+    }
+
+    return endDate;
+  }
+
 }
+
+
