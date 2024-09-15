@@ -30,6 +30,28 @@ export class DropshippingController {
     return this.dropshippingService.create(payload, userId);
   }
 
+  @Get('list')
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ValidationPipe())
+  @ApiBearerAuth('JWT-auth')
+  ListDropshipping(@Request() req) {
+    const userId = req.user;
+    return this.dropshippingService.listDropshipping(userId);
+  }
+
+
+
+  @Get('my-inventories')
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ValidationPipe())
+  @ApiBearerAuth('JWT-auth')
+  MyInventories(@Request() req) {
+    const userId = req.user;
+    return this.dropshippingService.myInventories(userId);
+  }
+
   @Post('verify')
   @HttpCode(HttpStatus.OK)
   async handleCallbackSub(@Body('TransactionRef') transactionRef: string) {

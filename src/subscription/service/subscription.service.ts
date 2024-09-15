@@ -6,7 +6,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Subscription } from '../schema/subscription.schema';
-import { User } from 'src/user/schema/user.schem';
+import { User } from 'src/user/schema/user.schema';
 import { PaymentGatewayEnums, SubscriptionStatus } from 'src/constants';
 import { HelpersService } from 'src/utils/helpers/helpers.service';
 import { Cron, CronExpression } from '@nestjs/schedule';

@@ -4,7 +4,7 @@ import { UserController } from './user.controller';
 import { HelpersService } from '../utils/helpers/helpers.service';
 import { MailingService } from '../utils/mailing/mailing.service';
 import { MongooseModule } from '@nestjs/mongoose';
-import { UserSchema } from './schema/user.schem';
+import { UserSchema } from './schema/user.schema';
 import { AdminService } from 'src/admin/admin.service';
 import { AdminSchema } from 'src/admin/schema/admin.schema';
 import { AzureService } from 'src/utils/uploader/azure';

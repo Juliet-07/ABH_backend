@@ -10,7 +10,7 @@ import { Dropshipping } from 'src/dropshipping/schema/dropshipping.schema';
 import { Order } from 'src/orders/schema/order.schema';
 import { Product } from 'src/products/schema/product.schema';
 import { Subscription } from 'src/subscription/schema/subscription.schema';
-import { User } from 'src/user/schema/user.schem';
+import { User } from 'src/user/schema/user.schema';
 import { Vendor } from 'src/vendors/schema/vendor.schema';
 
 @Injectable()

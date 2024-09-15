@@ -19,6 +19,13 @@ export class Inventory {
   })
   userId: string;
 
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: 'Vendor',
+  })
+  vendorId: string;
+
   @Prop({ type: Number, required: true })
   quantity: number;
 
