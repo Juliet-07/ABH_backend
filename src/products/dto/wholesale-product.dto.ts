@@ -31,9 +31,11 @@ export class CreateWholeSaleProductDto {
   discount?: number;
 
   //@IsNumber()
+  @IsNotEmpty()
   maximumOrderPerCarton: number;
 
   //@IsNumber()
+  @IsNotEmpty()
   unitPerCarton: number;
 
   @IsNotEmpty()

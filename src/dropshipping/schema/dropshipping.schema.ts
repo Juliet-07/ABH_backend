@@ -4,7 +4,6 @@ import {
   OrderStatusEnum,
   PaymentGatewayEnums,
   PaymentStatus,
-  ShippingMethodEnums,
 } from 'src/constants';
 
 export type DropshippingDocument = Dropshipping & Document;
@@ -20,7 +19,6 @@ export class Dropshipping {
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
   userId: string;
 
-  
   @Prop({
     type: [
       {
@@ -46,35 +44,6 @@ export class Dropshipping {
   }[];
 
   @Prop({
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Transaction',
-    required: true,
-  })
-  transactionId: string;
-
-  @Prop({ type: Number, required: false })
-  quantity: number;
-
-  @Prop({ required: true })
-  totalAmount: number;
-
-  @Prop({
-    type: {
-      street: { type: String, required: true },
-      city: { type: String, required: true },
-      state: { type: String, required: true },
-      country: { type: String, required: true },
-    },
-    required: true,
-  })
-  shippingAddress: {
-    street: string;
-    city: string;
-    state: string;
-    country: string;
-  };
-
-  @Prop({
     type: {
       firstName: { type: String, required: true },
       lastName: { type: String, required: true },
@@ -90,35 +59,38 @@ export class Dropshipping {
   };
 
   @Prop({
-    type: {
-      street: { type: String },
-      city: { type: String },
-      state: { type: String },
-      country: { type: String },
-    },
-    nullable: true,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Transaction',
+    required: true,
   })
-  billingAddress?: {
-    street?: string;
-    city?: string;
-    state?: string;
-    country?: string;
-  };
+  transactionId: string;
 
-  @Prop({ enum: ShippingMethodEnums, required: false })
-  shippingMethod: ShippingMethodEnums;
+  @Prop({ type: Number, required: false })
+  quantity: number;
+
+  @Prop({ required: true })
+  totalAmount: number;
 
   @Prop({ required: true })
   reference: string;
-
-  @Prop({ type: Number, required: true })
-  shippingFee: number;
 
   @Prop({ type: Number, required: true })
   vat: number;
 
   @Prop({ enum: PaymentGatewayEnums, required: true })
   paymentGateway: PaymentGatewayEnums;
+
+  @Prop({
+    type: {
+      plan: { type: String, required: true },
+      amount: { type: Number, required: true },
+    },
+    //required: false, 
+  })
+  subscriptionDetails: {
+    plan: string;
+    amount: number;
+  };
 }
 
 export const DropshippingSchema = SchemaFactory.createForClass(Dropshipping);

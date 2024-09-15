@@ -46,8 +46,8 @@ export class SubscriptionService {
 
   async createSubscription(userId: string, payload: CreateSubscriptionDto) {
     try {
-      const { type, amount, paymentGateway } = payload;
-      console.log('Subscription type:', type); // Log the incoming type
+      const { plan, amount, paymentGateway } = payload;
+      console.log('Subscription plan:', plan); // Log the incoming type
 
       const user = await this.userModel.findById(userId);
       if (!user) {
@@ -57,7 +57,7 @@ export class SubscriptionService {
       const startDate = new Date();
       let endDate: Date;
 
-      const normalizedType = type.toUpperCase(); // Normalize the type to uppercase
+      const normalizedType = plan.toUpperCase(); // Normalize the type to uppercase
 
       switch (normalizedType) {
         case 'DAILY':
@@ -78,7 +78,7 @@ export class SubscriptionService {
 
       const subscription = this.subscriptionModel.create({
         userId,
-        type,
+        plan,
         amount,
         startDate,
         endDate,
@@ -86,10 +86,10 @@ export class SubscriptionService {
         paymentGateway
       });
 
-      const paymentResponse = await this.processPayment(
-        await subscription,
-        user,
-      );
+      // const paymentResponse = await this.processPayment(
+      //   await subscription,
+      //   user,
+      // );
 
       // Create transaction
       const transaction = await this.transactionModel.create({
@@ -103,7 +103,7 @@ export class SubscriptionService {
 
       return {
         subscription,
-        paymentResponse,
+      //  paymentResponse,
       };
     } catch (error) {
       console.error(error);

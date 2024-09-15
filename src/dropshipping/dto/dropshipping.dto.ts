@@ -64,13 +64,15 @@ class ProductDto {
   sellingPrice: number;
 }
 
-class DropShippingDto {
-  @IsEnum(SubscriptionTypeEnum)
-  type: string;
+export class CreateSubscriptionDto {
+  @IsEnum(SubscriptionTypeEnum, { message: 'Invalid subscription type' })
+  plan: SubscriptionTypeEnum;
 
+  @IsNumber()
   amount: number;
 
-  reference: string;
+  // @IsEnum(PaymentGatewayEnums)
+  // paymentGateway: PaymentGatewayEnums;
 }
 
 export type ProductDetail = {
@@ -88,33 +90,15 @@ export type ProductDetail = {
 };
 
 export class CreateDropShippingDto {
-  @IsDefined()
-  @ValidateNested()
-  @Type(() => AddressDto)
-  shippingAddress: AddressDto;
-
   @IsOptional()
   @ValidateNested()
-  @Type(() => AddressDto)
-  billingAddress: AddressDto;
-
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => DropShippingDto)
-  subscriptionDetails: DropShippingDto;
+  @Type(() => CreateSubscriptionDto)
+  subscriptionDetails: CreateSubscriptionDto;
 
   //@IsDefined()
   @ValidateNested()
   @Type(() => PersonalInfoDto)
-  personalInfo: PersonalInfoDto;
-
-  @IsDefined()
-  @IsNumber()
-  shippingFee: number;
-
-  @IsDefined()
-  @IsEnum(ShippingMethodEnums)
-  shippingMethod: string;
+  personalInfo?: PersonalInfoDto;
 
   @IsOptional()
   @IsEnum(PaymentGatewayEnums)

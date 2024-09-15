@@ -14,7 +14,7 @@ export class Subscription {
   userId: string;
 
   @Prop({ required: true, enum: SubscriptionTypeEnum })
-  type: SubscriptionTypeEnum;
+  plan: string;
 
   @Prop({ type: Number, required: true })
   amount: number;
