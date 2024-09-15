@@ -22,8 +22,12 @@ export class SingleDropshipping {
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
   userId: string;
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Order' })
-  orderId: string;
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: 'Dropshipping',
+  })
+  dropshippingId: string;
 
   @Prop({
     type: [
@@ -50,13 +54,13 @@ export class SingleDropshipping {
 
   @Prop({
     type: {
-      street: { type: String, required: true },
-      city: { type: String, required: true },
-      state: { type: String, required: true },
+      street: { type: String, required: false },
+      city: { type: String, required: false },
+      state: { type: String, required: false },
       country: { type: String, required: false },
       town: { type: String, required: false },
     },
-    required: true,
+    required: false,
   })
   shippingAddress: {
     street: string;
@@ -65,6 +69,27 @@ export class SingleDropshipping {
     country?: string;
     town?: string;
   };
+
+  @Prop({ required: false, type: String })
+  reference: string;
+
+  // @Prop({
+  //   type: [
+  //     {
+  //       productId: {
+  //         type: mongoose.Schema.Types.ObjectId,
+  //         required: false,
+  //         ref: 'Product',
+  //       },
+  //       quantity: { type: Number, required: true },
+  //     },
+  //   ],
+  //   required: false,
+  // })
+  // itemToShip: {
+  //   productId: string;
+  //   quantity: number;
+  // }[];
 }
 
 export const SingleDropshippingSchema =

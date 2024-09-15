@@ -20,7 +20,7 @@ export class Transaction {
   @Prop({ type: Number, required: true })
   totalProductAmount: number;
 
-  @Prop({ type: Number, required: true })
+  @Prop({ type: Number, required: false })
   shippingFee: number;
 
   @Prop({ enum: PaymentStatusEnum, default: PaymentStatusEnum.PENDING })

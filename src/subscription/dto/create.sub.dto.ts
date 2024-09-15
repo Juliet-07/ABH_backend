@@ -10,12 +10,12 @@ export enum SubscriptionType {
 
 export class CreateSubscriptionDto {
   @IsEnum(SubscriptionType)
-  type: SubscriptionType;
+  plan: SubscriptionType;
 
   @IsNumber()
   amount: number;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsEnum(PaymentGatewayEnums)
   paymentGateway: string;
 }

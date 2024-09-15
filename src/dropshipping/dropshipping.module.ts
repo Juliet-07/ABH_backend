@@ -24,6 +24,7 @@ import { VendorSchema } from 'src/vendors/schema/vendor.schema';
 import { LogisticService } from 'src/logistics/service/logistic.service';
 import { SingleOrderSchema } from 'src/orders/schema/singleOreder.schema';
 import { SingleDropshippingSchema } from './schema/singledropshipping.schema';
+import { InventorySchema } from './schema/inventory.schem';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { SingleDropshippingSchema } from './schema/singledropshipping.schema';
       { name: 'Vendor', schema: VendorSchema },
       { name: 'SingleOrder', schema: SingleOrderSchema },
       { name: 'SingleDropshipping', schema: SingleDropshippingSchema },
+      { name: 'Inventory', schema: InventorySchema },
     ]),
     UserModule,
     VendorsModule,

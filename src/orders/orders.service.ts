@@ -238,7 +238,6 @@ export class OrdersService {
         shippingAddress,
         billingAddress,
         shippingMethod,
-        personalInfo,
         products,
         shippingFee,
         paymentGateway,
@@ -260,8 +259,14 @@ export class OrdersService {
         amount,
         shippingFee,
         vat,
-        
       );
+
+      const personalInfo = {
+        firstName: userInfo.firstName,
+        lastName: userInfo.lastName,
+        email: userInfo.email,
+        phoneNumber: userInfo.phoneNumber,
+      };
 
       // Create the order with vendorId from the products
       const order = await this.orderModel.create({
@@ -396,45 +401,40 @@ export class OrdersService {
   }
 
   async handleVendorOrders(productDetails, orderId, userId, shippingAddress) {
-    const vendorOrdersMap = new Map();
+    const vendorOrders = [];
 
-    for (const item of productDetails) {
-      const vendorId = item.vendorId;
-      if (!vendorOrdersMap.has(vendorId)) {
-        vendorOrdersMap.set(vendorId, {
-          vendorId: vendorId,
+    // Group product details by vendor
+    const productsByVendor = productDetails.reduce((acc, item) => {
+      if (!acc[item.vendorId]) {
+        acc[item.vendorId] = {
+          vendorId: item.vendorId,
           orderId: orderId,
           userId: userId,
           shippingAddress: shippingAddress,
           deliveryStatus: OrderStatusEnum.PENDING,
           products: [],
           totalAmount: 0,
-        });
+        };
       }
 
-      const vendorOrder = vendorOrdersMap.get(vendorId);
       const productAmount = item.sellingPrice * item.quantity;
-      vendorOrder.products.push({
+      acc[item.vendorId].products.push({
         productId: item.product.id,
         quantity: item.quantity,
         amount: productAmount,
       });
-      vendorOrder.totalAmount += productAmount;
+      acc[item.vendorId].totalAmount += productAmount;
+
+      return acc;
+    }, {});
+
+    // Create vendor orders
+    for (const vendorOrder of Object.values(productsByVendor)) {
+      const createdOrder = await this.singleOrderModel.create(vendorOrder);
+      vendorOrders.push(createdOrder);
     }
 
-    for (const vendorOrder of vendorOrdersMap.values()) {
-      const existingOrder = await this.singleOrderModel.findOne({
-        vendorId: vendorOrder.vendorId,
-      });
-
-      if (existingOrder) {
-        existingOrder.products.push(...vendorOrder.products);
-        existingOrder.totalAmount += vendorOrder.totalAmount;
-        await existingOrder.save();
-      } else {
-        await this.singleOrderModel.create(vendorOrder);
-      }
-    }
+    return vendorOrders;
   }
 
   // Separate method for payment processing
