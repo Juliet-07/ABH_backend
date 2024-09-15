@@ -14,7 +14,7 @@ import { Cart } from 'src/cart/schema/cart.schema';
 import { Product } from 'src/products/schema/product.schema';
 import { Transaction } from 'src/transaction/schema/transaction.schema';
 import { PaymentService } from 'src/payment/service/payments.service';
-import { User } from 'src/user/schema/user.schem';
+import { User } from 'src/user/schema/user.schema';
 import { Vendor } from 'src/vendors/schema/vendor.schema';
 import { LogisticService } from 'src/logistics/service/logistic.service';
 import { SingleOrder } from './schema/singleOreder.schema';
@@ -289,15 +289,16 @@ export class OrdersService {
         })),
       });
 
-      const paymentResponse = await this.processPayment(order, userInfo);
-      await this.updateProductQuantities(productDetails);
-
-      await this.handleVendorOrders(
-        productDetails,
-        order._id,
-        userId,
-        shippingAddress,
-      );
+      const [paymentResponse, ,] = await Promise.all([
+        this.processPayment(order, userInfo),
+        this.updateProductQuantities(productDetails),
+        this.handleVendorOrders(
+          productDetails,
+          order._id,
+          userId,
+          shippingAddress,
+        ),
+      ]);
 
       return {
         order,

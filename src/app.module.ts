@@ -24,6 +24,7 @@ import { DashBoardModule } from './admin/dashboard/dashboard.module';
 import { StatisticModule } from './vendors/statistics/statistic.module';
 import { DropshippingModule } from './dropshipping/dropshipping.module';
 import { LogisticModule } from './logistics/logistic.module';
+import { ShippingModule } from './shippment/shippment.module';
 //import { PaymentModule } from './payment/payment.module';
 
 
@@ -56,7 +57,8 @@ import { LogisticModule } from './logistics/logistic.module';
     DashBoardModule,
     StatisticModule,
     DropshippingModule,
-    LogisticModule
+    LogisticModule,
+    ShippingModule,
   ],
   controllers: [AppController],
   providers: [

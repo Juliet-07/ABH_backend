@@ -10,7 +10,7 @@ import { ProductSchema } from 'src/products/schema/product.schema';
 import { SubscriptionModule } from 'src/subscription/subscription.module';
 import { TransactionSchema } from 'src/transaction/schema/transaction.schema';
 import { TransactionModule } from 'src/transaction/transaction.module';
-import { UserSchema } from 'src/user/schema/user.schem';
+import { UserSchema } from 'src/user/schema/user.schema';
 import { UserModule } from 'src/user/user.module';
 import { HelpersService } from 'src/utils/helpers/helpers.service';
 import { VendorsModule } from 'src/vendors/vendors.module';
@@ -24,7 +24,7 @@ import { VendorSchema } from 'src/vendors/schema/vendor.schema';
 import { LogisticService } from 'src/logistics/service/logistic.service';
 import { SingleOrderSchema } from 'src/orders/schema/singleOreder.schema';
 import { SingleDropshippingSchema } from './schema/singledropshipping.schema';
-import { InventorySchema } from './schema/inventory.schem';
+import { InventorySchema } from './schema/inventory.schema';
 
 @Module({
   imports: [

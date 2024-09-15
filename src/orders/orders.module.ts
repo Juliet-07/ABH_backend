@@ -16,7 +16,7 @@ import { AdminSchema } from 'src/admin/schema/admin.schema';
 import { PaymentModule } from 'src/payment/payment.module';
 import { PaymentService } from 'src/payment/service/payments.service';
 import { SubscriptionModule } from 'src/subscription/subscription.module';
-import { UserSchema } from 'src/user/schema/user.schem';
+import { UserSchema } from 'src/user/schema/user.schema';
 import { VendorSchema } from 'src/vendors/schema/vendor.schema';
 import { LogisticService } from 'src/logistics/service/logistic.service';
 import { SingleOrderSchema } from './schema/singleOreder.schema';

@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { Dropshipping } from '../schema/dropshipping.schema';
@@ -8,12 +9,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateDropShippingDto } from '../dto/dropshipping.dto';
 import { PaymentService } from 'src/payment/service/payments.service';
-import {
-  OrderStatusEnum,
-  PaymentGatewayEnums,
-  SubscriptionTypeEnum,
-} from 'src/constants';
-import { User } from 'src/user/schema/user.schem';
+import { OrderStatusEnum, PaymentGatewayEnums } from 'src/constants';
+import { User } from 'src/user/schema/user.schema';
 import { Product } from 'src/products/schema/product.schema';
 import { HelpersService } from 'src/utils/helpers/helpers.service';
 import { Subscription } from 'src/subscription/schema/subscription.schema';
@@ -21,7 +18,7 @@ import { Transaction } from 'src/transaction/schema/transaction.schema';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { SingleDropshipping } from '../schema/singledropshipping.schema';
-import { Inventory } from '../schema/inventory.schem';
+import { Inventory } from '../schema/inventory.schema';
 
 @Injectable()
 export class DropshippingService {
@@ -41,7 +38,7 @@ export class DropshippingService {
     @InjectModel(Subscription.name)
     private subscriptionModel: Model<Subscription>,
     @InjectModel(SingleDropshipping.name)
-    private SingleDropshippingModel: Model<SingleDropshipping>,
+    private singleDropshippingModel: Model<SingleDropshipping>,
 
     @InjectModel(Inventory.name) private inventoryModel: Model<Inventory>,
 
@@ -108,7 +105,6 @@ export class DropshippingService {
       });
 
       // Payment processing logic...
-      // const paymentResponse = await this.processPayment(dropshipping, userInfo);
 
       if (
         !subscriptionDetails ||
@@ -132,17 +128,31 @@ export class DropshippingService {
       });
 
       await this.updateProductQuantities(productDetails);
-      await Promise.all([
+      const [paymentResponse] = await Promise.all([
+        this.processPayment(dropshipping, userInfo),
         this.handleVendorOrders(productDetails, dropshipping._id, userId),
         this.createUserInventory(productDetails, dropshipping.id, userId),
       ]);
+
       return {
         dropshipping,
-        // paymentResponse,
+        paymentResponse,
       };
     } catch (error) {
       console.log('THE ERROR', error);
       throw new BadRequestException(error.message);
+    }
+  }
+
+  async listDropshipping(userId: string) {
+    try {
+      const dropshipping = await this.singleDropshippingModel.find({
+        userId: userId,
+      });
+
+      return dropshipping || null;
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -154,13 +164,23 @@ export class DropshippingService {
     for (const item of productDetails) {
       await this.inventoryModel.create({
         productId: item.product.id,
-        // orderId: dropshippingId,
+        vendorId: item.vendorId,
         userId: userId,
         quantity: item.quantity,
         quantityShipped: 0,
         quantityLeft: item.quantity,
         dropshippingId: dropshippingId,
       });
+    }
+  }
+
+  async myInventories(userId: string) {
+    try {
+      const inventories = await this.inventoryModel.find({ userId: userId });
+
+      return inventories || null;
+    } catch (error) {
+      throw new BadRequestException(error.message);
     }
   }
 
@@ -193,7 +213,7 @@ export class DropshippingService {
 
     // Create separate SingleDropshippingOrders for each vendor
     for (const vendorOrder of Object.values(productsByVendor)) {
-      const createdOrder = await this.SingleDropshippingModel.create(
+      const createdOrder = await this.singleDropshippingModel.create(
         vendorOrder,
       );
       singleDropshippingOrders.push(createdOrder);
@@ -284,7 +304,7 @@ export class DropshippingService {
           { $set: { status: 'PAID' } },
         );
 
-        await this.SingleDropshippingModel.updateMany(
+        await this.singleDropshippingModel.updateMany(
           { orderId: result._id },
           { $set: { status: 'PAID' } },
         );

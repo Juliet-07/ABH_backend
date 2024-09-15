@@ -17,7 +17,7 @@ import { RedisService } from 'src/redis/redis.service';
 import * as bcrypt from 'bcrypt';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User } from './schema/user.schem';
+import { User } from './schema/user.schema';
 import { AzureService } from 'src/utils/uploader/azure';
 
 @Injectable()

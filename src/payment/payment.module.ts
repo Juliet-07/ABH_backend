@@ -13,7 +13,7 @@ import { CartModule } from 'src/cart/cart.module';
 import { SubscriptionService } from 'src/subscription/service/subscription.service';
 import { SubscriptionSchema } from 'src/subscription/schema/subscription.schema';
 import { UserModule } from 'src/user/user.module';
-import { UserSchema } from 'src/user/schema/user.schem';
+import { UserSchema } from 'src/user/schema/user.schema';
 import { VendorSchema } from 'src/vendors/schema/vendor.schema';
 import { LogisticService } from 'src/logistics/service/logistic.service';
 import { SingleOrderSchema } from 'src/orders/schema/singleOreder.schema';
