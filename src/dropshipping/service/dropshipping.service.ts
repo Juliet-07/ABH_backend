@@ -121,7 +121,7 @@ export class DropshippingService {
 
       return {
         dropshipping,
-         paymentResponse,
+        paymentResponse,
       };
     } catch (error) {
       console.log('THE ERROR', error);
@@ -161,8 +161,13 @@ export class DropshippingService {
 
   async myInventories(userId: string) {
     try {
-      const inventories = await this.inventoryModel.find({ userId: userId });
-
+      const inventories = await this.inventoryModel
+        .find({ userId: userId })
+        .populate({
+          path: 'userId',
+          select: ['-password'],
+        })
+        .populate('productId');
       return inventories || null;
     } catch (error) {
       throw new BadRequestException(error.message);
@@ -211,6 +216,16 @@ export class DropshippingService {
     try {
       const result = await this.dropshippingModel.findOneAndUpdate(
         { reference: reference },
+        { $set: { status: 'PAID' } },
+        { new: true },
+      );
+
+      if (!result) {
+        throw new NotFoundException(`Dropshipping not found`);
+      }
+
+      await this.singleDropshippingModel.updateMany(
+        { userId: result.userId },
         { $set: { status: 'PAID' } },
         { new: true },
       );
