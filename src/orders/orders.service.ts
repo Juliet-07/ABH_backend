@@ -289,7 +289,7 @@ export class OrdersService {
         })),
       });
 
-      const [paymentResponse, ,] = await Promise.all([
+      const [paymentResponse] = await Promise.all([
         this.processPayment(order, userInfo),
         this.updateProductQuantities(productDetails),
         this.handleVendorOrders(

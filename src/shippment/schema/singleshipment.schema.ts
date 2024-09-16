@@ -87,6 +87,13 @@ export class SingleShipping {
     phoneNumber: string;
   };
 
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: 'Vendor',
+  })
+  vendorId: string;
+
   @Prop({ type: Number, required: true })
   shippingFee: number;
 

@@ -94,7 +94,7 @@ export class ShippingService {
       const groupedByVendor = this.groupProductsByVendor(productDetails);
 
       // Create a SingleShipping entry for each vendor
-      const paymentResponse = await Promise.all([
+      const [paymentResponse] = await Promise.all([
         Object.keys(groupedByVendor).map(async (vendorId) => {
           const vendorProducts = groupedByVendor[vendorId];
 
@@ -109,6 +109,7 @@ export class ShippingService {
           // Create SingleShipping entry
           await this.singleShippingModel.create({
             userId,
+            vendorId,
             products: productsForShipping,
             paymentGateway,
             shippingFee,
@@ -129,6 +130,16 @@ export class ShippingService {
       };
     } catch (error) {
       console.log(error);
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async listShipping(userId: string) {
+    try {
+      const shippings = await this.shippingModel.find({ userId: userId });
+
+      return shippings || null;
+    } catch (error) {
       throw new BadRequestException(error.message);
     }
   }

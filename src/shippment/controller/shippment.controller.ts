@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
@@ -26,5 +27,13 @@ export class ShippingController {
   create(@Body() payload: CreateShippingDto, @Request() req) {
     const userId = req.user;
     return this.shippingService.checkoutFromInventory(payload, userId);
+  }
+
+  @Get('users')
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.CREATED)
+  ListShipping(@Request() req) {
+    const userId = req.user;
+    return this.shippingService.listShipping(userId);
   }
 }
