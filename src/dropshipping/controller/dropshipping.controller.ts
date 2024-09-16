@@ -10,6 +10,7 @@ import {
   Request,
   Query,
   Get,
+  Param,
 } from '@nestjs/common';
 import { DropshippingService } from '../service/dropshipping.service';
 import { ApiBearerAuth } from '@nestjs/swagger';
@@ -40,7 +41,15 @@ export class DropshippingController {
     return this.dropshippingService.listDropshipping(userId);
   }
 
-
+  @Get('inventories/:inventoryId')
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ValidationPipe())
+  @ApiBearerAuth('JWT-auth')
+  ListOneInventory(@Param('inventoryId') inventoryId: string, @Request() req) {
+    const userId = req.user;
+    return this.dropshippingService.listOneInventory(inventoryId, userId);
+  }
 
   @Get('my-inventories')
   @UseGuards(AuthGuard)
