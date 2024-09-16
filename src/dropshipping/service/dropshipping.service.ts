@@ -166,7 +166,8 @@ export class DropshippingService {
           path: 'userId',
           select: ['-password'],
         })
-        .populate('productId');
+        .populate('productId')
+        .populate('vendorId');
       return inventories || null;
     } catch (error) {
       throw new BadRequestException(error.message);
