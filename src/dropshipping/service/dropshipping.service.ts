@@ -104,25 +104,10 @@ export class DropshippingService {
         })),
       });
 
-      // Payment processing logic...
-
-      if (
-        !subscriptionDetails ||
-        typeof subscriptionDetails !== 'object' ||
-        !subscriptionDetails.plan ||
-        !subscriptionDetails.amount
-      ) {
-        throw new BadRequestException(
-          'Subscription details are incomplete or malformed.',
-        );
-      }
-
       await this.subscriptionModel.create({
         userId,
         plan: subscriptionDetails.plan,
         amount: subscriptionDetails.amount,
-        startDate: new Date(),
-        endDate: this.calculateEndDate(subscriptionDetails.plan),
         reference: transaction.reference,
         paymentGateway: dropshipping.paymentGateway,
       });
@@ -136,7 +121,7 @@ export class DropshippingService {
 
       return {
         dropshipping,
-        paymentResponse,
+        // paymentResponse,
       };
     } catch (error) {
       console.log('THE ERROR', error);

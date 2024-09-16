@@ -8,11 +8,7 @@ import {
   IsString,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import {
-  PaymentGatewayEnums,
-  ShippingMethodEnums,
-  SubscriptionTypeEnum,
-} from '../../constants';
+import { PaymentGatewayEnums } from '../../constants';
 
 class AddressDto {
   @IsDefined()
@@ -65,8 +61,8 @@ class ProductDto {
 }
 
 export class CreateSubscriptionDto {
-  @IsEnum(SubscriptionTypeEnum, { message: 'Invalid subscription type' })
-  plan: SubscriptionTypeEnum;
+  @IsString()
+  plan: string;
 
   @IsNumber()
   amount: number;

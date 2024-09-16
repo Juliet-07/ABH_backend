@@ -1,10 +1,6 @@
 import { SchemaFactory, Schema, Prop } from '@nestjs/mongoose';
 import mongoose, { Document } from 'mongoose';
-import {
-  PaymentGatewayEnums,
-  SubscriptionStatus,
-  SubscriptionTypeEnum,
-} from 'src/constants';
+import { PaymentGatewayEnums, SubscriptionStatus } from 'src/constants';
 
 export type OrderDocument = Subscription & Document;
 
@@ -13,17 +9,11 @@ export class Subscription {
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
   userId: string;
 
-  @Prop({ required: true, enum: SubscriptionTypeEnum })
+  @Prop({ required: true, type: String })
   plan: string;
 
   @Prop({ type: Number, required: true })
   amount: number;
-
-  @Prop({ required: true })
-  startDate: Date;
-
-  @Prop({ required: true })
-  endDate: Date;
 
   @Prop({ default: SubscriptionStatus.INACTIVE })
   status: SubscriptionStatus;
