@@ -121,7 +121,7 @@ export class DropshippingService {
 
       return {
         dropshipping,
-        // paymentResponse,
+         paymentResponse,
       };
     } catch (error) {
       console.log('THE ERROR', error);
@@ -229,14 +229,14 @@ export class DropshippingService {
       customerName: userInfo.firstName,
       currency: 'NGN',
       transactionRef: dropshipping.reference,
-      callback: 'abh.oritsetech.online/payments/verify',
+      callback: 'abh.oritsetech.online/dropshipping/verify',
     };
 
     const PaystackPaymentData = {
       amount: dropshipping.totalAmount,
       email: userInfo.email,
       reference: dropshipping.reference,
-      callback: 'abh.oritsetech.online/payments/verify',
+      callback: 'abh.oritsetech.online/dropshipping/verify',
     };
 
     let paymentResponse;
