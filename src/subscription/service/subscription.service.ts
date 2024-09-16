@@ -54,36 +54,14 @@ export class SubscriptionService {
         throw new NotFoundException('User not found');
       }
 
-      const startDate = new Date();
-      let endDate: Date;
-
-      const normalizedType = plan.toUpperCase(); // Normalize the type to uppercase
-
-      switch (normalizedType) {
-        case 'DAILY':
-          endDate = new Date(startDate);
-          endDate.setDate(startDate.getDate() + 1);
-          break;
-        case 'WEEKLY':
-          endDate = new Date(startDate);
-          endDate.setDate(startDate.getDate() + 7);
-          break;
-        case 'MONTHLY':
-          endDate = new Date(startDate);
-          endDate.setMonth(startDate.getMonth() + 1);
-          break;
-        default:
-          throw new BadRequestException('Invalid subscription type');
-      }
+     
 
       const subscription = this.subscriptionModel.create({
         userId,
         plan,
         amount,
-        startDate,
-        endDate,
         reference: this.helper.genString(20),
-        paymentGateway
+        paymentGateway,
       });
 
       // const paymentResponse = await this.processPayment(
@@ -103,7 +81,7 @@ export class SubscriptionService {
 
       return {
         subscription,
-      //  paymentResponse,
+        //  paymentResponse,
       };
     } catch (error) {
       console.error(error);

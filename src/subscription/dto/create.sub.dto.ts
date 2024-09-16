@@ -1,4 +1,4 @@
-import { IsOptional, IsEnum, IsNumber } from 'class-validator';
+import { IsOptional, IsEnum, IsNumber, IsString } from 'class-validator';
 import { PaymentGatewayEnums } from 'src/constants';
 import { IsNotEmpty } from 'class-validator';
 
@@ -9,8 +9,8 @@ export enum SubscriptionType {
 }
 
 export class CreateSubscriptionDto {
-  @IsEnum(SubscriptionType)
-  plan: SubscriptionType;
+  @IsString()
+  plan: string;
 
   @IsNumber()
   amount: number;

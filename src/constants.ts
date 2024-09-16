@@ -27,11 +27,7 @@ export enum ProductStatusEnums {
   DECLINED = 'DECLINED',
 }
 
-export enum SubscriptionTypeEnum {
-  DAILY = 'DAILY',
-  WEEKLY = 'WEEKLY',
-  MONTHLY = 'MONTHLY',
-}
+
 
 export enum SubscriptionStatus {
   ACTIVE = 'ACTIVE',
