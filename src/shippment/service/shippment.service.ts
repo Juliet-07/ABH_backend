@@ -136,8 +136,13 @@ export class ShippingService {
 
   async listShipping(userId: string) {
     try {
-      const shippings = await this.shippingModel.find({ userId: userId });
-
+      const shippings = await this.shippingModel
+        .find({ userId: userId })
+        .populate({
+          path: 'products.productId', 
+          model: 'Product', 
+        })
+        .exec();
       return shippings || null;
     } catch (error) {
       throw new BadRequestException(error.message);

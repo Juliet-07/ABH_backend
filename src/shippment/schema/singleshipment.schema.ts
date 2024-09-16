@@ -23,30 +23,32 @@ export class SingleShipping {
   @Prop({ type: mongoose.Schema.Types.ObjectId, required: true })
   userId: string;
 
-  @Prop([
-    {
-      productId: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: true,
-        ref: 'Product',
+  @Prop({
+    type: [
+      {
+        productId: {
+          type: mongoose.Schema.Types.ObjectId,
+          required: true,
+          ref: 'Product',
+        },
+        quantityShipped: { type: Number, required: true },
+        quantity: { type: Number, required: false },
+        quantityLeft: { type: Number, required: true },
+        vendorId: {
+          type: mongoose.Schema.Types.ObjectId,
+          required: true,
+          ref: 'Vendor',
+        },
       },
-      quantityShipped: { type: Number, required: true },
-      quantity: { type: Number, required: false },
-      quantityLeft: { type: Number, required: true },
-      vendorId: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: true,
-        ref: 'Vendor',
-      },
-    },
-  ])
+    ],
+  })
   products: {
     productId: string;
     quantity: number;
     quantityShipped: number;
     quantityLeft: number;
     vendorId: string;
-  };
+  }[];
 
   @Prop({ type: String, required: true })
   reference: string;
