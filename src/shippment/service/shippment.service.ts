@@ -174,6 +174,31 @@ export class ShippingService {
     );
   }
 
+  async updateDropshippingPayment(reference: string) {
+    try {
+      const result = await this.shippingModel.findOneAndUpdate(
+        { reference: reference },
+        { $set: { status: 'PAID' } },
+        { new: true },
+      );
+
+      if (!result) {
+        throw new NotFoundException(`shipping not found`);
+      }
+
+      await this.singleShippingModel.updateMany(
+        { userId: result.userId },
+        { $set: { status: 'PAID' } },
+        { new: true },
+      );
+
+      return result;
+    } catch (error) {
+      console.log(error);
+      throw new BadRequestException(`Error verifying Dropshipping transaction`);
+    }
+  }
+
   async updateInventory(productDetails) {
     await Promise.all(
       productDetails.map(async (item) => {
