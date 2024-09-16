@@ -11,6 +11,7 @@ import { DropshippingstatisticService } from './service/dropshipping.stat';
 import { DropshippingSchema } from 'src/dropshipping/schema/dropshipping.schema';
 import { SingleOrderSchema } from 'src/orders/schema/singleOreder.schema';
 import { SingleDropshippingSchema } from 'src/dropshipping/schema/singledropshipping.schema';
+import { SingleShippingSchema } from 'src/shippment/schema/singleshipment.schema';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { SingleDropshippingSchema } from 'src/dropshipping/schema/singledropship
       { name: 'Dropshipping', schema: DropshippingSchema },
       { name: 'SingleOrder', schema: SingleOrderSchema },
       { name: 'SingleDropshipping', schema: SingleDropshippingSchema },
+      { name: 'SingleShipping', schema: SingleShippingSchema },
     ]),
     AdminModule,
     VendorsModule

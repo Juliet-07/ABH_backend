@@ -230,4 +230,29 @@ export class StatisticController {
       vendorId,
     );
   }
+
+  @UseGuards(VendorGuard)
+  @HttpCode(HttpStatus.OK)
+  @Get('shippings')
+  async ListShipping(@Request() req) {
+    const vendorId = req.vendor;
+    return this.dropshippingstatisticService.listShipping(vendorId);
+  }
+
+  @UseGuards(VendorGuard)
+  @HttpCode(HttpStatus.OK)
+  @Patch('accept-shipping/:shippingId')
+  async acceptShipping(
+    @Request() req,
+    @Param('shippingId') shippingId: string,
+    @Body() payload: UpdateOrderStatusDto1,
+  ) {
+    const vendorId = req.vendor;
+
+    return this.dropshippingstatisticService.acceptShipping(
+      shippingId,
+      vendorId,
+      payload,
+    );
+  }
 }
