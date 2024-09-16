@@ -44,7 +44,7 @@ export class DropshippingstatisticService {
           path: 'userId',
           select: '-password',
         })
-        .populate('productId')
+        .populate('products.productId')
         .exec();
 
       return {
@@ -261,14 +261,16 @@ export class DropshippingstatisticService {
           path: 'userId',
           select: '-password',
         })
-        .populate('productId')
-        .exec();
+        .populate('products.productId')
+        
 
-      return shipping || null;
+      return shipping ;
     } catch (error) {
       throw new BadRequestException(error.message);
     }
   }
+
+  //66b45be220ddb08395cf4e95
 
   async acceptShipping(
     shippingId: string,
