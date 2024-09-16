@@ -124,7 +124,6 @@ export class DropshippingService {
         paymentResponse,
       };
     } catch (error) {
-      console.log('THE ERROR', error);
       throw new BadRequestException(error.message);
     }
   }
@@ -169,6 +168,29 @@ export class DropshippingService {
         })
         .populate('productId');
       return inventories || null;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async listOneInventory(inventoryId: string, userId: string) {
+    try {
+      const inventory = await this.inventoryModel
+        .findOne({
+          _id: inventoryId,
+          userId: userId,
+        })
+        .populate({
+          path: 'userId',
+          select: ['-password'],
+        })
+        .populate('productId');
+
+      if (!inventory) {
+        throw new NotFoundException(`Product not found in the inventory`);
+      }
+
+      return inventory;
     } catch (error) {
       throw new BadRequestException(error.message);
     }
