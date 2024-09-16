@@ -13,6 +13,7 @@ import { UpdateOrderStatusDto1 } from 'src/orders/dto/update-order-status.dto';
 
 import { Document } from 'mongoose';
 import { SingleDropshipping } from 'src/dropshipping/schema/singledropshipping.schema';
+import { SingleShipping } from 'src/shippment/schema/singleshipment.schema';
 
 export interface DropshippingDocument extends Document {
   status: PaymentStatus;
@@ -30,6 +31,8 @@ export class DropshippingstatisticService {
     private dropshippingModel: Model<Dropshipping>,
     @InjectModel(SingleDropshipping.name)
     private SingleDropshippingModel: Model<SingleDropshipping>,
+    @InjectModel(SingleShipping.name)
+    private singleShippingModel: Model<SingleShipping>,
   ) {}
 
   async getDropshippingByVendorId(vendorId: string) {
@@ -243,6 +246,60 @@ export class DropshippingstatisticService {
       throw new Error(
         `Error fetching monthly orders and revenue for vendor: ${error.message}`,
       );
+    }
+  }
+
+  ///// Shipping    //////////////////
+
+  async listShipping(vendorId: string) {
+    try {
+      const shipping = await this.singleShippingModel
+        .find({
+          vendorId: vendorId,
+        })
+        .populate({
+          path: 'userId',
+          select: '-password',
+        })
+        .populate('productId')
+        .exec();
+
+      return shipping || null;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async acceptShipping(
+    shippingId: string,
+    vendorId: string,
+    payload: UpdateOrderStatusDto1,
+  ) {
+    try {
+      const dropshipping = await this.singleShippingModel.findOne({
+        _id: shippingId,
+        vendorId: vendorId,
+      });
+
+      if (!dropshipping) {
+        throw new NotFoundException(
+          'DropshippingOrder not found or does not belong to this vendor',
+        );
+      }
+
+      if (dropshipping.status !== 'PAID') {
+        throw new BadRequestException(`Payment not confirmed yet`);
+      }
+
+      const updatedStatus = await this.singleShippingModel.findOneAndUpdate(
+        { _id: shippingId },
+        { $set: { deliveryStatus: payload.deliveryStatus } },
+        { new: true },
+      );
+
+      return updatedStatus;
+    } catch (error) {
+      throw new BadGatewayException(error.message);
     }
   }
 }
