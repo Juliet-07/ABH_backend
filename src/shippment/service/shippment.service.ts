@@ -14,6 +14,7 @@ import { PaymentGatewayEnums } from 'src/constants';
 import { User } from 'src/user/schema/user.schema';
 import { CreateShippingDto } from '../dto/shipping.dto';
 import { SingleShipping } from '../schema/singleshipment.schema';
+import axios from 'axios';
 
 @Injectable()
 export class ShippingService {
@@ -94,7 +95,7 @@ export class ShippingService {
       const groupedByVendor = this.groupProductsByVendor(productDetails);
 
       // Create a SingleShipping entry for each vendor
-      const [paymentResponse] = await Promise.all([
+      await Promise.all([
         Object.keys(groupedByVendor).map(async (vendorId) => {
           const vendorProducts = groupedByVendor[vendorId];
 
@@ -110,6 +111,7 @@ export class ShippingService {
           await this.singleShippingModel.create({
             userId,
             vendorId,
+            shippingId: shipping._id,
             products: productsForShipping,
             paymentGateway,
             shippingFee,
@@ -121,8 +123,9 @@ export class ShippingService {
           });
         }),
         // Process payment for the shipping
-        await this.processPayment(shipping, userInfo),
       ]);
+
+      const paymentResponse = await this.processPayment(shipping, userInfo);
 
       return {
         shipping,
@@ -139,8 +142,8 @@ export class ShippingService {
       const shippings = await this.shippingModel
         .find({ userId: userId })
         .populate({
-          path: 'products.productId', 
-          model: 'Product', 
+          path: 'products.productId',
+          model: 'Product',
         })
         .exec();
       return shippings || null;
@@ -179,25 +182,46 @@ export class ShippingService {
     );
   }
 
-  async updateDropshippingPayment(reference: string) {
+  async updateDropshippingPayment(TransactionRef: string) {
     try {
-      const result = await this.shippingModel.findOneAndUpdate(
-        { reference: reference },
-        { $set: { status: 'PAID' } },
-        { new: true },
+      const response = await axios.post(
+        this.hydroVerify,
+        { TransactionRef: TransactionRef },
+        {
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+        },
       );
 
-      if (!result) {
-        throw new NotFoundException(`shipping not found`);
+      // Check if the transaction status is 'Paid'
+      const isPaid =
+        response.data.data.status === 'Paid' ||
+        response.data.data.transactionStatus === 'Paid';
+
+      if (isPaid) {
+        // Update the dropshipping record status to 'PAID'
+
+        const result = await this.shippingModel.findOneAndUpdate(
+          { reference: TransactionRef },
+          { $set: { status: 'PAID' } },
+          { new: true },
+        );
+
+        if (!result) {
+          throw new NotFoundException(`shipping not found`);
+        }
+
+        await this.singleShippingModel.updateMany(
+          { shippingId: result._id },
+          { $set: { status: 'PAID' } },
+          { new: true },
+        );
+
+        return result;
       }
-
-      await this.singleShippingModel.updateMany(
-        { userId: result.userId },
-        { $set: { status: 'PAID' } },
-        { new: true },
-      );
-
-      return result;
+      return null;
     } catch (error) {
       console.log(error);
       throw new BadRequestException(`Error verifying Dropshipping transaction`);
@@ -221,14 +245,14 @@ export class ShippingService {
       customerName: userInfo.firstName,
       currency: 'NGN',
       transactionRef: shipping.reference,
-      callback: 'abh.oritsetech.online/payments/verify',
+      callback: 'abh.oritsetech.online/shipping/verify',
     };
 
     const PaystackPaymentData = {
       amount: shipping.totalAmount,
       email: userInfo.email,
       reference: shipping.reference,
-      callback: 'abh.oritsetech.online/payments/verify',
+      callback: 'abh.oritsetech.online/shipping/verify',
     };
 
     let paymentResponse;

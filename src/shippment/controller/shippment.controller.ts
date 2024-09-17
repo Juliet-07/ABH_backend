@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Query,
   Request,
   UseGuards,
   UsePipes,
@@ -35,5 +36,16 @@ export class ShippingController {
   ListShipping(@Request() req) {
     const userId = req.user;
     return this.shippingService.listShipping(userId);
+  }
+
+  @Post('verify')
+  @HttpCode(HttpStatus.OK)
+  async handleCallbackSub(@Body('TransactionRef') TransactionRef: string) {
+    return await this.shippingService.updateDropshippingPayment(TransactionRef);
+  }
+
+  @Get('verify')
+  async verifyPayment(@Query('TransactionRef') TransactionRef: string) {
+    return await this.shippingService.updateDropshippingPayment(TransactionRef);
   }
 }

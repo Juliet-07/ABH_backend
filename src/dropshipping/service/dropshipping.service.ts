@@ -236,27 +236,52 @@ export class DropshippingService {
     return singleDropshippingOrders;
   }
 
-  async updateDropshippingPayment(reference: string) {
+  async updateDropshippingPayment(TransactionRef: string) {
     try {
-      const result = await this.dropshippingModel.findOneAndUpdate(
-        { reference: reference },
-        { $set: { status: 'PAID' } },
-        { new: true },
+      // Verify the transaction with the payment gateway
+      const response = await axios.post(
+        this.hydroVerify,
+        { TransactionRef: TransactionRef },
+        {
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+        },
       );
 
-      if (!result) {
-        throw new NotFoundException(`Dropshipping not found`);
+      // Check if the transaction status is 'Paid'
+      const isPaid =
+        response.data.data.status === 'Paid' ||
+        response.data.data.transactionStatus === 'Paid';
+
+      if (isPaid) {
+        // Update the dropshipping record status to 'PAID'
+        const result = await this.dropshippingModel.findOneAndUpdate(
+          { reference: TransactionRef },
+          { $set: { status: 'PAID' } },
+          { new: true },
+        );
+
+        // Handle case where dropshipping record is not found
+        if (!result) {
+          throw new NotFoundException(`Dropshipping not found`);
+        }
+
+        // Update related single dropshipping records to 'PAID'
+        await this.singleDropshippingModel.updateMany(
+          { dropshippingId: result._id },
+          { $set: { status: 'PAID' } },
+          { new: true },
+        );
+
+        return result; // Return the updated dropshipping record
       }
 
-      await this.singleDropshippingModel.updateMany(
-        { userId: result.userId },
-        { $set: { status: 'PAID' } },
-        { new: true },
-      );
-
-      return result;
+      // If the transaction is not paid, return null or handle accordingly
+      return null;
     } catch (error) {
-      console.log(error);
+      console.error(error); // Log the error for debugging
       throw new BadRequestException(`Error verifying Dropshipping transaction`);
     }
   }
