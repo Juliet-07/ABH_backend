@@ -63,9 +63,9 @@ export class DropshippingController {
 
   @Post('verify')
   @HttpCode(HttpStatus.OK)
-  async handleCallbackSub(@Body('TransactionRef') transactionRef: string) {
+  async handleCallbackSub(@Body('TransactionRef') TransactionRef: string) {
     return await this.dropshippingService.verifyDropshippingTransaction(
-      transactionRef,
+      TransactionRef,
     );
   }
 

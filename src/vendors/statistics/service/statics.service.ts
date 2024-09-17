@@ -182,7 +182,6 @@ export class StatisticService {
         })
         .exec();
 
-      // Calculate total sales amount by summing the amounts of all products in each order
       const totalAmount = totalSales.reduce((acc, order) => {
         const orderTotal = order.products.reduce((orderAcc, product) => {
           return orderAcc + product.amount;

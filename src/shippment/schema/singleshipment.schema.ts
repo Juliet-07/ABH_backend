@@ -20,8 +20,15 @@ export class SingleShipping {
   })
   deliveryStatus: OrderStatusEnum;
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, required: true })
+  @Prop({ type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' })
   userId: string;
+
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: 'Shipping',
+  })
+  shippingId: string;
 
   @Prop({
     type: [
