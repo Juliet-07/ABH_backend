@@ -185,7 +185,8 @@ export class DropshippingService {
           path: 'userId',
           select: ['-password'],
         })
-        .populate('productId');
+        .populate('productId')
+        .populate('vendorId');
 
       if (!inventory) {
         throw new NotFoundException(`Product not found in the inventory`);
