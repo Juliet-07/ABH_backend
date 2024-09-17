@@ -26,7 +26,7 @@ export class ShippingController {
   @UsePipes(new ValidationPipe())
   @ApiBearerAuth('JWT-auth')
   create(@Body() payload: CreateShippingDto, @Request() req) {
-    const userId = req.user;
+    const userId = req.user._id;
     return this.shippingService.checkoutFromInventory(payload, userId);
   }
 

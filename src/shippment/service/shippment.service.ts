@@ -48,7 +48,10 @@ export class ShippingService {
       const { products, paymentGateway, shippingFee } = payload;
 
       // Validate and fetch product details from inventory
-      const productDetails = await this.validateAndFetchProducts(products);
+      const productDetails = await this.validateAndFetchProducts(
+        products,
+        userId,
+      );
 
       // Validate user information
       const userInfo = await this.validateUser(userId);
@@ -73,14 +76,13 @@ export class ShippingService {
         totalAmount,
         reference: this.helper.genString(15, '1234567890'),
         products: productDetails.map((item) => {
-          // Ensure these are numbers
           const quantityShipped = Number(item.quantityShipped);
           const quantityLeft = Number(item.quantityLeft);
 
           return {
             productId: item.product.id,
-            quantityShipped, // Ensure this is a number
-            quantityLeft, // Ensure this is a number
+            quantityShipped,
+            quantityLeft,
             vendorId: item.vendorId,
           };
         }),
@@ -89,8 +91,6 @@ export class ShippingService {
         shippingFee,
       });
 
-      // Deduct quantities from inventory
-      await this.updateInventory(productDetails);
       // Group products by vendor
       const groupedByVendor = this.groupProductsByVendor(productDetails);
 
@@ -125,15 +125,47 @@ export class ShippingService {
         // Process payment for the shipping
       ]);
 
-      const paymentResponse = await this.processPayment(shipping, userInfo);
+      // Update inventory for each product
+      await Promise.all(
+        productDetails.map(async (item) => {
+          try {
+            const { product, quantityShipped, quantityLeft } = item;
+
+            // Update the inventory
+            const result = await this.inventoryModel.findOneAndUpdate(
+              { productId: item.product.productId, userId: userId }, // Use item.product.id here
+              {
+                $set: {
+                  quantityLeft: quantityLeft, // Quantity after shipping
+                  quantityShipped: quantityShipped, // Total shipped quantity
+                },
+              },
+              { new: true },
+            );
+            console.log('RESULT', result);
+          } catch (error) {
+            console.error(
+              `Failed to update inventory for productId: ${item.product.productId}`,
+              error,
+            ); // Use item.product.id here
+            throw new BadRequestException(
+              `Failed to update inventory for productId: ${item.product.productId}`,
+            ); // Use item.product.id here
+          }
+        }),
+      );
+
+      //const paymentResponse = await this.processPayment(shipping, userInfo);
 
       return {
         shipping,
-        paymentResponse,
+        // paymentResponse,
       };
     } catch (error) {
-      console.log(error);
-      throw new BadRequestException(error.message);
+      console.error('Checkout error:', error);
+      throw new BadRequestException(
+        'An error occurred during checkout. Please try again.',
+      );
     }
   }
 
@@ -152,11 +184,12 @@ export class ShippingService {
     }
   }
 
-  async validateAndFetchProducts(products) {
+  async validateAndFetchProducts(products, userId) {
     return Promise.all(
       products.map(async (item) => {
         const product = await this.inventoryModel.findOne({
           productId: item.productId,
+          userId: userId,
         });
 
         if (!product) {
@@ -228,12 +261,22 @@ export class ShippingService {
     }
   }
 
-  async updateInventory(productDetails) {
+  async updateInventory(productDetails, userId) {
     await Promise.all(
       productDetails.map(async (item) => {
-        await this.inventoryModel.findByIdAndUpdate(item.product.id, {
-          quantityLeft: item.quantityLeft,
-        });
+        const result = await this.inventoryModel.findOneAndUpdate(
+          { productId: item.product.id, userId: userId },
+          { quantityLeft: item.quantityLeft },
+          { new: true },
+        );
+        console.log(
+          `Updating productId: ${item.product.id} for userId: ${userId}`,
+        );
+        if (!result) {
+          console.warn(
+            `No inventory record found for productId: ${item.product.id} and userId: ${userId}`,
+          );
+        }
       }),
     );
   }
