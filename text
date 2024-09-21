@@ -1,0 +1,107 @@
+JWT_SECRET=kjshdbvbsijvbE1u37h2984y2ge9uJHBDVHU7IHBE&S2ev:wjbwhvbiwygfw9e7fy2gebf2907g3fvubuvgbio<jbdcubiwr9uwuev
+API_PORT=5500
+NODE_ENV=production
+MJ_APIKEY=xxxxxx
+MJ_SECRETKEY=xxxxx
+
+NODE_ENV=development
+
+
+REDIS_URL='localhost:6379'
+
+
+MONGO_URI=mongodb+srv://abhuser:gbubemi!123@abh.mongocluster.cosmos.azure.com/abh_db?ssl=true&authMechanism=SCRAM-SHA-256&retrywrites=false&maxIdleTimeMS=120000
+
+
+
+SMTP_HOST=live.smtp.mailtrap.io
+SMTP_PORT=587
+SMTP_USERNAME=api
+SMTP_PASSWORD=065500aa1be407d439cac1126be4b477
+
+SENDERS_NAME='abh.com'
+SENDERS_EMAIL='info@abhmarkets.com'
+
+
+HYDROGRENPAY_PUB_KEY=PK_TEST_a4397dbc032533eaa29bb785ab97d5c3
+
+
+
+PAY_STACK_SCT_KEY=sk_test_10d800623da608dbcfb883ab4920525667e75801
+PAY_STACK_URL=https://api.paystack.co/transaction/initialize
+
+
+HYDROGRENPAY_URL= https://api.hydrogenpay.com/bepay/api/v1/merchant/initiate-payment
+
+HYDROGRENPAY_VERIFY_URL=https://api.hydrogenpay.com/bepay/api/v1/Merchant/confirm-payment
+
+AZURE_ACCT_NAME=adhproject
+AZURE_ACCT_KEY=wFeObQgrUsJia7mBM9uK7HonX8ZjfpLdIjy309ff91yB5RfCu3ZS7wLgYHjJGUoCJVOadHk0bhLb+AStiz5HOA==
+AZURE_CONTAINER_NAME=adhfile
+
+
+
+GIG_LOGISTICS_USERNAME=testaccount@yahoo.com
+GIG_LOGISTICS_PASSWORD=loving
+GIG_LOGISTICS_AUTH_URL=https://dev-agilitythirdpartyapi.theagilitysystems.com/api/thirdparty
+GIG_LOGISTICS_SHIPPING_PRICE_URL=https://prod-agilitythirdpartyapi.theagilitysystems.com/api/ThirdParty/price
+
+
+
+
+
+///////////////////////  PROD ////////////////////
+
+# HYDROGRENPAY_PUB_KEY=PK_LIVE_0b500de514b0705fac89e06947123de9
+
+
+# PAY_STACK_SCT_KEY=sk_test_10d800623da608dbcfb883ab4920525667e75801
+# PAY_STACK_URL=https://api.paystack.co/transaction/initialize
+
+
+# HYDROGRENPAY_URL= https://api.hydrogenpay.com/bepay/api/v1/merchant/initiate-payment
+
+# HYDROGRENPAY_VERIFY_URL=https://api.hydrogenpay.com/bepay/api/v1/Merchant/confirm-payment
+
+# AZURE_ACCT_NAME=adhproject
+# AZURE_ACCT_KEY=wFeObQgrUsJia7mBM9uK7HonX8ZjfpLdIjy309ff91yB5RfCu3ZS7wLgYHjJGUoCJVOadHk0bhLb+AStiz5HOA==
+# AZURE_CONTAINER_NAME=adhfile
+
+
+RED_STAR_USERNAME=ABHCOMLIMITED
+
+RED_STAR_PASSWORD=Rncz1895$k%dgb
+
+
+# GIG_LOGISTICS_USERNAME=testaccount@yahoo.com
+# GIG_LOGISTICS_PASSWORD=loving
+# GIG_LOGISTICS_AUTH_URL=https://dev-agilitythirdpartyapi.theagilitysystems.com/api/thirdparty
+# GIG_LOGISTICS_SHIPPING_PRICE_URL=https://prod-agilitythirdpartyapi.theagilitysystems.com/api/ThirdParty/price
+
+
+# WT_SECRET=kjshdbvbsijvbE1u37h2984y2ge9uJHBDVHU7IHBE&S2ev:wjbwhvbiwygfw9e7fy2gebf2907g3fvubuvgbio<jbdcubiwr9uwuev
+# API_PORT=5500
+# NODE_ENV=production
+# MJ_APIKEY=xxxxxx
+# MJ_SECRETKEY=xxxxx
+
+# NODE_ENV=development
+
+
+# REDIS_URL='localhost:6379'
+
+
+# MONGO_URI=mongodb+srv://abhuser:gbubemi!123@abh.mongocluster.cosmos.azure.com/abh_db?ssl=true&authMechanism=SCRAM-SHA-256&retrywrites=false&maxIdleTimeMS=120000
+
+
+
+# SMTP_HOST=live.smtp.mailtrap.io
+# SMTP_PORT=587
+# SMTP_USERNAME=api
+# SMTP_PASSWORD=065500aa1be407d439cac1126be4b477
+
+# SENDERS_NAME='abh.com'
+# SENDERS_EMAIL='info@abhmarkets.com'
+
+
+

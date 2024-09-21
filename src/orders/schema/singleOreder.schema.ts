@@ -26,11 +26,17 @@ export class SingleOrder {
   orderId: string;
 
   @Prop({
-    type: [{
-      productId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Product' },
-      quantity: { type: Number, required: true },
-      amount: { type: Number, required: true },
-    }],
+    type: [
+      {
+        productId: {
+          type: mongoose.Schema.Types.ObjectId,
+          required: true,
+          ref: 'Product',
+        },
+        quantity: { type: Number, required: true },
+        amount: { type: Number, required: true },
+      },
+    ],
     required: true,
   })
   products: {
@@ -41,6 +47,9 @@ export class SingleOrder {
 
   @Prop({ type: Number, required: true })
   totalAmount: number;
+
+  @Prop({ required: true })
+  price: number;
 
   @Prop({
     type: {

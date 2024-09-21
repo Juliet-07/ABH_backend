@@ -18,6 +18,8 @@ import { User } from 'src/user/schema/user.schema';
 import { Vendor } from 'src/vendors/schema/vendor.schema';
 import { LogisticService } from 'src/logistics/service/logistic.service';
 import { SingleOrder } from './schema/singleOreder.schema';
+import { NotificationService } from 'src/notification/notification.service';
+import { CreateNotificationDataType } from 'src/notification/dto/notification.dto';
 
 @Injectable()
 export class OrdersService {
@@ -34,6 +36,7 @@ export class OrdersService {
     private cartService: CartService,
     private readonly paymentService: PaymentService,
     private readonly logisticService: LogisticService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   // async create(createOrderDto: CreateOrderDto, userId: string) {
@@ -248,6 +251,10 @@ export class OrdersService {
       const totalProductAmount =
         this.calculateTotalProductAmount(productDetails);
       const vat = this.calculateVAT(totalProductAmount);
+
+      const totalVendorPrice = await this.calculateTotalProductAmountForVendor(
+        productDetails,
+      );
       const amount = this.calculateTotalAmount(
         totalProductAmount,
         vat,
@@ -275,6 +282,7 @@ export class OrdersService {
         billingAddress,
         personalInfo,
         shippingMethod,
+        price: totalVendorPrice,
         shippingFee,
         paymentGateway,
         vat,
@@ -289,16 +297,29 @@ export class OrdersService {
         })),
       });
 
-      const [paymentResponse] = await Promise.all([
+      const [paymentResponse, vendorOrders] = await Promise.all([
         this.processPayment(order, userInfo),
-        this.updateProductQuantities(productDetails),
+
         this.handleVendorOrders(
           productDetails,
           order._id,
           userId,
           shippingAddress,
+          totalProductAmount,
         ),
+        this.updateProductQuantities(productDetails),
       ]);
+
+      await Promise.all(
+        vendorOrders.map((vendorOrder) => {
+          const notificationData: CreateNotificationDataType = {
+            message: 'A new order has been created for your account.',
+            receiverId: vendorOrder.vendorId,
+          };
+
+          return this.notificationService.createNotification(notificationData);
+        }),
+      );
 
       return {
         order,
@@ -353,6 +374,16 @@ export class OrdersService {
     return userInfo;
   }
 
+  calculateTotalProductAmountForVendor(productDetails) {
+    return productDetails
+      .map((item) => {
+        const discountAmount =
+          (item.discount / 100) * item.product.price * item.quantity;
+        return item.product.price * item.quantity - discountAmount;
+      })
+      .reduce((a, b) => a + b, 0);
+  }
+
   calculateTotalProductAmount(productDetails) {
     return productDetails
       .map((item) => {
@@ -400,8 +431,13 @@ export class OrdersService {
       }),
     );
   }
-
-  async handleVendorOrders(productDetails, orderId, userId, shippingAddress) {
+  async handleVendorOrders(
+    productDetails,
+    orderId,
+    userId,
+    shippingAddress,
+    price, // Accept price parameter here
+  ) {
     const vendorOrders = [];
 
     // Group product details by vendor
@@ -415,16 +451,20 @@ export class OrdersService {
           deliveryStatus: OrderStatusEnum.PENDING,
           products: [],
           totalAmount: 0,
+          price: 0, // Initialize price field
         };
       }
 
-      const productAmount = item.sellingPrice * item.quantity;
+      const productAmount = item.product.sellingPrice * item.quantity;
       acc[item.vendorId].products.push({
         productId: item.product.id,
         quantity: item.quantity,
         amount: productAmount,
       });
       acc[item.vendorId].totalAmount += productAmount;
+
+      // Assign price for each vendor (you might adjust this logic if necessary)
+      acc[item.vendorId].price = price;
 
       return acc;
     }, {});

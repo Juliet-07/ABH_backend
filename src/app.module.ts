@@ -25,6 +25,7 @@ import { StatisticModule } from './vendors/statistics/statistic.module';
 import { DropshippingModule } from './dropshipping/dropshipping.module';
 import { LogisticModule } from './logistics/logistic.module';
 import { ShippingModule } from './shippment/shippment.module';
+import { WebhookModule } from './webhook/webhook.module';
 //import { PaymentModule } from './payment/payment.module';
 
 
@@ -59,6 +60,7 @@ import { ShippingModule } from './shippment/shippment.module';
     DropshippingModule,
     LogisticModule,
     ShippingModule,
+    WebhookModule,
   ],
   controllers: [AppController],
   providers: [

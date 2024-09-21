@@ -1,9 +1,12 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 
 @Injectable()
 export class LogisticService {
-  private readonly tokenUrl = 'https://api.clicknship.com.ng/Token'; // Moved outside to class level
+  private readonly redstart_password: string;
+  private readonly redstart_userName: string;
+  private readonly tokenUrl = 'https://api.clicknship.com.ng/Token';
   private readonly statesUrl =
     'https://api.clicknship.com.ng/clicknship/Operations/States';
   private readonly citiesUrl =
@@ -16,15 +19,23 @@ export class LogisticService {
     'https://api.clicknship.com.ng/clicknship/Operations/DeliveryFee';
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  constructor() {}
+  constructor(private readonly configService: ConfigService) {
+    this.redstart_password =
+      this.configService.get<string>('RED_STAR_PASSWORD');
+    this.redstart_userName =
+      this.configService.get<string>('RED_STAR_USERNAME');
+  }
+
+  // username: 'cnsdemoapiacct',
+  // password: 'ClickNShip$12345',
 
   // Method to obtain the auth token
   async getAuthToken(): Promise<string | undefined> {
     const requestBody = new URLSearchParams({
-      username: 'cnsdemoapiacct', // Demo User
-      password: 'ClickNShip$12345', // Demo Password
+      username: this.redstart_userName,
+      password: this.redstart_password,
       grant_type: 'password',
-    });
+    }).toString();
 
     try {
       const response = await axios.post(this.tokenUrl, requestBody, {
@@ -35,7 +46,7 @@ export class LogisticService {
 
       const token = response.data.access_token;
 
-      return token; // Return the token for further use
+      return token; 
     } catch (error) {
       console.error(
         'Error obtaining token:',

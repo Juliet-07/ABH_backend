@@ -17,6 +17,8 @@ import { UserSchema } from 'src/user/schema/user.schema';
 import { VendorSchema } from 'src/vendors/schema/vendor.schema';
 import { LogisticService } from 'src/logistics/service/logistic.service';
 import { SingleOrderSchema } from 'src/orders/schema/singleOreder.schema';
+import { NotificationService } from 'src/notification/notification.service';
+import { NotificationSchema } from 'src/notification/schema/notification.schema';
 
 @Module({
   imports: [
@@ -30,6 +32,7 @@ import { SingleOrderSchema } from 'src/orders/schema/singleOreder.schema';
       { name: 'User', schema: UserSchema },
       { name: 'Vendor', schema: VendorSchema },
       { name: 'SingleOrder', schema: SingleOrderSchema },
+      { name: 'Notification', schema: NotificationSchema },
     ]),
     CartModule,
     UserModule,
@@ -39,7 +42,8 @@ import { SingleOrderSchema } from 'src/orders/schema/singleOreder.schema';
     PaymentService,
     OrdersService,
     HelpersService,
-    SubscriptionService,LogisticService
+    SubscriptionService,LogisticService,
+    NotificationService
   ],
   exports: [PaymentService,],
 })
