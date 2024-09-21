@@ -26,9 +26,7 @@ export class LogisticService {
       this.configService.get<string>('RED_STAR_USERNAME');
   }
 
-  // username: 'cnsdemoapiacct',
-  // password: 'ClickNShip$12345',
-
+  
   // Method to obtain the auth token
   async getAuthToken(): Promise<string | undefined> {
     const requestBody = new URLSearchParams({
