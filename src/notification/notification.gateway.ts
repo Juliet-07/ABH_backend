@@ -1,8 +1,4 @@
-import {
-  Logger,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Logger, Injectable, UnauthorizedException } from '@nestjs/common';
 import {
   SubscribeMessage,
   WebSocketGateway,
@@ -16,9 +12,15 @@ import {
 import { Server, Socket } from 'socket.io';
 import { NotificationService } from './notification.service';
 import { NotificationSocketEnum } from './socket.enum';
-import { CreateNotificationDataType, GetNotificationDataType, GetOneNotificationDataType } from './dto/notification.dto';
+import {
+  CreateNotificationDataType,
+  GetOneNotificationDataType,
+} from './dto/notification.dto';
 import { JwtService } from '@nestjs/jwt';
 
+interface GetNotificationDataType {
+  receiverId: string;
+}
 
 @WebSocketGateway({
   cors: {
@@ -27,15 +29,15 @@ import { JwtService } from '@nestjs/jwt';
   namespace: 'notification',
 })
 @Injectable()
-export class NotificationGateway implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit {
-
+export class NotificationGateway
+  implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit
+{
   private readonly logger = new Logger(NotificationGateway.name);
 
   constructor(
     private readonly notificationService: NotificationService,
     private jwtService: JwtService,
-
-  ) { }
+  ) {}
 
   @WebSocketServer()
   server: Server;
@@ -59,7 +61,8 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      const createNotification = await this.notificationService.createNotification(payload);
+      const createNotification =
+        await this.notificationService.createNotification(payload);
 
       client.emit(
         NotificationSocketEnum.NOTIFICATION_CREATED,
@@ -68,62 +71,72 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
         }),
       );
     } catch (error) {
-      this.logger.error(`NotificationGateway.handleCreateNotification error: ${error.message}`);
+      this.logger.error(
+        `NotificationGateway.handleCreateNotification error: ${error.message}`,
+      );
     }
   }
 
-  @SubscribeMessage(NotificationSocketEnum.LIST_ONE_NOTIFICATION)
+  @SubscribeMessage(NotificationSocketEnum.LIST_NOTIFICATION)
   async handleGetNotificationsForReceiver(
-    @MessageBody() payload: GetNotificationDataType,
+    @MessageBody() receiverId: string,
     @ConnectedSocket() client: Socket,
   ) {
     try {
-
       const token = client.handshake.query.token as string;
       if (!token) throw new UnauthorizedException('Token is required');
 
+      console.log(token);
+
       // Verify the token
       const decodedToken = this.jwtService.verify(token);
-       payload.receiverId = decodedToken._id
+      console.log(decodedToken._id);
+      receiverId = decodedToken._id;
 
-      const getNotification = await this.notificationService.getNotificationsForReceiver(payload);
+      const getNotification =
+        await this.notificationService.getNotificationsForReceiver(
+          decodedToken._id,
+        );
 
       client.emit(
-        NotificationSocketEnum.ONE_NOTIFICATION_LISTED,
+        NotificationSocketEnum.NOTIFICATION_LISTED,
         JSON.stringify({
           notification: getNotification,
         }),
       );
     } catch (error) {
-      this.logger.error(`NotificationGateway.handleGetNotificationsForReceiver error: ${error.message}`);
+      this.logger.error(
+        `NotificationGateway.handleGetNotificationsForReceiver error: ${error.message}`,
+      );
     }
   }
 
-
-  @SubscribeMessage(NotificationSocketEnum.LIST_NOTIFICATION)
+  @SubscribeMessage(NotificationSocketEnum.LIST_ONE_NOTIFICATION)
   async handleGetOneNotification(
-    @MessageBody() payload: GetOneNotificationDataType,
+    @MessageBody() payload: { notificationId: string; receiverId: string },
     @ConnectedSocket() client: Socket,
   ) {
     try {
-
       const token = client.handshake.query.token as string;
       if (!token) throw new UnauthorizedException('Token is required');
 
       // Verify the token
       const decodedToken = this.jwtService.verify(token);
-       payload.receiverId = decodedToken._id
-
-      const listOneNotification = await this.notificationService.getOneNotification(payload);
+      payload.receiverId = decodedToken._id;
+      console.log(decodedToken._id);
+      const listOneNotification =
+        await this.notificationService.getOneNotification(payload);
 
       client.emit(
-        NotificationSocketEnum.NOTIFICATION_LISTED,
+        NotificationSocketEnum.ONE_NOTIFICATION_LISTED,
         JSON.stringify({
           notification: listOneNotification,
         }),
       );
     } catch (error) {
-      this.logger.error(`NotificationGateway.handleGetNotificationsForReceiver error: ${error.message}`);
+      this.logger.error(
+        `NotificationGateway.handleGetNotificationsForReceiver error: ${error.message}`,
+      );
     }
   }
 }

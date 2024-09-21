@@ -263,27 +263,19 @@ export class ProductsController {
   // For Users
   @HttpCode(HttpStatus.OK)
   @Get('/list/all')
-  async findAll(
-    @Query('limit') limit: number,
-    @Query('page') page: number,
-    @Query('categoryId') categoryId: string,
-    @Query('subcategoryId') subcategoryId: string,
-    @Query('sellingPrice') sellingPrice: number,
-    @Query('name') name: string,
-  ) {
-    // Build the search object from query parameters
-    const search: any = {};
-    if (categoryId) search.categoryId = categoryId;
-    if (subcategoryId) search.subcategoryId = subcategoryId;
-    if (sellingPrice !== undefined) search.sellingPrice = sellingPrice;
-    if (name) search.name = name;
-
+  async findAll() {
     // Call the service method
-    return this.productsService.findAllForUser({ limit, page, search });
+    return this.productsService.findAllForUser();
   }
 
   @Get('category/:categoryId')
   async getProductsByCategory(@Param('categoryId') categoryId: string) {
     return this.productsService.getProductsByCategory(categoryId);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/list-one/:productId')
+  async ListOne(@Param('productId') productId: string) {
+    return await this.productsService.listOne(productId);
   }
 }

@@ -26,6 +26,8 @@ import { VendorSchema } from 'src/vendors/schema/vendor.schema';
 import { LogisticService } from 'src/logistics/service/logistic.service';
 import { ShippingService } from './service/shippment.service';
 import { SingleShippingSchema } from './schema/singleshipment.schema';
+import { NotificationSchema } from 'src/notification/schema/notification.schema';
+import { NotificationService } from 'src/notification/notification.service';
 
 @Module({
   imports: [
@@ -43,6 +45,7 @@ import { SingleShippingSchema } from './schema/singleshipment.schema';
       { name: 'SingleDropshipping', schema: SingleDropshippingSchema },
       { name: 'Vendor', schema: VendorSchema },
       { name: 'SingleShipping', schema: SingleShippingSchema },
+      { name: 'Notification', schema: NotificationSchema },
     ]),
     UserModule,
     VendorsModule,
@@ -60,6 +63,7 @@ import { SingleShippingSchema } from './schema/singleshipment.schema';
     OrdersService,
     LogisticService,
     ShippingService,
+    NotificationService
   ],
 })
 export class ShippingModule {}

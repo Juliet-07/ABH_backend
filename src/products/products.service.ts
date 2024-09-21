@@ -899,69 +899,40 @@ export class ProductsService {
     }
   }
 
-  async findAllForUser({
-    filter = {},
-    limit = 10,
-    page = 1,
-    search = {},
-  }: {
-    filter?: Record<string, any>;
-    limit?: number;
-    page?: number;
-    search?: {
-      categoryId?: string;
-      subcategoryId?: string;
-      sellingPrice?: number;
-      name?: string;
-    };
-  }) {
+  async findAllForUser() {
     try {
-      const pageSize = Math.max(1, limit);
-      const currentPage = Math.max(1, page);
-      const skip = (currentPage - 1) * pageSize;
-
-      // Build search criteria
-      const searchCriteria: Record<string, any> = { ...filter };
-
-      if (search.categoryId) {
-        searchCriteria.categoryId = search.categoryId;
-      }
-
-      if (search.subcategoryId) {
-        searchCriteria.subcategoryId = search.subcategoryId;
-      }
-
-      if (search.sellingPrice !== undefined) {
-        searchCriteria.sellingPrice = search.sellingPrice;
-      }
-
-      if (search.name) {
-        searchCriteria.name = { $regex: search.name, $options: 'i' };
-      }
-
       const data = await this.productModel
-        .find({ searchCriteria, status: 'APPROVED' })
+        .find({ status: 'APPROVED' })
         .populate({
           path: 'vendor',
           select: ['-password'],
         })
         .sort({ createdAt: -1 })
-        .populate('categoryId')
-        .populate('subcategoryId')
-        .skip(skip)
-        .limit(limit);
-
-      const totalCount = await this.productModel.countDocuments({
-        searchCriteria,
-        status: 'APPROVED',
-      });
+        .populate('categoryId');
 
       const result = {
-        page: pageSize,
-        currentPage,
-        totalPages: Math.ceil(totalCount / pageSize),
+        count: data.length,
         data,
       };
+
+      return result;
+    } catch (error) {
+      throw new Error(`Error fetching products: ${error.message}`);
+    }
+  }
+
+  async listOne(productId: string) {
+    try {
+      const result = await this.productModel
+        .findOne({ _id: productId, status: 'APPROVED' })
+        .populate({
+          path: 'vendor',
+          select: ['-password'],
+        })
+        .sort({ createdAt: -1 })
+        .populate('categoryId');
+
+      
 
       return result;
     } catch (error) {

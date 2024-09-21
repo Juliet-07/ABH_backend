@@ -58,6 +58,9 @@ export class Order {
   @Prop({ required: true })
   totalAmount: number;
 
+  @Prop({ required: true })
+  price: number;
+
   @Prop({
     type: {
       street: { type: String, required: true },

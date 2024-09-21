@@ -19,6 +19,8 @@ import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { SingleDropshipping } from '../schema/singledropshipping.schema';
 import { Inventory } from '../schema/inventory.schema';
+import { NotificationService } from 'src/notification/notification.service';
+import { CreateNotificationDataType } from 'src/notification/dto/notification.dto';
 
 @Injectable()
 export class DropshippingService {
@@ -39,7 +41,7 @@ export class DropshippingService {
     private subscriptionModel: Model<Subscription>,
     @InjectModel(SingleDropshipping.name)
     private singleDropshippingModel: Model<SingleDropshipping>,
-
+    private readonly notificationService: NotificationService,
     @InjectModel(Inventory.name) private inventoryModel: Model<Inventory>,
 
     private readonly paymentService: PaymentService,
@@ -113,11 +115,22 @@ export class DropshippingService {
       });
 
       await this.updateProductQuantities(productDetails);
-      const [paymentResponse] = await Promise.all([
+      const [paymentResponse, vendorOrders] = await Promise.all([
         this.processPayment(dropshipping, userInfo),
         this.handleVendorOrders(productDetails, dropshipping._id, userId),
         this.createUserInventory(productDetails, dropshipping.id, userId),
       ]);
+
+      await Promise.all(
+        vendorOrders.map((vendorOrder) => {
+          const notificationData: CreateNotificationDataType = {
+            message: 'A new order has been created for your account.',
+            receiverId: vendorOrder.vendorId,
+          };
+
+          return this.notificationService.createNotification(notificationData);
+        }),
+      );
 
       return {
         dropshipping,

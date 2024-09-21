@@ -174,7 +174,6 @@ export class StatisticService {
 
   async totalSalesForVendor(vendorId: string) {
     try {
-      // Fetch all paid orders for the specified vendor
       const totalSales = await this.singleOrderModel
         .find({
           vendorId,
@@ -183,10 +182,7 @@ export class StatisticService {
         .exec();
 
       const totalAmount = totalSales.reduce((acc, order) => {
-        const orderTotal = order.products.reduce((orderAcc, product) => {
-          return orderAcc + product.amount;
-        }, 0);
-        return acc + orderTotal;
+        return acc + order.price;
       }, 0);
 
       return totalAmount;
