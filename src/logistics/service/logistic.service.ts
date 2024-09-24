@@ -17,6 +17,11 @@ export class LogisticService {
     'https://api.clicknship.com.ng/clicknship/Operations/DeliveryTowns';
   private readonly deliveryFeeUrl =
     'https://api.clicknship.com.ng/clicknship/Operations/DeliveryFee';
+  private readonly PickupRequestUrl =
+    'https://api.clicknship.com.ng/clicknship/Operations/PickupRequest';
+
+  private readonly trackShipmentUrl =
+    'https://api.clicknship.com.ng/clicknship/Operations/TrackShipment';
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   constructor(private readonly configService: ConfigService) {
@@ -26,7 +31,6 @@ export class LogisticService {
       this.configService.get<string>('RED_STAR_USERNAME');
   }
 
-  
   // Method to obtain the auth token
   async getAuthToken(): Promise<string | undefined> {
     const requestBody = new URLSearchParams({
@@ -44,7 +48,7 @@ export class LogisticService {
 
       const token = response.data.access_token;
 
-      return token; 
+      return token;
     } catch (error) {
       console.error(
         'Error obtaining token:',
@@ -58,7 +62,7 @@ export class LogisticService {
     try {
       const response = await axios.get(this.statesUrl, {
         headers: {
-          Authorization: `Bearer ${token}`, // Use Bearer token for authorization
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
@@ -202,6 +206,58 @@ export class LogisticService {
     } catch (error) {
       console.error(
         'Error calculating delivery fee:',
+        error.response ? error.response.data : error.message,
+      );
+    }
+  }
+
+  // Method to submit a pickup request and generate a waybill number
+  async submitPickupRequest(
+    token: string,
+    pickupRequestData: any,
+  ): Promise<any | { error: string }> {
+    try {
+      const response = await axios.post(
+        this.PickupRequestUrl,
+        pickupRequestData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      const waybillInfo = response.data;
+      console.log('Pickup Request Submitted:', waybillInfo);
+      return waybillInfo;
+    } catch (error) {
+      console.error(
+        'Error submitting pickup request:',
+        error.response ? error.response.data : error.message,
+      );
+      return { error: 'Failed to submit pickup request. Please try again.' };
+    }
+  }
+
+  async trackShipment(token: string, waybillNo: string): Promise<any | undefined> {
+    try {
+      const response = await axios.get(
+        `${this.trackShipmentUrl}?waybillno=${encodeURIComponent(waybillNo)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      const trackingInfo = response.data; // Assuming response is an array of JSON objects
+      console.log(`Tracking Info for Waybill ${waybillNo}:`, trackingInfo);
+      return trackingInfo;
+    } catch (error) {
+      console.error(
+        'Error tracking shipment:',
         error.response ? error.response.data : error.message,
       );
     }
