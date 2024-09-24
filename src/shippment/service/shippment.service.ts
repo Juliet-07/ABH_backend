@@ -288,7 +288,7 @@ export class ShippingService {
       customerName: userInfo.firstName,
       currency: 'NGN',
       transactionRef: shipping.reference,
-      callback: 'app.abhmarkets.com//shipping/verify',
+      callback: 'stagging.abhmarkets.com/shipping/verify',
     };
 
     const PaystackPaymentData = {

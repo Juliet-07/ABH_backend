@@ -306,7 +306,7 @@ export class DropshippingService {
       customerName: userInfo.firstName,
       currency: 'NGN',
       transactionRef: dropshipping.reference,
-      callback: 'app.abhmarkets.com/dropshipping/verify',
+      callback: 'stagging.abhmarkets.com//dropshipping/verify',
     };
 
     const PaystackPaymentData = {

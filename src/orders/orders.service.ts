@@ -486,7 +486,7 @@ export class OrdersService {
       customerName: userInfo.firstName,
       currency: 'NGN',
       transactionRef: order.reference,
-      callback: 'abh.oritsetech.online/payments/verify',
+      callback: 'stagging.abhmarkets.com/payments/verify',
     };
 
     const PaystackPaymentData = {
