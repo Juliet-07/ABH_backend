@@ -306,14 +306,14 @@ export class DropshippingService {
       customerName: userInfo.firstName,
       currency: 'NGN',
       transactionRef: dropshipping.reference,
-      callback: 'abh.oritsetech.online/dropshipping/verify',
+      callback: 'app.abhmarkets.com/dropshipping/verify',
     };
 
     const PaystackPaymentData = {
       amount: dropshipping.totalAmount,
       email: userInfo.email,
       reference: dropshipping.reference,
-      callback: 'abh.oritsetech.online/dropshipping/verify',
+      callback: 'app.abhmarkets.com/dropshipping/verify',
     };
 
     let paymentResponse;

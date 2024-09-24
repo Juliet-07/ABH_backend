@@ -288,14 +288,14 @@ export class ShippingService {
       customerName: userInfo.firstName,
       currency: 'NGN',
       transactionRef: shipping.reference,
-      callback: 'abh.oritsetech.online/shipping/verify',
+      callback: 'app.abhmarkets.com//shipping/verify',
     };
 
     const PaystackPaymentData = {
       amount: shipping.totalAmount,
       email: userInfo.email,
       reference: shipping.reference,
-      callback: 'abh.oritsetech.online/shipping/verify',
+      callback: 'app.abhmarkets.com/shipping/verify',
     };
 
     let paymentResponse;
