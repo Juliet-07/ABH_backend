@@ -15,6 +15,14 @@ import {
   SubscriptionSchema,
 } from 'src/subscription/schema/subscription.schema';
 import { Product, ProductSchema } from 'src/products/schema/product.schema';
+import {
+  SingleOrder,
+  SingleOrderSchema,
+} from 'src/orders/schema/singleOreder.schema';
+import {
+  SingleDropshipping,
+  SingleDropshippingSchema,
+} from 'src/dropshipping/schema/singledropshipping.schema';
 
 @Module({
   imports: [
@@ -25,6 +33,8 @@ import { Product, ProductSchema } from 'src/products/schema/product.schema';
       { name: Dropshipping.name, schema: DropshippingSchema },
       { name: Subscription.name, schema: SubscriptionSchema },
       { name: Product.name, schema: ProductSchema },
+      { name: SingleOrder.name, schema: SingleOrderSchema },
+      { name: SingleDropshipping.name, schema: SingleDropshippingSchema },
     ]),
     AdminModule,
   ],

@@ -295,7 +295,7 @@ export class DropshippingService {
       return null;
     } catch (error) {
       console.error(error); // Log the error for debugging
-      throw new BadRequestException(`Error verifying Dropshipping transaction`);
+      //throw new BadRequestException(`Error verifying Dropshipping transaction`);
     }
   }
 
@@ -306,14 +306,14 @@ export class DropshippingService {
       customerName: userInfo.firstName,
       currency: 'NGN',
       transactionRef: dropshipping.reference,
-      callback: 'stagging.abhmarkets.com//dropshipping/verify',
+      callback: process.env.HYDROGRENPAY_CALLBACK,
     };
 
     const PaystackPaymentData = {
       amount: dropshipping.totalAmount,
       email: userInfo.email,
       reference: dropshipping.reference,
-      callback: 'app.abhmarkets.com/dropshipping/verify',
+      callback: process.env.PAYSTACK_CALLBACK,
     };
 
     let paymentResponse;

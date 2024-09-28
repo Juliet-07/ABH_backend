@@ -7,7 +7,9 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { OrderStatusEnum, PaymentStatus } from 'src/constants';
 import { Dropshipping } from 'src/dropshipping/schema/dropshipping.schema';
+import { SingleDropshipping } from 'src/dropshipping/schema/singledropshipping.schema';
 import { Order } from 'src/orders/schema/order.schema';
+import { SingleOrder } from 'src/orders/schema/singleOreder.schema';
 import { Product } from 'src/products/schema/product.schema';
 import { Subscription } from 'src/subscription/schema/subscription.schema';
 import { User } from 'src/user/schema/user.schema';
@@ -19,6 +21,9 @@ export class DashboardService {
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(Vendor.name) private vendorModel: Model<Vendor>,
     @InjectModel(Order.name) private orderModel: Model<Order>,
+    @InjectModel(SingleOrder.name) private singleOrderModel: Model<SingleOrder>,
+    @InjectModel(SingleDropshipping.name)
+    private singleDropshippingModel: Model<SingleDropshipping>,
     @InjectModel(Dropshipping.name)
     private dropshippingModel: Model<Dropshipping>,
     @InjectModel(Subscription.name)
@@ -426,4 +431,28 @@ export class DashboardService {
       throw new Error(error.message);
     }
   }
+
+  async UserOrders(userId: string) {
+    try {
+      const orders = await this.singleOrderModel.find({ userId: userId });
+
+      return orders || null;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async UserDropshipping(userId: string) {
+    try {
+      const orders = await this.singleDropshippingModel.find({
+        userId: userId,
+      });
+
+      return orders || null;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
 }
+
+

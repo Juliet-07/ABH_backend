@@ -96,7 +96,7 @@ export class VendorsController {
   @Get('profile')
   @ApiBearerAuth('JWT-auth')
   getProfile(@Request() req) {
-    return req.vendors;
+    return this.vendorsService.listOneVendor(req.vendor);
   }
 
   //@UseGuards(AdminAuthGuard)
@@ -135,7 +135,9 @@ export class VendorsController {
   @HttpCode(HttpStatus.OK)
   @Post('forget-password')
   async forgetPassword(@Body('email') email: string) {
-    return await this.vendorsService.requestForgotPasswordVerificationCode(email);
+    return await this.vendorsService.requestForgotPasswordVerificationCode(
+      email,
+    );
   }
 
   @Patch('reset-password')
@@ -158,7 +160,6 @@ export class VendorsController {
     const vendorId = req.vendor;
     return this.vendorsService.uploadImage(vendorId, image);
   }
-
 
   @Patch('/block-status/:vendorId')
   async toggleBlockVendor(
