@@ -14,7 +14,6 @@ import { Transaction } from 'src/transaction/schema/transaction.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
-
 @Injectable()
 export class PaymentService {
   private readonly apiKey: string;
@@ -31,8 +30,6 @@ export class PaymentService {
     @InjectModel(Transaction.name) private transactionModel: Model<Transaction>,
     @Inject(forwardRef(() => SubscriptionService))
     private subscriptionService: SubscriptionService,
-
-      
   ) {
     this.apiKey = this.configService.get<string>('HYDROGRENPAY_PUB_KEY');
     this.apiUrl = this.configService.get<string>('HYDROGRENPAY_URL');
@@ -54,11 +51,7 @@ export class PaymentService {
       return response.data;
     } catch (error) {
       console.error('THE ERROR', error);
-      console.error(
-        'Error creating payment with HydrogenPay:',
-        error.response ? error.response.data : error.message,
-      );
-      throw new BadRequestException('Failed to create payment', error);
+      throw new BadRequestException('Failed to create payment', error.message);
     }
   }
 
@@ -100,7 +93,7 @@ export class PaymentService {
         'Error verifying order transaction:',
         error.response ? error.response.data : error.message,
       );
-      throw new BadRequestException('Failed to verify order transaction');
+     // throw new BadRequestException('Failed to verify order transaction');
     }
   }
 
@@ -141,8 +134,6 @@ export class PaymentService {
       );
     }
   }
-
-
 
   async initializePayment(paymentData: CreatePayStackPaymentDto): Promise<any> {
     try {

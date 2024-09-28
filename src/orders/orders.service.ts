@@ -486,14 +486,14 @@ export class OrdersService {
       customerName: userInfo.firstName,
       currency: 'NGN',
       transactionRef: order.reference,
-      callback: 'abh.oritsetech.online/payments/verify',
+      callback: process.env.HYDROGRENPAY_CALLBACK,
     };
 
     const PaystackPaymentData = {
       amount: order.totalAmount,
       email: userInfo.email,
       reference: order.reference,
-      callback: 'abh.oritsetech.online/payments',
+      callback: process.env.PAYSTACK_CALLBACK,
     };
 
     let paymentResponse;

@@ -155,11 +155,11 @@ export class ShippingService {
         }),
       );
 
-      //const paymentResponse = await this.processPayment(shipping, userInfo);
+      const paymentResponse = await this.processPayment(shipping, userInfo);
 
       return {
         shipping,
-        // paymentResponse,
+        paymentResponse,
       };
     } catch (error) {
       console.error('Checkout error:', error);
@@ -257,7 +257,6 @@ export class ShippingService {
       return null;
     } catch (error) {
       console.log(error);
-      throw new BadRequestException(`Error verifying Dropshipping transaction`);
     }
   }
 
@@ -288,14 +287,14 @@ export class ShippingService {
       customerName: userInfo.firstName,
       currency: 'NGN',
       transactionRef: shipping.reference,
-      callback: 'app.abhmarkets.com//shipping/verify',
+      callback: process.env.HYDROGRENPAY_CALLBACK,
     };
 
     const PaystackPaymentData = {
       amount: shipping.totalAmount,
       email: userInfo.email,
       reference: shipping.reference,
-      callback: 'app.abhmarkets.com/shipping/verify',
+      callback: process.env.PAYSTACK_CALLBACK,
     };
 
     let paymentResponse;

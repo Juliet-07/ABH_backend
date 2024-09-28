@@ -84,4 +84,16 @@ export class DashboardController {
   async ListAllVendorsProduct(@Param('vendor') vendor: string) {
     return await this.dashboardService.listAllVendorsProduct(vendor);
   }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('customers-orders/:userId')
+  async ListAllUsersOrders(@Param('userId') userId: string) {
+    return await this.dashboardService.UserOrders(userId);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('customers-dropshipping/:userId')
+  async UserDropshipping(@Param('userId') userId: string) {
+    return await this.dashboardService.UserDropshipping(userId);
+  }
 }
