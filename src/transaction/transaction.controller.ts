@@ -1,56 +1,58 @@
-import { Controller, Get, UsePipes, ValidationPipe, Query, BadRequestException, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Request,
+  UseGuards,
+  Param,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { PaymentStatusEnum } from 'src/constants';
 import { AdminAuthGuard } from 'src/auth/admin-auth/admin-auth.guard';
+import { AuthGuard } from 'src/auth/auth.guard';
 
 @ApiTags('Transaction')
-@Controller('transaction')
+@Controller('transactions')
 export class TransactionController {
-  constructor(private readonly transactionService: TransactionService) { }
+  constructor(private readonly transactionService: TransactionService) {}
 
-  // @Post()
-  // @UsePipes(new ValidationPipe())
-  // create(@Body() createTransactionDto: CreateTransactionDto): Promise<Transaction> {
-  //   return this.transactionService.create(createTransactionDto);
-  // }
-
+  @Get('trx')
   @UseGuards(AdminAuthGuard)
-  @UsePipes(new ValidationPipe())
+  @HttpCode(HttpStatus.OK)
   @ApiBearerAuth('JWT-auth')
-  @Get()
   findAll() {
-    return this.transactionService.findAll();
+    return this.transactionService.listAllTrx();
   }
-
 
   @UseGuards(AdminAuthGuard)
-  @UsePipes(new ValidationPipe())
-  @ApiBearerAuth('JWT-auth')
-  @Get('status')
-  async getByStatus(
-    @Query('status') status: PaymentStatusEnum,
-  ){
-    // Validate status (Optional: ensure the status is a valid enum value)
-    if (!Object.values(PaymentStatusEnum).includes(status as PaymentStatusEnum)) {
-      throw new BadRequestException('Invalid status value');
-    }
-
-    // Call the service method to fetch transactions by status
-    return this.transactionService.findByStatus(status);
+  @HttpCode(HttpStatus.OK)
+  @Get('trx/:transactionId')
+  async listOneTrx(
+    @Param('transactionId')
+    transactionId: string,
+  ) {
+    return this.transactionService.listOneTrx(transactionId);
   }
-  // @Get(':id')
-  // findOne(@Param('id') id: string) {
-  //   return this.transactionService.findOne(+id);
-  // }
 
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateTransactionDto: UpdateTransactionDto) {
-  //   return this.transactionService.update(+id, updateTransactionDto);
-  // }
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @Get('user-trx')
+  async listAllUserTrx(@Request() req) {
+    const userId = req.user;
+    console.log(userId);
+    return this.transactionService.listAllUserTrx(userId);
+  }
 
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.transactionService.remove(+id);
-  // }
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @Get('user-trx/:transactionId')
+  async listAllOneUserTrx(
+    @Param('transactionId')
+    transactionId: string,
+    @Request() req,
+  ) {
+    const userId = req.user;
+    return this.transactionService.listAllOneUserTrx(transactionId, userId);
+  }
 }

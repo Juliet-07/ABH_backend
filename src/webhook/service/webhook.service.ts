@@ -13,18 +13,18 @@ export class WebhookService {
     private readonly dropshippingService: DropshippingService,
   ) {}
 
-  async handleShippingVerification(data: any) {
-    await this.shippingService.updateDropshippingPayment(data);
-    this.logger.log('Processing dropshipping verification:', data);
+  async handleShippingVerification(TransactionRef: string) {
+    await this.shippingService.updateDropshippingPayment(TransactionRef);
+    this.logger.log('Processing dropshipping verification:', TransactionRef);
   }
 
-  async handlePaymentVerification(data: any) {
-    await this.paymentService.verifyOrderTransaction(data);
-    this.logger.log('Processing payment verification:', data);
+  async handlePaymentVerification(TransactionRef: string) {
+    await this.paymentService.verifyOrderTransaction(TransactionRef);
+    this.logger.log('Processing payment verification:', TransactionRef);
   }
 
-  async handleDropshippingVerification(data: any) {
-    await this.dropshippingService.updateDropshippingPayment(data);
-    this.logger.log('Processing shipping verification:', data);
+  async handleDropshippingVerification(TransactionRef: string) {
+    await this.dropshippingService.updateDropshippingPayment(TransactionRef);
+    this.logger.log('Processing shipping verification:', TransactionRef);
   }
 }

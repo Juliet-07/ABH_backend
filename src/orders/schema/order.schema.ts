@@ -51,7 +51,7 @@ export class Order {
   @Prop({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Transaction',
-    required: true,
+    required: false,
   })
   transactionId: string;
 
