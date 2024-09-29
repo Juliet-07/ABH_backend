@@ -75,12 +75,6 @@ export class DropshippingService {
         throw new BadRequestException('Calculated total amount is invalid');
       }
 
-      const transaction = await this.createTransaction(
-        paymentGateway,
-        amount,
-        vat,
-      );
-
       const personalInfo = {
         firstName: userInfo.firstName,
         lastName: userInfo.lastName,
@@ -95,8 +89,8 @@ export class DropshippingService {
         paymentGateway,
         personalInfo,
         vat,
-        reference: transaction.reference,
-        transactionId: transaction._id,
+        reference: this.helper.genString(15, '1234567890'),
+        // transactionId: transaction._id,
         totalAmount: amount,
         products: productDetails.map((item) => ({
           productId: item.product.id,
@@ -110,7 +104,7 @@ export class DropshippingService {
         userId,
         plan: subscriptionDetails.plan,
         amount: subscriptionDetails.amount,
-        reference: transaction.reference,
+        reference: dropshipping.reference,
         paymentGateway: dropshipping.paymentGateway,
       });
 
@@ -130,6 +124,16 @@ export class DropshippingService {
 
           return this.notificationService.createNotification(notificationData);
         }),
+      );
+
+      const transaction = await this.createTransaction(
+        paymentGateway,
+        amount,
+        //shippingFee,
+        vat,
+        dropshipping.reference,
+        dropshipping._id,
+        userId,
       );
 
       return {
@@ -280,6 +284,11 @@ export class DropshippingService {
         if (!result) {
           throw new NotFoundException(`Dropshipping not found`);
         }
+
+        await this.transactionModel.findOneAndUpdate(
+          { reference: TransactionRef },
+          { $set: { status: 'PAID' } },
+        );
 
         // Update related single dropshipping records to 'PAID'
         await this.singleDropshippingModel.updateMany(
@@ -443,13 +452,22 @@ export class DropshippingService {
     return parseFloat((totalProductAmount + vat + subAmount).toFixed(2));
   }
 
-  async createTransaction(paymentGateway, amount, vat) {
+  async createTransaction(
+    paymentGateway,
+    amount,
+    vat,
+    reference,
+    dropshippingId,
+    userId,
+  ) {
     return await this.transactionModel.create({
-      reference: this.helper.genString(15, '1234567890'),
       paymentGateway,
-      totalProductAmount: amount,
       amount,
       vat,
+      reference,
+      dropshippingId,
+      totalProductAmount: amount,
+      userId,
     });
   }
 

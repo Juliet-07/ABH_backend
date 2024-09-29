@@ -261,13 +261,6 @@ export class OrdersService {
         shippingFee,
       );
 
-      const transaction = await this.createTransaction(
-        paymentGateway,
-        amount,
-        shippingFee,
-        vat,
-      );
-
       const personalInfo = {
         firstName: userInfo.firstName,
         lastName: userInfo.lastName,
@@ -286,8 +279,8 @@ export class OrdersService {
         shippingFee,
         paymentGateway,
         vat,
-        reference: transaction.reference,
-        transactionId: transaction._id,
+        reference: this.helper.genString(15, '1234567890'),
+        // transactionId: transaction._id,
         totalAmount: amount,
         products: productDetails.map((item) => ({
           productId: item.product.id,
@@ -319,6 +312,16 @@ export class OrdersService {
 
           return this.notificationService.createNotification(notificationData);
         }),
+      );
+
+      const transaction = await this.createTransaction(
+        paymentGateway,
+        amount,
+        shippingFee,
+        vat,
+        order.reference,
+        order._id,
+        userId
       );
 
       return {
@@ -402,14 +405,24 @@ export class OrdersService {
     return parseFloat((totalProductAmount + vat + shippingFee).toFixed(2));
   }
 
-  async createTransaction(paymentGateway, amount, shippingFee, vat) {
+  async createTransaction(
+    paymentGateway,
+    amount,
+    shippingFee,
+    vat,
+    reference,
+    orderId,
+    userId
+  ) {
     return await this.transactionModel.create({
-      reference: this.helper.genString(15, '1234567890'),
       paymentGateway,
-      totalProductAmount: amount,
-      shippingFee,
       amount,
+      shippingFee,
       vat,
+      reference,
+      orderId,
+      totalProductAmount: amount,
+      userId
     });
   }
 
