@@ -61,7 +61,7 @@ export class Dropshipping {
   @Prop({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Transaction',
-    required: true,
+    required: false,
   })
   transactionId: string;
 
@@ -85,7 +85,7 @@ export class Dropshipping {
       plan: { type: String, required: true },
       amount: { type: Number, required: true },
     },
-    //required: false, 
+    //required: false,
   })
   subscriptionDetails: {
     plan: string;

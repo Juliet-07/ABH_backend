@@ -15,6 +15,7 @@ import { User } from 'src/user/schema/user.schema';
 import { CreateShippingDto } from '../dto/shipping.dto';
 import { SingleShipping } from '../schema/singleshipment.schema';
 import axios from 'axios';
+import { Transaction } from 'src/transaction/schema/transaction.schema';
 
 @Injectable()
 export class ShippingService {
@@ -28,6 +29,7 @@ export class ShippingService {
     private readonly configService: ConfigService,
     @InjectModel(Inventory.name) private inventoryModel: Model<Inventory>,
     @InjectModel(Shipping.name) private shippingModel: Model<Shipping>,
+    @InjectModel(Transaction.name) private transactionModel: Model<Transaction>,
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(SingleShipping.name)
     private singleShippingModel: Model<SingleShipping>,
@@ -157,6 +159,17 @@ export class ShippingService {
 
       const paymentResponse = await this.processPayment(shipping, userInfo);
 
+      const transaction = await this.createTransaction(
+        paymentGateway,
+        shipping.totalAmount,
+        shippingFee,
+        vat,
+        shipping.reference,
+        shipping._id,
+        shipping.totalAmount,
+        userId
+      );
+
       return {
         shipping,
         paymentResponse,
@@ -167,6 +180,28 @@ export class ShippingService {
         'An error occurred during checkout. Please try again.',
       );
     }
+  }
+
+  async createTransaction(
+    paymentGateway,
+    amount,
+    shippingFee,
+    vat,
+    reference,
+    shippingId,
+    totalProductAmount,
+    userId
+  ) {
+    return await this.transactionModel.create({
+      paymentGateway,
+      amount,
+      shippingFee,
+      vat,
+      reference,
+      shippingId,
+      totalProductAmount,
+      userId
+    });
   }
 
   async listShipping(userId: string) {
@@ -245,6 +280,11 @@ export class ShippingService {
         if (!result) {
           throw new NotFoundException(`shipping not found`);
         }
+
+        await this.transactionModel.findOneAndUpdate(
+          { reference: TransactionRef },
+          { $set: { status: 'PAID' } },
+        );
 
         await this.singleShippingModel.updateMany(
           { shippingId: result._id },
