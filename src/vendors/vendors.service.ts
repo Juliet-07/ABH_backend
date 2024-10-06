@@ -25,6 +25,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Vendor } from './schema/vendor.schema';
 import { NotificationService } from 'src/notification/notification.service';
 import { CreateNotificationDataType } from 'src/notification/dto/notification.dto';
+import { VendorWelcomeOnboard } from 'src/template/welcome';
 
 @Injectable()
 export class VendorsService {
@@ -239,13 +240,9 @@ export class VendorsService {
 
       await this.vendorModel.findOneAndUpdate({ _id: vendor.id }, updateData);
 
-      //  Send Email to user
-
-      const text = `Hello ${vendor.firstName}, your account has been verified and active now. Login with your registered email and password ${rawPassword}    .\n \n \n Kindly ensure you change your password on login`;
-
       await this.mailingService.send({
-        subject: 'Vendor Account Approved',
-        html: text,
+        subject: 'Welcome Email',
+        html: VendorWelcomeOnboard(vendor.firstName, rawPassword),
         email: vendor.email,
       });
 
@@ -256,8 +253,7 @@ export class VendorsService {
 
       await this.notificationService.createNotification(data);
 
-      // TODO: Remove this before Production
-      return text;
+      return 'Account Approved successfully';
     } catch (error) {
       throw error;
     }
@@ -272,8 +268,10 @@ export class VendorsService {
       const vendor = await this.vendorModel.findOne({ email });
       if (!vendor) throw new NotFoundException('Vendor not found');
 
-      const { token: forgotPasswordVerificationCode, expiresIn: forgotPasswordVerificationCodeExpiresIn } =
-        this.helpers.generateVerificationCode();
+      const {
+        token: forgotPasswordVerificationCode,
+        expiresIn: forgotPasswordVerificationCodeExpiresIn,
+      } = this.helpers.generateVerificationCode();
 
       await this.vendorModel.findOneAndUpdate(
         { _id: vendor.id },
@@ -311,19 +309,19 @@ export class VendorsService {
       // Ensure page and limit are numbers
       const currentPage = Number(page);
       const pageSize = Number(limit);
-  
+
       // Validate page and limit
       if (currentPage < 1 || pageSize < 1) {
         throw new BadRequestException(
           'Page number and limit must be greater than zero',
         );
       }
-  
+
       // Initialize the filter
       const query: {
         status?: VendorStatusEnums | { $in: VendorStatusEnums[] };
       } = {};
-  
+
       // Apply the filter only if a specific status is provided
       if (filter?.status) {
         if (
@@ -340,7 +338,7 @@ export class VendorsService {
           };
         }
       }
-  
+
       // Fetch paginated items based on the query
       const [items, total] = await Promise.all([
         this.vendorModel
@@ -350,7 +348,7 @@ export class VendorsService {
           .exec(),
         this.vendorModel.countDocuments(query).exec(),
       ]);
-  
+
       return {
         items,
         total,
@@ -359,7 +357,6 @@ export class VendorsService {
       throw new BadRequestException(error.message);
     }
   }
-  
 
   async findVendorWithToken(id: string | any): Promise<Vendor> {
     const data = await this.vendorModel.findOne({ id });
@@ -404,8 +401,6 @@ export class VendorsService {
       throw new BadRequestException(error.message);
     }
   }
-
-
 
   async changePassword(email: string, otp: string, newPassword: string) {
     try {
