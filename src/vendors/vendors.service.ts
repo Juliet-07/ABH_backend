@@ -42,7 +42,7 @@ export class VendorsService {
   ) {}
 
   private decodeBase64ToBuffer(base64: string): Buffer {
-    const base64Data = base64.replace(/^data:application\/pdf;base64,/, ''); // Remove base64 prefix if present
+    const base64Data = base64.replace(/^data:application\/pdf;base64,/, ''); 
     return Buffer.from(base64Data, 'base64');
   }
 
