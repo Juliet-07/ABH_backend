@@ -64,7 +64,7 @@ export class AzureService {
   async uploadDocumentToBlobStorage(fileBuffer: Buffer, fileName: string, mimetype: string): Promise<string> {
     try {
       const validateFileType = (fileName: string): boolean => {
-        const allowedExtensions = ['pdf'];
+        const allowedExtensions = ['pdf', 'jpeg', 'png', 'jpg'];
         const extension = fileName.split('.').pop()?.toLowerCase();
         return extension ? allowedExtensions.includes(extension) : false;
       };
