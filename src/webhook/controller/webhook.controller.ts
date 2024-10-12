@@ -48,7 +48,7 @@ export class WebhookController {
       await this.shippingService.updateDropshippingPayment(TransactionRef);
       await this.paymentService.verifyOrderTransaction(TransactionRef);
     } catch (error) {
-      throw error;
+      this.logger.error(`Error processing webhook: ${error.message}`);
     }
   }
 }
