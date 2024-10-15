@@ -27,16 +27,31 @@ export class WebhookController {
   @Post()
   @HttpCode(HttpStatus.OK)
   async handleWebhook(@Body() body: any) {
-    const TransactionRef = body.TransactionRef || body.transactionRef;
-    this.logger.log(`Received webhook event: ${TransactionRef}`);
+    const transactionRef = body.transactionRef || body.TransactionRef;
 
+    // Check if transactionRef is available
+    if (!transactionRef) {
+      this.logger.error('TransactionRef is missing in the webhook payload');
+      return { message: 'TransactionRef is missing' };
+    }
+
+    // Validate the transaction status
+    const status = body.status || body.transactionStatus;
+    if (status !== 'Paid') {
+      this.logger.warn(`Transaction is not 'Paid': ${status}`);
+      return { message: `Transaction is not Paid: ${status}` };
+    }
     try {
-      await this.dropshippingService.updateDropshippingPayment(TransactionRef);
-      await this.shippingService.updateDropshippingPayment(TransactionRef);
-      await this.paymentService.verifyOrderTransaction(TransactionRef);
+      // Process all promises concurrently
+      await Promise.all([
+        this.dropshippingService.updateDropshippingPayment(transactionRef),
+        this.shippingService.updateDropshippingPayment(transactionRef),
+        this.paymentService.verifyOrderTransaction(transactionRef),
+      ]);
 
       this.logger.log('All webhook functions processed successfully');
     } catch (error) {
+      // If any of the promises fail, log the error
       this.logger.error(`Error processing webhook: ${error.message}`);
     }
   }
@@ -44,9 +59,11 @@ export class WebhookController {
   @Get('verify')
   async verifyPayment(@Query('TransactionRef') TransactionRef: string) {
     try {
-      await this.dropshippingService.updateDropshippingPayment(TransactionRef);
-      await this.shippingService.updateDropshippingPayment(TransactionRef);
-      await this.paymentService.verifyOrderTransaction(TransactionRef);
+      await Promise.all([
+        this.dropshippingService.updateDropshippingPayment(TransactionRef),
+        this.shippingService.updateDropshippingPayment(TransactionRef),
+        this.paymentService.verifyOrderTransaction(TransactionRef),
+      ]);
     } catch (error) {
       this.logger.error(`Error processing webhook: ${error.message}`);
     }
