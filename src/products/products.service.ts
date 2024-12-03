@@ -772,13 +772,51 @@ export class ProductsService {
     }
   }
 
-  async getAllWholeSaleProduct(page = 1, limit = 10) {
+  // async getAllWholeSaleProduct(page = 1, limit = 10) {
+  //   try {
+  //     page = Math.max(page, 1);
+  //     limit = Math.max(limit, 1);
+
+  //     const skip = (page - 1) * limit;
+
+  //     const products = await this.productModel
+  //       .find({
+  //         status: 'APPROVED',
+  //         productType: 'WHOLESALE',
+  //       })
+  //       .sort({ createdAt: -1 })
+  //       .populate({
+  //         path: 'vendor',
+  //         select: ['-password'],
+  //       })
+  //       .populate('categoryId')
+  //       .populate('subcategoryId')
+  //       .skip(skip)
+  //       .limit(limit)
+  //       .exec();
+
+  //     const totalCount = await this.productModel
+  //       .countDocuments({
+  //         status: 'APPROVED',
+  //         productType: 'WHOLESALE',
+  //       })
+  //       .exec();
+
+  //     return {
+  //       products,
+  //       totalCount,
+  //       page,
+  //       limit,
+  //       totalPages: Math.ceil(totalCount / limit),
+  //     };
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // }
+
+  // GET WHOLE PRODUCTS API WITHOUT PAGINATION
+  async getAllWholeSaleProduct() {
     try {
-      page = Math.max(page, 1);
-      limit = Math.max(limit, 1);
-
-      const skip = (page - 1) * limit;
-
       const products = await this.productModel
         .find({
           status: 'APPROVED',
@@ -791,23 +829,11 @@ export class ProductsService {
         })
         .populate('categoryId')
         .populate('subcategoryId')
-        .skip(skip)
-        .limit(limit)
-        .exec();
-
-      const totalCount = await this.productModel
-        .countDocuments({
-          status: 'APPROVED',
-          productType: 'WHOLESALE',
-        })
         .exec();
 
       return {
         products,
-        totalCount,
-        page,
-        limit,
-        totalPages: Math.ceil(totalCount / limit),
+        totalCount: products.length, // Total number of products
       };
     } catch (error) {
       throw error;
@@ -931,8 +957,6 @@ export class ProductsService {
         })
         .sort({ createdAt: -1 })
         .populate('categoryId');
-
-      
 
       return result;
     } catch (error) {
