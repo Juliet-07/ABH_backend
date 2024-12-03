@@ -708,14 +708,8 @@ export class ProductsService {
 
   //For USERS
 
-  async getAllRetailProduct(page = 1, limit = 10) {
+  async getAllRetailProduct() {
     try {
-      page = Math.max(page, 1);
-      limit = Math.max(limit, 1);
-
-      // Calculate skip (offset) and limit
-      const skip = (page - 1) * limit;
-
       const products = await this.productModel
         .find({
           status: 'APPROVED',
@@ -729,23 +723,18 @@ export class ProductsService {
         .sort({ createdAt: -1 })
         .populate('categoryId')
         .populate('subcategoryId')
-        .skip(skip)
-        .limit(limit)
         .exec();
 
-      const totalCount = await this.productModel
-        .countDocuments({
-          status: 'APPROVED',
-          productType: 'RETAIL',
-        })
-        .exec();
+      // const totalCount = await this.productModel
+      //   .countDocuments({
+      //     status: 'APPROVED',
+      //     productType: 'RETAIL',
+      //   })
+      //   .exec();
 
       return {
         products,
-        totalCount,
-        page,
-        limit,
-        totalPages: Math.ceil(totalCount / limit),
+        totalCount: products.length,
       };
     } catch (error) {
       throw error;
