@@ -22,14 +22,22 @@ export class DashboardController {
     return await this.dashboardService.dashBoard();
   }
 
+  // @UseGuards(AdminAuthGuard)
+  // @HttpCode(HttpStatus.OK)
+  // @Get('orders')
+  // async findAllOrder(@Query('page') page = 1, @Query('limit') limit = 10) {
+  //   const pageNumber = Number(page);
+  //   const limitNumber = Number(limit);
+
+  //   return await this.dashboardService.findAll(pageNumber, limitNumber);
+  // }
+
+  // UPDATED CODE BY JULIET
   @UseGuards(AdminAuthGuard)
   @HttpCode(HttpStatus.OK)
   @Get('orders')
-  async findAllOrder(@Query('page') page = 1, @Query('limit') limit = 10) {
-    const pageNumber = Number(page);
-    const limitNumber = Number(limit);
-
-    return await this.dashboardService.findAll(pageNumber, limitNumber);
+  async findAllOrder() {
+    return await this.dashboardService.findAll();
   }
 
   @UseGuards(AdminAuthGuard)

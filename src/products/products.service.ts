@@ -839,10 +839,12 @@ export class ProductsService {
         })
         .sort({ createdAt: -1 })
         .populate('categoryId')
-
-        .populate('categoryId');
+        .select('+unitPerCarton')
+        // .populate('categoryId');
 
       if (!product) throw new NotFoundException(`Product not found`);
+
+      console.log(product)
 
       return product;
     } catch (error) {

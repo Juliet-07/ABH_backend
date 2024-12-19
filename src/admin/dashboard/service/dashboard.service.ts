@@ -219,39 +219,62 @@ export class DashboardService {
     return monthlySales;
   }
 
-  async findAll(limit = 50, page = 1) {
+  // async findAll(limit = 50, page = 1) {
+  //   try {
+  //     // Ensure limit and page are positive integers
+  //     limit = Math.max(1, limit);
+  //     page = Math.max(1, page);
+
+  //     // Calculate the number of documents to skip
+  //     const skip = (page - 1) * limit;
+
+  //     // Fetch paginated documents
+  //     const orders = await this.orderModel
+  //       .find()
+  //       .limit(limit)
+  //       .skip(skip)
+  //       .populate('products.productId')
+  //       .populate('transactionId');
+
+  //     // Count total number of documents
+  //     const totalCount = await this.orderModel.countDocuments();
+
+  //     // Calculate pagination metadata
+  //     const totalPages = Math.ceil(totalCount / limit);
+  //     const prevPage = page > 1 ? page - 1 : null;
+  //     const nextPage = page < totalPages ? page + 1 : null;
+
+  //     return {
+  //       totalCount,
+  //       currentPage: page,
+  //       prevPage,
+  //       nextPage,
+  //       currentLimit: limit,
+  //       totalPages,
+  //       data: orders.length > 0 ? orders : null,
+  //     };
+  //   } catch (error) {
+  //     console.error('Error fetching orders:', error);
+  //     throw new BadRequestException('Failed to fetch orders.');
+  //   }
+  // }
+
+  // CODE WITHOUT PAGINATION
+
+  async findAll() {
     try {
-      // Ensure limit and page are positive integers
-      limit = Math.max(1, limit);
-      page = Math.max(1, page);
-
-      // Calculate the number of documents to skip
-      const skip = (page - 1) * limit;
-
-      // Fetch paginated documents
+      // Fetch all orders without limit or skip
       const orders = await this.orderModel
         .find()
-        .limit(limit)
-        .skip(skip)
         .populate('products.productId')
         .populate('transactionId');
 
-      // Count total number of documents
+      // Count total documents
       const totalCount = await this.orderModel.countDocuments();
-
-      // Calculate pagination metadata
-      const totalPages = Math.ceil(totalCount / limit);
-      const prevPage = page > 1 ? page - 1 : null;
-      const nextPage = page < totalPages ? page + 1 : null;
 
       return {
         totalCount,
-        currentPage: page,
-        prevPage,
-        nextPage,
-        currentLimit: limit,
-        totalPages,
-        data: orders.length > 0 ? orders : null,
+        data: orders,
       };
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -454,5 +477,3 @@ export class DashboardService {
     }
   }
 }
-
-
