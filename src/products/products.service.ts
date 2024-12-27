@@ -569,21 +569,39 @@ export class ProductsService {
     }
   }
 
+  // async remove(productId: string): Promise<string> {
+  //   try {
+  //     const product = await this.productModel.findOne({
+  //       _id: productId,
+  //     });
+
+  //     if (!product) throw new NotFoundException(`Product not found`);
+
+  //     await this.productModel.findOneAndDelete({ product });
+
+  //     return `Product deleted Successfully`;
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // }
+
   async remove(productId: string): Promise<string> {
     try {
-      const product = await this.productModel.findOne({
-        _id: productId,
-      });
-
-      if (!product) throw new NotFoundException(`Product not found`);
-
-      await this.productModel.findOneAndDelete({ product });
-
-      return `Product deleted Successfully`;
+      const product = await this.productModel.findOne({ _id: productId });
+  
+      if (!product) {
+        throw new NotFoundException(`Product not found`);
+      }
+  
+      // Use the correct condition to delete the product
+      await this.productModel.findOneAndDelete({ _id: productId });
+  
+      return `Product deleted successfully`;
     } catch (error) {
       throw error;
     }
   }
+  
 
   async findAllForAdmin({ status }: { status?: string }) {
     try {
