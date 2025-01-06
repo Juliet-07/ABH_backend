@@ -111,8 +111,9 @@ export class VendorsController {
   // }
 
   // REMOVE PAGINATION
+  @UseGuards(AdminAuthGuard)
   @Get()
-  async findAll(@Query('status') status?: VendorStatusEnums) {
+  async findAll(@Query('filter.status') status?: VendorStatusEnums) {
     // Construct the filter object if a status is provided
     const filter = status ? { status } : undefined;
 
