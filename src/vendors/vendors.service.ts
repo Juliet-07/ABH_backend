@@ -42,7 +42,7 @@ export class VendorsService {
   ) {}
 
   private decodeBase64ToBuffer(base64: string): Buffer {
-    const base64Data = base64.replace(/^data:application\/pdf;base64,/, ''); 
+    const base64Data = base64.replace(/^data:application\/pdf;base64,/, '');
     return Buffer.from(base64Data, 'base64');
   }
 
@@ -300,28 +300,74 @@ export class VendorsService {
     }
   }
 
+  // async findAll(
+  //   page = 1,
+  //   limit = 10,
+  //   filter?: { status?: VendorStatusEnums },
+  // ): Promise<{ items: Vendor[]; total: number }> {
+  //   try {
+  //     // Ensure page and limit are numbers
+  //     const currentPage = Number(page);
+  //     const pageSize = Number(limit);
+
+  //     // Validate page and limit
+  //     if (currentPage < 1 || pageSize < 1) {
+  //       throw new BadRequestException(
+  //         'Page number and limit must be greater than zero',
+  //       );
+  //     }
+
+  //     // Initialize the filter
+  //     const query: {
+  //       status?: VendorStatusEnums | { $in: VendorStatusEnums[] };
+  //     } = {};
+
+  //     // Apply the filter only if a specific status is provided
+  //     if (filter?.status) {
+  //       if (
+  //         filter.status === VendorStatusEnums.ACTIVE ||
+  //         filter.status === VendorStatusEnums.INACTIVE ||
+  //         filter.status === VendorStatusEnums.PENDING
+  //       ) {
+  //         // Filter by a single status
+  //         query.status = filter.status;
+  //       } else {
+  //         // If you want to filter by multiple statuses (e.g., ACTIVE and INACTIVE)
+  //         query.status = {
+  //           $in: [VendorStatusEnums.ACTIVE, VendorStatusEnums.INACTIVE],
+  //         };
+  //       }
+  //     }
+
+  //     // Fetch paginated items based on the query
+  //     const [items, total] = await Promise.all([
+  //       this.vendorModel
+  //         .find(query) // Use the constructed query
+  //         .skip((currentPage - 1) * pageSize)
+  //         .limit(pageSize)
+  //         .exec(),
+  //       this.vendorModel.countDocuments(query).exec(),
+  //     ]);
+
+  //     return {
+  //       items,
+  //       total,
+  //     };
+  //   } catch (error) {
+  //     throw new BadRequestException(error.message);
+  //   }
+  // }
+
+  // REMOVING PAGINATION
   async findAll(
-    page = 1,
-    limit = 10,
     filter?: { status?: VendorStatusEnums },
   ): Promise<{ items: Vendor[]; total: number }> {
     try {
-      // Ensure page and limit are numbers
-      const currentPage = Number(page);
-      const pageSize = Number(limit);
-
-      // Validate page and limit
-      if (currentPage < 1 || pageSize < 1) {
-        throw new BadRequestException(
-          'Page number and limit must be greater than zero',
-        );
-      }
-
       // Initialize the filter
       const query: {
         status?: VendorStatusEnums | { $in: VendorStatusEnums[] };
       } = {};
-
+  
       // Apply the filter only if a specific status is provided
       if (filter?.status) {
         if (
@@ -338,17 +384,13 @@ export class VendorsService {
           };
         }
       }
-
-      // Fetch paginated items based on the query
+  
+      // Fetch all items based on the query
       const [items, total] = await Promise.all([
-        this.vendorModel
-          .find(query) // Use the constructed query
-          .skip((currentPage - 1) * pageSize)
-          .limit(pageSize)
-          .exec(),
+        this.vendorModel.find(query).exec(),
         this.vendorModel.countDocuments(query).exec(),
       ]);
-
+  
       return {
         items,
         total,
@@ -357,7 +399,7 @@ export class VendorsService {
       throw new BadRequestException(error.message);
     }
   }
-
+  
   async findVendorWithToken(id: string | any): Promise<Vendor> {
     const data = await this.vendorModel.findOne({ id });
 

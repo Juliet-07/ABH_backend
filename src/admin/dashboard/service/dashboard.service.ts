@@ -267,8 +267,8 @@ export class DashboardService {
       const orders = await this.orderModel
         .find()
         .populate('products.productId')
-        .populate('transactionId')
-        // .populate('userId', 'firstName lastName email phoneNumber');
+        .populate('transactionId');
+      // .populate('userId', 'firstName lastName email phoneNumber');
 
       // Count total documents
       const totalCount = await this.orderModel.countDocuments();

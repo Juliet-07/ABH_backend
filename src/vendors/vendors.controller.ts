@@ -100,14 +100,24 @@ export class VendorsController {
   }
 
   //@UseGuards(AdminAuthGuard)
+  // @Get()
+  // async findAll(
+  //   @Query('page') page = 1,
+  //   @Query('limit') limit = 10,
+  //   @Query('filter.status') status?: VendorStatusEnums,
+  // ) {
+  //   const filter = status ? { status } : undefined;
+  //   return this.vendorsService.findAll(page, limit, filter);
+  // }
+
+  // REMOVE PAGINATION
   @Get()
-  async findAll(
-    @Query('page') page = 1,
-    @Query('limit') limit = 10,
-    @Query('filter.status') status?: VendorStatusEnums,
-  ) {
+  async findAll(@Query('status') status?: VendorStatusEnums) {
+    // Construct the filter object if a status is provided
     const filter = status ? { status } : undefined;
-    return this.vendorsService.findAll(page, limit, filter);
+
+    // Call the service method with the provided filter
+    return this.vendorsService.findAll(filter);
   }
 
   @UseGuards(AdminAuthGuard)

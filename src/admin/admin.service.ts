@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
 import { JwtService } from '@nestjs/jwt';
@@ -9,12 +15,12 @@ import { MailingService } from '../utils/mailing/mailing.service';
 import { RedisService } from 'src/redis/redis.service';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Admin } from 'src/admin/schema/admin.schema'
+import { Admin } from 'src/admin/schema/admin.schema';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AdminService {
-  cacheKey = 'all_admin'
+  cacheKey = 'all_admin';
 
   constructor(
     @InjectModel(Admin.name) private adminModel: Model<Admin>,
@@ -22,7 +28,7 @@ export class AdminService {
     private helpers: HelpersService,
     private mailingSerivce: MailingService,
     private redisService: RedisService,
-  ) { }
+  ) {}
 
   async create(createAdminDto: CreateAdminDto): Promise<string> {
     try {
@@ -57,7 +63,7 @@ export class AdminService {
 
     const referrer = await this.adminModel.findOne({ where: { code } });
 
-    if (!referrer) throw new Error('Invalid Referrer Code')
+    if (!referrer) throw new Error('Invalid Referrer Code');
 
     return referrer.id;
   }
@@ -66,13 +72,12 @@ export class AdminService {
     try {
       const { email, password } = loginAdminDto;
       const admin = await this.adminModel.findOne({
-
-        email
-
-      })
-      if (!admin) throw new NotFoundException('Admin Not Found')
+        email,
+      });
+      if (!admin) throw new NotFoundException('Admin Not Found');
       const isPasswordCorrect = await bcrypt.compare(password, admin.password);
-      if (!isPasswordCorrect) throw new UnauthorizedException('Incorrect Password')
+      if (!isPasswordCorrect)
+        throw new UnauthorizedException('Incorrect Password');
 
       // if (!admin.verified) throw new MisdirectedException('Pls verify your account')
 
@@ -83,15 +88,10 @@ export class AdminService {
         accessToken: await this.jwtService.signAsync(payload),
       };
     } catch (error) {
-      console.error("THE ERROR", error)
+      console.error('THE ERROR', error);
       throw new BadRequestException(error.message);
     }
-
   }
-
-
-
-
 
   async requestForgotPasswordVerificationCode(email: string): Promise<void> {
     try {
@@ -106,31 +106,35 @@ export class AdminService {
       // Generate the verification code and its expiration
       const {
         token: forgotPasswordVerificationCode,
-        expiresIn: forgotPasswordVerificationCodeExpiresIn
+        expiresIn: forgotPasswordVerificationCodeExpiresIn,
       } = this.helpers.generateVerificationCode();
 
       // Update the admin document with the verification code and expiration
-      await this.adminModel.findByIdAndUpdate(admin.id, {
-        forgotPasswordVerificationCode,
-        forgotPasswordVerificationCodeExpiresIn,
-      }).exec();
+      await this.adminModel
+        .findByIdAndUpdate(admin.id, {
+          forgotPasswordVerificationCode,
+          forgotPasswordVerificationCodeExpiresIn,
+        })
+        .exec();
 
       // Prepare and send the email with the verification code
       try {
         await this.mailingSerivce.send({
           subject: 'Password Reset Request',
           email: admin.email,
-          html: `${admin.firstName} ${admin.lastName}, please use the OTP code <b style="font-size: 20px;">${forgotPasswordVerificationCode}</b> to reset your password. The code expires on ${new Date(forgotPasswordVerificationCodeExpiresIn).toLocaleString()}.`
+          html: `${admin.firstName} ${
+            admin.lastName
+          }, please use the OTP code <b style="font-size: 20px;">${forgotPasswordVerificationCode}</b> to reset your password. The code expires on ${new Date(
+            forgotPasswordVerificationCodeExpiresIn,
+          ).toLocaleString()}.`,
         });
       } catch (mailError) {
         throw new InternalServerErrorException('Failed to send email');
       }
-
     } catch (error) {
       throw new BadRequestException(error.message);
     }
   }
-
 
   async findAll(): Promise<Admin[]> {
     try {
@@ -142,7 +146,11 @@ export class AdminService {
 
       const data = await this.adminModel.find();
 
-      await this.redisService.set({ key: this.cacheKey, value: data, ttl: 3600 });
+      await this.redisService.set({
+        key: this.cacheKey,
+        value: data,
+        ttl: 3600,
+      });
 
       return data;
     } catch (error) {
@@ -151,7 +159,6 @@ export class AdminService {
   }
 
   async findAdminWithToken(id: string | any): Promise<Admin> {
-
     const data = await this.adminModel.findOne({ id });
 
     return data;
@@ -167,23 +174,22 @@ export class AdminService {
       if (!id) throw new BadRequestException('ID cannot be empty');
 
       // Perform the update operation
-      const updatedAdmin = await this.adminModel.findByIdAndUpdate(
-        id,
-        { $set: updateAdminDto },
-        { new: true, useFindAndModify: false } // Return the updated document and avoid deprecation warnings
-      ).exec();
+      const updatedAdmin = await this.adminModel
+        .findByIdAndUpdate(
+          id,
+          { $set: updateAdminDto },
+          { new: true, useFindAndModify: false }, // Return the updated document and avoid deprecation warnings
+        )
+        .exec();
 
       // Check if the document was found and updated
       if (!updatedAdmin) throw new NotFoundException('Admin not found');
 
       return updatedAdmin;
-
     } catch (error) {
       throw new BadRequestException(error.message);
     }
   }
-
-
 
   remove(id: number) {
     return `This action removes a #${id} admin`;
