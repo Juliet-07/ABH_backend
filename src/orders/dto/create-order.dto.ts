@@ -25,8 +25,10 @@ class AddressDto {
   country?: string;
 
   @IsDefined()
-  @IsOptional()
-  town?: string;
+  town: string;
+
+  @IsDefined()
+  townId: string;
 }
 
 class PersonalInfoDto {

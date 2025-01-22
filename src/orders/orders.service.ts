@@ -321,7 +321,7 @@ export class OrdersService {
         vat,
         order.reference,
         order._id,
-        userId
+        userId,
       );
 
       return {
@@ -412,7 +412,7 @@ export class OrdersService {
     vat,
     reference,
     orderId,
-    userId
+    userId,
   ) {
     return await this.transactionModel.create({
       paymentGateway,
@@ -422,7 +422,7 @@ export class OrdersService {
       reference,
       orderId,
       totalProductAmount: amount,
-      userId
+      userId,
     });
   }
 

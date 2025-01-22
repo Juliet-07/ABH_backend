@@ -57,7 +57,8 @@ export class SingleOrder {
       city: { type: String, required: true },
       state: { type: String, required: true },
       country: { type: String, required: false },
-      town: { type: String, required: false },
+      town: { type: String, required: true },
+      townId: { type: String, required: true },
     },
     required: true,
   })
@@ -66,7 +67,8 @@ export class SingleOrder {
     city: string;
     state: string;
     country?: string;
-    town?: string;
+    town: string;
+    townId: string;
   };
 }
 
