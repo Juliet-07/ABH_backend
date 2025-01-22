@@ -116,13 +116,21 @@ export class StatisticService {
   async updateOrderStatus(
     orderId: string,
     vendorId: string,
+    // townId: number,
     payload: UpdateOrderStatusDto1,
   ) {
     try {
-      const order = await this.singleOrderModel.findOne({
-        _id: orderId,
-        vendorId: vendorId,
-      });
+      const order = await this.singleOrderModel
+        .findOne({
+          orderId: orderId,
+          vendorId: vendorId,
+        })
+        .populate('userId')
+        .populate('orderId')
+        .populate('vendorId')
+        .populate('products.productId');
+
+      console.log(order);
 
       if (!order) {
         throw new UnauthorizedException(
