@@ -40,6 +40,12 @@ export class Vendor {
   @Prop({ type: String })
   state?: string;
 
+  @Prop({ type: String, required: true })
+  town: string;
+
+  @Prop({ type: String, required: true })
+  townId: string;
+
   @Prop({ enum: VendorStatusEnums, default: VendorStatusEnums.PENDING })
   status: string;
 
