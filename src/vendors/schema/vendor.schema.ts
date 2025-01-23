@@ -68,6 +68,15 @@ export class Vendor {
   @Prop({ type: Number })
   referredBy?: number;
 
+  @Prop({ type: String })
+  accountNumber?: string;
+
+  @Prop({ type: String })
+  accountName?: string;
+
+  @Prop({ type: String })
+  bankName?: string;
+
   @Prop({ default: false })
   verified: boolean;
 
