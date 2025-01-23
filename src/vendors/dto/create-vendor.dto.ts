@@ -47,6 +47,20 @@ export class CreateVendorDto {
     state: string;
 
     @IsString()
+    @ApiProperty({
+        type: String,
+        description: 'Town Name',
+    })
+    town: string;
+
+    @IsString()
+    @ApiProperty({
+        type: String,
+        description: 'Town\'s ID',
+    })
+    townId: string;
+
+    @IsString()
     @IsDefined()
     @ApiProperty({
         type: String,
