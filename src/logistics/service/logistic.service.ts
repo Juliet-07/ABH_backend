@@ -229,7 +229,7 @@ export class LogisticService {
       );
 
       const waybillInfo = response.data;
-      console.log('Pickup Request Submitted:', waybillInfo);
+      // console.log('Pickup Request Submitted:', waybillInfo);
       return waybillInfo;
     } catch (error) {
       console.error(

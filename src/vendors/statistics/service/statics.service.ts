@@ -13,6 +13,7 @@ import { Order } from 'src/orders/schema/order.schema';
 import { Product } from 'src/products/schema/product.schema';
 import { Document } from 'mongoose';
 import { SingleOrder } from 'src/orders/schema/singleOreder.schema';
+import { LogisticService } from 'src/logistics/service/logistic.service';
 
 export interface OrderDocument extends Document {
   status: PaymentStatus;
@@ -29,6 +30,7 @@ export class StatisticService {
     @InjectModel(Order.name) private orderModel: Model<Order>,
     @InjectModel(Product.name) private productModel: Model<Product>,
     @InjectModel(SingleOrder.name) private singleOrderModel: Model<SingleOrder>,
+    private logisticService: LogisticService,
   ) {}
   async getOrdersByVendorId(vendorId: string) {
     try {
@@ -116,44 +118,155 @@ export class StatisticService {
   async updateOrderStatus(
     orderId: string,
     vendorId: string,
-    // townId: number,
     payload: UpdateOrderStatusDto1,
   ) {
     try {
+      // Find the order and populate required fields
       const order = await this.singleOrderModel
         .findOne({
           orderId: orderId,
           vendorId: vendorId,
         })
         .populate('userId')
-        .populate('orderId')
         .populate('vendorId')
         .populate('products.productId');
 
-      console.log(order);
-
+      // Ensure the order exists
       if (!order) {
         throw new UnauthorizedException(
           'You are not authorized to update this order',
         );
       }
 
+      // Ensure the payment is confirmed
       if (order.status !== 'PAID') {
-        throw new BadRequestException(`Payment not confirmed yet`);
+        throw new BadRequestException('Payment not confirmed yet');
       }
 
-      const updatedStatus = await this.singleOrderModel.findOneAndUpdate(
-        { _id: orderId },
-        { $set: { deliveryStatus: payload.deliveryStatus } },
-        { new: true },
-      );
+      // Save the updated delivery status to the database
+      order.deliveryStatus = payload.deliveryStatus;
+      await order.save();
 
-      return updatedStatus;
+      // console.log(order, 'AFTER....................');
+
+      // If the delivery status is "SHIPPED", prepare and send the pickup request
+      if (payload.deliveryStatus === 'SHIPPED') {
+        const sender = order.vendorId as any;
+        const recipient = order.userId as any;
+
+        // Extract shipment items
+        const shipmentItems = (order.products as any).map((product: any) => ({
+          ItemName: product.productId.name,
+          ItemUnitCost: product.productId.price,
+          ItemQuantity: product.quantity,
+          ItemColour: product.productId.colour || 'N/A',
+          ItemSize: product.productId.size || 'N/A',
+        }));
+
+        // Prepare the payload for the pickup request
+        const submitPickupPayload = {
+          OrderNo: order._id.toString(),
+          // orderNo: '67924a7d466b23b834426c96f',
+          Description: 'Products from order',
+
+          Weight: order.products
+            .map((product: any) => (product.productId.weight || 0).toString())
+            .join(','),
+          SenderName: `${(sender as any).firstName} ${
+            (sender as any).lastName
+          }`,
+          SenderCity: (sender as any).city,
+          SenderTownID: (sender as any).townId,
+          SenderAddress: (sender as any).address,
+          SenderPhone: (sender as any).phoneNumber,
+          SenderEmail: (sender as any).email,
+          RecipientName: `${(recipient as any).firstName} ${
+            (recipient as any).lastName
+          }`,
+          RecipientCity: order.shippingAddress.city,
+          RecipientTownID: order.shippingAddress.townId,
+          RecipientAddress: order.shippingAddress.street,
+          RecipientPhone: (recipient as any).phoneNumber,
+          RecipientEmail: (recipient as any).email,
+          PaymentType: 'Pay On Delivery',
+          DeliveryType: 'Normal Delivery',
+          PickupType: '1',
+          ShipmentItems: shipmentItems,
+        };
+
+        // console.log(
+        //   submitPickupPayload,
+        //   'PICKUP PAYLOAD........................',
+        // );
+
+        // Send the request using logisticService
+        const token = await this.logisticService.getAuthToken();
+        if (token) {
+          const result = await this.logisticService.submitPickupRequest(
+            token,
+            submitPickupPayload,
+          );
+
+          if (result.error) {
+            throw new BadRequestException('Pickup request submission failed.');
+          }
+
+          // console.log('Pickup request successfully submitted:', result);
+
+          return {
+            message: 'Pickup request successfully submitted.',
+            response: result,
+          };
+        } else {
+          throw new UnauthorizedException(
+            'Authentication failed for pickup request.',
+          );
+        }
+      }
     } catch (error) {
-      console.log(error);
+      console.error('Error updating order status:', error);
       throw new BadRequestException(error.message);
     }
   }
+
+  // async updateOrderStatus(
+  //   orderId: string,
+  //   vendorId: string,
+  //   payload: UpdateOrderStatusDto1,
+  // ) {
+  //   try {
+  //     const order = await this.singleOrderModel
+  //       .findOne({
+  //         orderId: orderId,
+  //         vendorId: vendorId,
+  //       })
+  //       .populate('userId')
+  //       .populate('orderId')
+  //       .populate('vendorId')
+  //       .populate('products.productId');
+
+  //     if (!order) {
+  //       throw new UnauthorizedException(
+  //         'You are not authorized to update this order',
+  //       );
+  //     }
+
+  //     if (order.status !== 'PAID') {
+  //       throw new BadRequestException(`Payment not confirmed yet`);
+  //     }
+
+  //     const updatedStatus = await this.singleOrderModel.findOneAndUpdate(
+  //       { _id: orderId },
+  //       { $set: { deliveryStatus: payload.deliveryStatus } },
+  //       { new: true },
+  //     );
+
+  //     return updatedStatus;
+  //   } catch (error) {
+  //     console.log(error);
+  //     throw new BadRequestException(error.message);
+  //   }
+  // }
 
   async outOfstock(vendorId: string) {
     try {
