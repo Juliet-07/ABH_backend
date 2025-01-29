@@ -14,6 +14,7 @@ import { Product } from 'src/products/schema/product.schema';
 import { Document } from 'mongoose';
 import { SingleOrder } from 'src/orders/schema/singleOreder.schema';
 import { LogisticService } from 'src/logistics/service/logistic.service';
+import { MailingService } from 'src/utils/mailing/mailing.service';
 
 export interface OrderDocument extends Document {
   status: PaymentStatus;
@@ -31,6 +32,7 @@ export class StatisticService {
     @InjectModel(Product.name) private productModel: Model<Product>,
     @InjectModel(SingleOrder.name) private singleOrderModel: Model<SingleOrder>,
     private logisticService: LogisticService,
+    private mailingSerivce: MailingService,
   ) {}
   async getOrdersByVendorId(vendorId: string) {
     try {
@@ -147,8 +149,6 @@ export class StatisticService {
       order.deliveryStatus = payload.deliveryStatus;
       await order.save();
 
-      // console.log(order, 'AFTER....................');
-
       // If the delivery status is "SHIPPED", prepare and send the pickup request
       if (payload.deliveryStatus === 'SHIPPED') {
         const sender = order.vendorId as any;
@@ -166,7 +166,7 @@ export class StatisticService {
         // Prepare the payload for the pickup request
         const submitPickupPayload = {
           OrderNo: order._id.toString(),
-          // orderNo: '67924a7d466b23b834426c96f',
+          // OrderNo: '6722a7d4633261412b23b834426c96f',
           Description: 'Products from order',
 
           Weight: order.products
@@ -207,11 +207,23 @@ export class StatisticService {
             submitPickupPayload,
           );
 
-          if (result.error) {
+          if (result.error || result?.TransStatus !== 'Successful') {
             throw new BadRequestException('Pickup request submission failed.');
           }
 
           // console.log('Pickup request successfully submitted:', result);
+
+          try {
+            const waybillNumber = result?.WaybillNumber || 'N/A';
+
+            await this.mailingSerivce.send({
+              subject: 'Pickup Confirmation',
+              email: recipient.email,
+              html: `${recipient.firstName} ${recipient.lastName}, Here is your waybill number: <b style="font-size: 20px;">${waybillNumber}</b>`,
+            });
+          } catch (error) {
+            console.error('Error sending email:', error);
+          }
 
           return {
             message: 'Pickup request successfully submitted.',

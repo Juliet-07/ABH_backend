@@ -13,6 +13,7 @@ import { SingleOrderSchema } from 'src/orders/schema/singleOreder.schema';
 import { SingleDropshippingSchema } from 'src/dropshipping/schema/singledropshipping.schema';
 import { SingleShippingSchema } from 'src/shippment/schema/singleshipment.schema';
 import { LogisticService } from 'src/logistics/service/logistic.service';
+import { MailingService } from 'src/utils/mailing/mailing.service';
 
 @Module({
   imports: [
@@ -30,6 +31,11 @@ import { LogisticService } from 'src/logistics/service/logistic.service';
   ],
   exports: [StatisticService, LogisticService],
   controllers: [StatisticController],
-  providers: [StatisticService, DropshippingstatisticService, LogisticService],
+  providers: [
+    StatisticService,
+    DropshippingstatisticService,
+    LogisticService,
+    MailingService,
+  ],
 })
 export class StatisticModule {}
