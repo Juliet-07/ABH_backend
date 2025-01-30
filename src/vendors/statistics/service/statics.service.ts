@@ -149,6 +149,20 @@ export class StatisticService {
       order.deliveryStatus = payload.deliveryStatus;
       await order.save();
 
+      // Update delivery status in Order schema
+      const allVendorOrders = await this.singleOrderModel.find({ orderId });
+
+      const allSameStatus = allVendorOrders.every(
+        (order) => order.deliveryStatus === payload.deliveryStatus,
+      );
+
+      if (allSameStatus) {
+        await this.orderModel.findOneAndUpdate(
+          { _id: orderId },
+          { deliveryStatus: payload.deliveryStatus },
+        );
+      }
+
       // If the delivery status is "SHIPPED", prepare and send the pickup request
       if (payload.deliveryStatus === 'SHIPPED') {
         const sender = order.vendorId as any;
