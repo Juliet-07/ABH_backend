@@ -24,7 +24,7 @@ export class Product {
   @Prop({ type: Number, required: false })
   maximumOrderPerCarton: number;
 
-  @Prop({ type: Number, required: true })
+  @Prop({ type: Number, required: false })
   unitPerCarton: number;
 
   @Prop({ required: true })
