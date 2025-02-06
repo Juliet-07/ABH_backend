@@ -588,20 +588,19 @@ export class ProductsService {
   async remove(productId: string): Promise<string> {
     try {
       const product = await this.productModel.findOne({ _id: productId });
-  
+
       if (!product) {
         throw new NotFoundException(`Product not found`);
       }
-  
+
       // Use the correct condition to delete the product
       await this.productModel.findOneAndDelete({ _id: productId });
-  
+
       return `Product deleted successfully`;
     } catch (error) {
       throw error;
     }
   }
-  
 
   async findAllForAdmin({ status }: { status?: string }) {
     try {
@@ -857,12 +856,12 @@ export class ProductsService {
         })
         .sort({ createdAt: -1 })
         .populate('categoryId')
-        .select('+unitPerCarton')
-        // .populate('categoryId');
+        .select('+unitPerCarton');
+      // .populate('categoryId');
 
       if (!product) throw new NotFoundException(`Product not found`);
 
-      console.log(product)
+      console.log(product);
 
       return product;
     } catch (error) {
@@ -978,6 +977,7 @@ export class ProductsService {
     const products = await this.productModel
       .find({ categoryId: categoryId, status: 'APPROVED' })
       .sort({ createdAt: -1 })
+      .populate({ path: 'vendor', select: ['-password'] })
       .exec();
     return {
       counts: products.length,
